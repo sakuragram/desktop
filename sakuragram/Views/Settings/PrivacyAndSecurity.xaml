@@ -96,8 +96,7 @@
                         <controls:SettingsCard Description="Users who add your number to their contact will see it on Telegram only if they are your contacts"
                                                Header="Who can see my phone number"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox x:Name="ComboBoxPhoneNumber"
-                                      SelectionChanged="ComboBoxPhoneNumber_OnSelectionChanged">
+                            <ComboBox x:Name="ComboBoxPhoneNumber">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -415,19 +414,22 @@
                 
                 <ContentDialog x:Name="ContentDialogSessions"
                                Opened="ContentDialogSessions_OnOpened"
-                               MaxHeight="500"
+                               Closed="ContentDialogSessions_OnClosed"
                                CloseButtonText="Close">
                     <ContentDialog.TitleTemplate>
                         <DataTemplate>
                             <TextBlock Text="Active sessions" />
                         </DataTemplate>
                     </ContentDialog.TitleTemplate>
-                    <ScrollViewer>
+                    <ScrollViewer Height="500"
+                                  Width="400">
                         <StackPanel>
                             <StackPanel x:Name="ActiveSession"/>
                             <Button x:Name="ButtonTerminateOtherSessions"
                                     Content="Terminate other sessions"
                                     Width="Auto"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
                                     Click="ButtonTerminateOtherSessions_OnClick"/>
                             <MenuFlyoutSeparator Margin="0, 10, 0, 10" />
                             <StackPanel x:Name="SessionList"/>

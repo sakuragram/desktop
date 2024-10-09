@@ -1,4 +1,7 @@
-﻿using Microsoft.UI.Xaml;
+﻿using System;
+using System.Threading.Tasks;
+using CommunityToolkit.WinUI;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using sakuragram.Views.Settings.AdditionalElements;
 using TdLib;
@@ -56,25 +59,27 @@ public partial class PrivacyAndSecurity : Page
             }
         }
     }
-
-    private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+    
+    private async void ButtonBase_OnClick(object sender, RoutedEventArgs e)
     {
-        ContentDialogSessions.ShowAsync();
+        await ContentDialogSessions.ShowAsync();
     }
 
-    private void ButtonTerminateOtherSessions_OnClick(object sender, RoutedEventArgs e)
+    private async void ButtonTerminateOtherSessions_OnClick(object sender, RoutedEventArgs e)
     {
         ContentDialogSessions.Hide();
-        TerminatingContentDialog.ShowAsync();
+        await ContentDialogSessions.ShowAsync();
     }
 
     private void TerminatingContentDialog_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
         _client.TerminateAllOtherSessionsAsync();
-        CardActiveSessions.Description = $"There are currently 1 active sessions";
+        CardActiveSessions.Description = "There are currently 1 active sessions";
     }
 
-    private void ComboBoxPhoneNumber_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void ContentDialogSessions_OnClosed(ContentDialog sender, ContentDialogClosedEventArgs args)
     {
+        ActiveSession.Children.Clear();
+        SessionList.Children.Clear();
     }
 }

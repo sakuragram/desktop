@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading;
+using Windows.UI.Core;
+using CommunityToolkit.WinUI;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -7,7 +11,7 @@ using TdLib;
 
 namespace sakuragram.Views.Settings.AdditionalElements;
 
-public partial class Session : Button
+public partial class Session : Page
 {
     private static readonly TdClient _client = App._client;
     private TdApi.Session _session;
@@ -20,18 +24,6 @@ public partial class Session : Button
     public void Update(TdApi.Session session)
     {
         _session = session;
-
-        if (session.IsCurrent)
-        {
-            ContentDialogSessionInfo.IsPrimaryButtonEnabled = false;
-            ContentDialogSessionInfo.PrimaryButtonText = string.Empty;
-        }
-        else
-        {
-            ContentDialogSessionInfo.IsPrimaryButtonEnabled = true;
-            ContentDialogSessionInfo.PrimaryButtonText = "Terminate";
-        }
-        
         
         TextBlockApplicationName.Text = session.ApplicationName + " " + session.ApplicationVersion;
         TextBlockPlatformAndVersion.Text = session.DeviceModel;
@@ -55,21 +47,16 @@ public partial class Session : Button
         };
     }
 
-    private void ContentDialogSessionInfo_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private void ButtonTerminateSession_OnClick(object sender, RoutedEventArgs e)
     {
-        _client.TerminateSessionAsync(_session.Id);
-    }
-
-    private void ContentDialogSessionInfo_OnOpened(ContentDialog sender, ContentDialogOpenedEventArgs args)
-    {
-        ContentDialogSessionInfo.Title = _session.DeviceModel;
-        CardAppliction.Description = _session.ApplicationName;
-        CardSystemVersion.Description = _session.DeviceModel;
-        CardLocation.Description = _session.Location;
-    }
-
-    private void Session_OnClick(object sender, RoutedEventArgs e)
-    {
-        ContentDialogSessionInfo.ShowAsync();
+        try
+        {
+            _client.TerminateSessionAsync(_session.Id);
+        }
+        catch (TdException exception)
+        {
+            Debug.WriteLine(exception.Message);
+            throw;
+        }
     }
 }
