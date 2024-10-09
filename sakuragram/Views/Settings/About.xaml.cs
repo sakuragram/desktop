@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.Storage;
+using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Octokit;
@@ -26,24 +27,6 @@ public partial class About : Page
         _appLatestVersionLink = $"https://github.com/{Config.GitHubRepoOwner}/{Config.GitHubRepoName}/releases/tag/{Config.AppVersion}";
         
         TextBlockVersionInfo.Text = $"Current version: {Config.AppVersion}, TdLib {Config.TdLibVersion}";
-        
-        Task.Run(async () =>
-        {
-            var releases = await _githubClient.Repository.Release.GetAll(Config.GitHubRepoOwner, Config.GitHubRepoName)
-                .ConfigureAwait(false);
-            
-            foreach (var release in releases)
-            {
-                string releaseName = release.Prerelease ? "Pre-release" + release.Name : "Release" + release.Name;
-                string releaseBody = release.Body;
-
-                SettingsCard card = new();
-                card.Header = releaseName;
-                card.Description = releaseBody;
-
-                ExpanderReleases.Items.Add(card);
-            }
-        });
         
         _updateManager._asyncCompletedEventHandler += AsyncCompletedEventHandler;
         CheckForUpdates();
@@ -121,5 +104,26 @@ public partial class About : Page
             ButtonNewVersionAvailable.Content = "Download failed";
             throw;
         }
+    }
+
+    private async void ExpanderReleases_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        var releases = await _githubClient.Repository.Release.GetAll(Config.GitHubRepoOwner, Config.GitHubRepoName)
+            .ConfigureAwait(false);
+        
+        await DispatcherQueue.EnqueueAsync(() =>
+        {
+            foreach (var release in releases)
+            {
+                string releaseName = release.Prerelease ? "Pre-release " + release.Name : "Release " + release.Name;
+                string releaseBody = release.Body != string.Empty ? release.Body : "The release does not have a changelog";
+
+                SettingsCard card = new();
+                card.Header = releaseName;
+                card.Description = releaseBody;
+
+                ExpanderReleases.Items.Add(card);
+            }
+        });
     }
 }

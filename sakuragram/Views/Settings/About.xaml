@@ -54,7 +54,9 @@
                 </controls:SettingsCard>
                 
                 <controls:SettingsExpander x:Name="ExpanderReleases"
-                                           Header="Releases" />
+                                           Header="Releases"
+                                           Visibility="Visible"
+                                           Loaded="ExpanderReleases_OnLoaded"/>
                 
                 <!-- About section -->
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
