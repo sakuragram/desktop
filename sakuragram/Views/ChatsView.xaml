@@ -70,7 +70,8 @@
                         Click="ButtonNewMessage_OnClick"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Bottom"
-                        RelativePanel.AlignBottomWithPanel="True"/>
+                        RelativePanel.AlignBottomWithPanel="True"
+                        RelativePanel.AlignRightWithPanel="True"/>
             </RelativePanel>
             
             <ContentDialog x:Name="NewMessage" CloseButtonText="Cancel" PrimaryButtonText="Create">
