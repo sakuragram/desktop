@@ -35,11 +35,17 @@
                 <!-- Security section -->
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
                            Text="Security" />
+                
+                <controls:SettingsCard Header="Two-Step Verification">
+                    <Button Content="Change"
+                            Style="{StaticResource AccentButtonStyle}" />
+                </controls:SettingsCard>
 
                 <controls:SettingsCard Description="This is a default card, with the Header, HeaderIcon, Description and Content set."
                                        Header="Auto-Delete messages"
-                                       HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                    <ComboBox SelectedIndex="0">
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xEC92;}">
+                    <ComboBox SelectedIndex="0"
+                              IsEnabled="False">
                         <ComboBoxItem>Off</ComboBoxItem>
                         <ComboBoxItem>After 1 day</ComboBoxItem>
                         <ComboBoxItem>After 1 week</ComboBoxItem>
@@ -48,12 +54,8 @@
                     </ComboBox>
                 </controls:SettingsCard>
                 
-                <controls:SettingsCard Header="Two-Step Verification">
-                    <Button Content="Change"
-                            Style="{StaticResource AccentButtonStyle}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard Header="Local passcode">
+                <controls:SettingsCard Header="Local passcode"
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xEF3E;}">
                     <Button Content="Change"
                             Style="{StaticResource AccentButtonStyle}"
                             IsEnabled="False" />
@@ -61,26 +63,31 @@
                 
                 <controls:SettingsCard x:Name="CardBlockedUsers"
                                        Header="Blocked users"
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xE8F8;}"
                                        Description="blocked (count) users">
-                    <Button Content="View"
+                    <Button x:Name="ButtonBlockedUsers"
+                            Content="View"
                             Style="{StaticResource AccentButtonStyle}"
-                            IsEnabled="False" />
+                            Click="ButtonBlockedUsers_OnClick"/>
                 </controls:SettingsCard>
                 
                 <controls:SettingsCard x:Name="CardConnectedWebsites"
                                        Header="Connected websites"
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xF6FA;}"
                                        Description="(count)">
-                    <Button Content="View"
+                    <Button x:Name="ButtonViewWebsites"
+                            Content="View"
                             Style="{StaticResource AccentButtonStyle}"
-                            IsEnabled="False" />
+                            Click="ButtonViewWebsites_OnClick"/>
                 </controls:SettingsCard>
                 
                 <controls:SettingsCard x:Name="CardActiveSessions"
                                        Header="Active sessions"
                                        Description="(count)">
-                    <Button Content="View"
+                    <Button x:Name="ButtonSessions"
+                            Content="View"
                             Style="{StaticResource AccentButtonStyle}"
-                            Click="ButtonBase_OnClick" />
+                            Click="ButtonSessions_OnClick"/>
                 </controls:SettingsCard>
                 <!-- End of Security section -->
                 
@@ -140,7 +147,6 @@
                         <controls:SettingsCard Header="Hide read time">
                             <ToggleSwitch />
                         </controls:SettingsCard>
-
                         
                         <controls:SettingsCard Description="Add users or groups to override the settings above"
                                                Header="Always share with"
@@ -375,8 +381,9 @@
                 
                 <controls:SettingsCard Description="Display people you message frequently at the top of the search section for quick access."
                                        Header="Suggest frequent contacts"
-                                       HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                    <ToggleSwitch IsOn="True" />
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xE77B;}">
+                    <ToggleSwitch IsOn="True"
+                                  IsEnabled="False"/>
                 </controls:SettingsCard>
                 
                 <!-- End of Frequent contacts section -->
@@ -387,9 +394,10 @@
                            Text="Bots and websites" />
                 
                 <controls:SettingsCard Header="Clear Payment and Shipping Info"
-                                       HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xE894;}">
                     <Button Content="Clear"
                             Style="{StaticResource AccentButtonStyle}" 
+                            IsEnabled="False"
                             Click="ClearPaymentInfo_OnClick"/>
                 </controls:SettingsCard>
                 
@@ -401,8 +409,10 @@
                            Text="Delete my account" />
                 
                 <controls:SettingsCard Header="If away for..."
-                                       HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                    <ComboBox SelectionChanged="DeleteIfAway_OnSelectionChanged">
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xE74D;}">
+                    <ComboBox SelectionChanged="DeleteIfAway_OnSelectionChanged"
+                              SelectedIndex="1"
+                              IsEnabled="False">
                         <ComboBoxItem>1 month</ComboBoxItem>
                         <ComboBoxItem>3 month</ComboBoxItem>
                         <ComboBoxItem>6 month</ComboBoxItem>
@@ -450,6 +460,30 @@
                     <TextBlock>
                         Are you sure you want to terminate all other sessions?
                     </TextBlock>
+                </ContentDialog>
+                
+                <ContentDialog x:Name="ContentDialogWebsites"
+                               Opened="ContentDialogWebsites_OnOpened"
+                               Closed="ContentDialogWebsites_OnClosed">
+                    <ContentDialog.TitleTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Connected websites" />
+                        </DataTemplate>
+                    </ContentDialog.TitleTemplate>
+                    <StackPanel>
+                        <Button x:Name="ButtonDisconnectAllWebsites"
+                                Content="Disconnect all websites"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Width="Auto"
+                                Click="ButtonDisconnectAllWebsites_OnClick"/>
+                        <MenuFlyoutSeparator Margin="0, 4, 0, 4" />
+                        <ScrollViewer Width="350"
+                                      MinHeight="200"
+                                      MaxHeight="400">
+                            <StackPanel x:Name="PanelWebsites"/>
+                        </ScrollViewer>
+                    </StackPanel>
                 </ContentDialog>
                 
             </StackPanel>
