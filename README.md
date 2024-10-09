@@ -5,7 +5,7 @@ Custom Telegram Desktop client based on TDLib ([tdsharp](https://github.com/egra
 [Telegram channel](https://t.me/sakuragram), [Telegram forum](https://t.me/sakuragramchat)
 
 ## Compilation Guide
-1. Clone **sakuragram** source code (`git clone https://github.com/cherryymerryy/sakuragram.git`)
+1. Clone **sakuragram** source code (`git clone https://github.com/sakuragram/desktop.git`)
 2. Open **sakuraglam.sln**
 3. Open **Config_Example** and fill it in according to the comments
 4. After all the steps in the console, write `dotnet build` 
