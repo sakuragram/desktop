@@ -1,10 +1,13 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.UI.Text;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using sakuragram.Services;
@@ -221,7 +224,28 @@ namespace sakuragram.Views.Chats.Messages
             switch (message.Content)
             {
                 case TdApi.MessageContent.MessageText messageText:
-                    MessageContent.Text = messageText.Text.Text;
+                    var text = messageText.Text.Text;
+                    var regex = new Regex(@"(https?://[^\s]+)");
+                    var match = regex.Match(text);
+
+                    if (match.Success)
+                    {
+                        var link = match.Value;
+                        var hyperlink = new Hyperlink
+                        {
+                            NavigateUri = new Uri(link),
+                            Foreground = new SolidColorBrush(Colors.Azure),
+                            TextDecorations = TextDecorations.Underline
+                        };
+                        hyperlink.Inlines.Add(new Run { Text = link });
+                        MessageContent.Inlines.Add(new Run { Text = text.Substring(0, match.Index) });
+                        MessageContent.Inlines.Add(hyperlink);
+                        MessageContent.Inlines.Add(new Run { Text = text.Substring(match.Index + match.Length) });
+                    }
+                    else
+                    {
+                        MessageContent.Text = text;
+                    }
                     break;
                 case TdApi.MessageContent.MessageUnsupported:
                     MessageContent.Text = "Your version of CherryMerryGram does not support this type of message, make sure that you are using the latest version of the client.";
@@ -231,20 +255,20 @@ namespace sakuragram.Views.Chats.Messages
                     break;
             }
             
-            var messageReactions = _client.ExecuteAsync(new TdApi.GetMessageAddedReactions
-            {
-                ChatId = message.ChatId,
-                MessageId = message.Id,
-                Limit = 100,
-            }).Result;
-            
-            if (messageReactions != null)
-            {
-                foreach (var reaction in messageReactions.Reactions)
-                {
-                    GenerateReaction(reaction);
-                }
-            }
+            // var messageReactions = _client.ExecuteAsync(new TdApi.GetMessageAddedReactions
+            // {
+            //     ChatId = message.ChatId,
+            //     MessageId = message.Id,
+            //     Limit = 100
+            // }).Result;
+            //
+            // if (messageReactions != null)
+            // {
+            //     foreach (var reaction in messageReactions.Reactions)
+            //     {
+            //         GenerateReaction(reaction);
+            //     }
+            // }
             
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         }
