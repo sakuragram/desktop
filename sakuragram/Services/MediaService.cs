@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using TdLib;
@@ -27,8 +28,9 @@ public class MediaService
             {
                 FileId = chat.Photo.Small.Id,
                 Priority = 1
-            });
-            avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty ? file.Local.Path : chat.Photo.Small.Local.Path));
+            }).WaitAsync(new CancellationToken());
+            if (file.Local.IsDownloadingCompleted) 
+                avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty ? file.Local.Path : chat.Photo.Small.Local.Path));
         }
     }
     
@@ -50,8 +52,9 @@ public class MediaService
             {
                 FileId = user.ProfilePhoto.Small.Id,
                 Priority = 1
-            });
-            avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty ? file.Local.Path : user.ProfilePhoto.Small.Local.Path));
+            }).WaitAsync(new CancellationToken());
+            if (file.Local.IsDownloadingCompleted) 
+                avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty ? file.Local.Path : user.ProfilePhoto.Small.Local.Path));
         }
     }
 }
