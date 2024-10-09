@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace sakuragram.Services;
 
-public class MathService
+public static class MathService
 {
     public static DateTime CalculateDateTime(int time)
     {
