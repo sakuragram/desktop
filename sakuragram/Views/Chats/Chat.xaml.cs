@@ -234,6 +234,15 @@ namespace sakuragram.Views.Chats
             
             MediaService.GetChatPhoto(_chat, ChatPhoto);
 
+            if (_chat.DraftMessage != null)
+            {
+                UserMessageInput.Text = _chat.DraftMessage.InputMessageText switch
+                {
+                    TdApi.InputMessageContent.InputMessageText text => text.Text.Text,
+                    _ => string.Empty
+                };
+            }
+            
             if (_chat.Background != null)
             {
                 _background = _chat.Background.Background;
