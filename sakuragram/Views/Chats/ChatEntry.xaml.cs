@@ -62,7 +62,9 @@ namespace sakuragram.Views.Chats
                     {
                         if (ChatId == updateChatLastMessage.LastMessage.ChatId)
                         {
-                            GetLastMessage(_client.GetChatAsync(updateChatLastMessage.ChatId).Result);
+                            string senderName = UserService.GetSenderName(_chat.LastMessage).Result;
+                            TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
+                            TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
                         }
                     });
                     break;
@@ -98,10 +100,14 @@ namespace sakuragram.Views.Chats
         public async void UpdateChatInfo()
         {
             _chat = await _client.GetChatAsync(chatId: ChatId);
-            TextBlockChatName.Text = _chat.Title;
-
+            string senderName = await UserService.GetSenderName(_chat.LastMessage).ConfigureAwait(false);
+            
             MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
-            GetLastMessage(_chat);
+            
+            TextBlockChatName.Text = _chat.Title;
+            TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
+            TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
+            //GetLastMessage(_chat);
             
             if (_chat.UnreadCount > 0)
             {

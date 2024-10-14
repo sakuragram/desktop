@@ -27,7 +27,7 @@ namespace sakuragram
 			TitleBar.Title = Config.AppName;
 			TitleBar.Icon = new BitmapIcon 
 			{
-				UriSource = new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"), 
+				UriSource = new Uri("ms-appx:///Assets/Light.svg"), 
 				ShowAsMonochrome = false
 			};
 			

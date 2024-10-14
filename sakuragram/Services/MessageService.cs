@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TdLib;
 
 namespace sakuragram.Services;
@@ -35,7 +36,7 @@ public class MessageService
         _selectedMessages.Clear();
     }
     
-    public string GetLastMessageContent(TdApi.Message message)
+    public static Task<string> GetLastMessageContent(TdApi.Message message)
     {
         var lastMessage = message.Content switch
         {
@@ -76,7 +77,7 @@ public class MessageService
             
             _ => "Unsupported message type"
         };
-        
-        return lastMessage;
+
+        return Task.FromResult(lastMessage);
     }
 }
