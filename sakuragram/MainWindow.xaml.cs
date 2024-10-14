@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
@@ -5,37 +8,48 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
-using sakuragram.Services;
 using TdLib;
 
 namespace sakuragram
 {
 	public sealed partial class MainWindow : Window
 	{
-		private NavigationViewItem _lastItem;
 		private static TdClient _client = App._client;
 		private static TdApi.User _user;
 		private static TdApi.ChatFolderInfo[] _folders = App._folders;
 
+		private NavigationViewItem _lastItem;
 		private int _totalUnreadCount;
 		
 		public MainWindow()
 		{
 			InitializeComponent();
+			TitleBar.Title = Config.AppName;
+			TitleBar.Icon = new BitmapIcon 
+			{
+				UriSource = new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"), 
+				ShowAsMonochrome = false
+			};
 			
 			#if DEBUG
 			{
-				Title = "sakuragram debug";
+				Title = $"{Config.AppName} debug";
 				TitleBar.Subtitle = "debug";
 			}
 			#elif BETA
 			{
-				Title = "sakuragram beta";
-				TitleBar.Subtitle = "beta";
+				Title = Config.AppName + " beta";
+				TitleBar.Subtitle = $"beta ({Config.AppVersion}, TdLib {Config.TdLibVersion})";
 			}
 			#elif RELEASE
 			{
-				Icon.Title = "sakuragram";
+				Title = Config.AppName;
+				TitleBar.Subtitle = Config.AppVersion;
+			}
+			#else
+			{
+				Title = Config.AppName;
+				TitleBar.Subtitle = "UNTITLED CONFIGURATION";
 			}
 			#endif
 			
@@ -58,13 +72,33 @@ namespace sakuragram
 			
 			foreach (var chatFolderInfo in _folders)
 			{
-				var folder = new NavigationViewItem
+				try
 				{
-					Content = chatFolderInfo.Title,
-					Tag = "ChatsView",
-					Name = $"{chatFolderInfo.Title}_{chatFolderInfo.Id}"
-				};
-				NavigationView.MenuItems.Add(folder);
+					string path = AppContext.BaseDirectory +
+					              $@"Assets\icons\folders\folders_{chatFolderInfo.Icon.Name.ToLower()}.png";
+					BitmapIcon folderIcon = new();
+					
+					if (File.Exists(path))
+					{
+						Uri folderIconPath = new(path);
+						
+						folderIcon.UriSource = folderIconPath;
+						folderIcon.ShowAsMonochrome = false;
+					}
+
+					var folderItem = new NavigationViewItem();
+					folderItem.Icon = folderIcon != null ? folderIcon : null;
+					folderItem.Content = chatFolderInfo.Title;
+					folderItem.Tag = "ChatsView";
+					folderItem.Name = $"{chatFolderInfo.Title}_{chatFolderInfo.Id}";
+
+					NavigationView.MenuItems.Add(folderItem);
+				}
+				catch (UriFormatException e)
+				{
+					Debug.WriteLine($"Error: {e.Message})");
+					throw;
+				}
 			}
 			
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
@@ -94,7 +128,7 @@ namespace sakuragram
 							TdApi.ConnectionState.ConnectionStateConnecting => "Connecting...",
 							TdApi.ConnectionState.ConnectionStateWaitingForNetwork => "Waiting for network...",
 							TdApi.ConnectionState.ConnectionStateConnectingToProxy => "Connecting to proxy...",
-							_ => "CherryMerryGram"
+							_ => Config.AppName
 						};
 					});
 					break;
@@ -136,7 +170,7 @@ namespace sakuragram
 
 		private bool NavigateToView(string clickedView, NavigationViewItem item)
 		{
-			var view = Assembly.GetExecutingAssembly().GetType($"sakuragram.Views.{clickedView}");
+			var view = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.{clickedView}");
 
 			if (string.IsNullOrEmpty(clickedView) || view == null)
 				return false;

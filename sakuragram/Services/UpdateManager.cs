@@ -9,16 +9,13 @@ namespace sakuragram.Services;
 
 public class UpdateManager
 {
+    private static readonly GitHubClient _gitHubClient = App._githubClient;
     public string _newVersion;
     public AsyncCompletedEventHandler _asyncCompletedEventHandler;
 
     private static async Task<string> GetLatestReleaseFromGitHub()
     {
-        var github = new GitHubClient(new ProductHeaderValue(Config.AppName));
-        var credentials = new Credentials(Config.GitHubAuthToken);
-        github.Credentials = credentials;
-
-        var releases = await github.Repository.Release.GetAll(Config.GitHubRepoOwner, Config.GitHubRepoName).ConfigureAwait(false);
+        var releases = await _gitHubClient.Repository.Release.GetAll(Config.GitHubRepoOwner, Config.GitHubRepoName).ConfigureAwait(false);
         Release latestRelease = releases[0];
         
         return latestRelease.TagName;

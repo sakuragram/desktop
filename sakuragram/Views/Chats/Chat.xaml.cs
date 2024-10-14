@@ -41,10 +41,11 @@ namespace sakuragram.Views.Chats
         private long _lastMessageId;
         private int _pollOptionsCount = 2;
         private bool _isProfileOpened = false;
+        private bool _hasInternetConnection = true;
         
         private ReplyService _replyService;
         private MessageService _messageService;
-        private MediaService _mediaService = new MediaService();
+        private MediaService _mediaService = new();
 
         public Chat()
         {
@@ -206,6 +207,19 @@ namespace sakuragram.Views.Chats
                     }
                     break;
                 }
+                case TdApi.Update.UpdateConnectionState updateConnectionState:
+                {
+                    _hasInternetConnection = updateConnectionState.State switch
+                    {
+                        TdApi.ConnectionState.ConnectionStateReady => true,
+                        TdApi.ConnectionState.ConnectionStateConnecting => false,
+                        TdApi.ConnectionState.ConnectionStateUpdating => false,
+                        TdApi.ConnectionState.ConnectionStateConnectingToProxy => false,
+                        TdApi.ConnectionState.ConnectionStateWaitingForNetwork => false,
+                        _ => false
+                    };
+                    break;
+                }
             }
 
             return Task.CompletedTask;
@@ -306,26 +320,26 @@ namespace sakuragram.Views.Chats
                 _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
             }
             
-            string channelBottomButtonValue = (string)_localSettings.Values["ChannelBottomButton"];
-
-            switch (channelBottomButtonValue)
-            {
-                case "Discuss":
-                {
-                    ButtonFastAction.Content = "Discuss";
-                    break;
-                }
-                case "Mute/Unmute":
-                {
-                    ButtonFastAction.Content = "Mute/Unmute";
-                    break;
-                }
-                case "Hide":
-                {
-                    ButtonFastAction.Content = "Hide";
-                    break;
-                }
-            }
+            // string channelBottomButtonValue = (string)_localSettings.Values["ChannelBottomButton"];
+            //
+            // switch (channelBottomButtonValue)
+            // {
+            //     case "Discuss":
+            //     {
+            //         ButtonFastAction.Content = "Discuss";
+            //         break;
+            //     }
+            //     case "Mute/Unmute":
+            //     {
+            //         ButtonFastAction.Content = "Mute/Unmute";
+            //         break;
+            //     }
+            //     case "Hide":
+            //     {
+            //         ButtonFastAction.Content = "Hide";
+            //         break;
+            //     }
+            // }
         }
 
         private void UpdateChatMembersText()
@@ -343,7 +357,7 @@ namespace sakuragram.Views.Chats
                     ChatId = chatId,
                     Limit = 100,
                     Offset = -1,
-                    OnlyLocal = false
+                    OnlyLocal = _hasInternetConnection
                 });
                 
                 foreach (var message in firstMessages.Messages_.Reverse())

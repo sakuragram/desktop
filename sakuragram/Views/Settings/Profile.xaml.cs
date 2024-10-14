@@ -21,7 +21,6 @@ public partial class Profile : Page
     private static TdApi.Chat _personalChat;
     private static TdApi.Chats _personalChats;
     
-    private int _profilePhotoFileId = 0;
     private int _personalChatIdToSet = 0;
     private readonly MediaService _mediaService = new();
 
@@ -29,31 +28,6 @@ public partial class Profile : Page
     {
         InitializeComponent();
         UpdateCurrentUser();
-    }
-    
-    private async Task ProcessUpdates(TdApi.Update update)
-    {
-        switch (update)
-        {
-            case TdApi.Update.UpdateFile updateFile:
-            {
-                if (updateFile.File.Id == _profilePhotoFileId)
-                {
-                    if (updateFile.File.Local.Path != string.Empty)
-                    {
-                        PersonPicture.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High,
-                            () => PersonPicture.ProfilePicture = new BitmapImage(new Uri(updateFile.File.Local.Path)));
-                    }
-                    else if (_profilePhoto.Small.Local.Path != string.Empty)
-                    {
-                        PersonPicture.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High,
-                            () => PersonPicture.ProfilePicture = new BitmapImage(new Uri(_profilePhoto.Small.Local.Path)));   
-                    }
-                }
-                break;
-            }
-            
-        }
     }
 
     private async void UpdateCurrentUser()
@@ -63,6 +37,7 @@ public partial class Profile : Page
         if (_currentUserFullInfo.PersonalChatId != 0)
         {
             _personalChat = await _client.GetChatAsync(chatId: _currentUserFullInfo.PersonalChatId);
+            ButtonRemoveConnectedChannel.IsEnabled = true;
             TextBlockConnectedChannel.Text = $"Connected channel: {_personalChat.Title}";
             TextBlockConnectedChannel.Visibility = Visibility.Visible;
         }
@@ -107,8 +82,6 @@ public partial class Profile : Page
         
         MediaService.GetUserPhoto(_currentUser, PersonPicture);
         PersonPicture.Visibility = Visibility.Visible;
-        
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
 
     private async void UpdateBirthDate()
@@ -223,13 +196,8 @@ public partial class Profile : Page
 
             _currentUser = _client.GetMeAsync().Result;
             _profilePhoto = _currentUser.ProfilePhoto;
-            _profilePhotoFileId = _profilePhoto.Small.Id;
             
-            await _client.ExecuteAsync(new TdApi.DownloadFile
-            {
-                FileId = _profilePhotoFileId,
-                Priority = 1
-            });
+            MediaService.GetUserPhoto(_currentUser, PersonPicture);
         }
         PersonPicture.Visibility = Visibility.Visible;
     }
@@ -268,13 +236,12 @@ public partial class Profile : Page
         StackPanelChats.Children.Clear();
     }
     
-    private async void CreatePersonalChatEntry(long chatId)
+    private void CreatePersonalChatEntry(long chatId)
     {
         var chat = _client.GetChatAsync(chatId).Result;
-        //var supergroup = _client.GetSupergroupAsync(chatId).Result;
         
         var button = new Button();
-        button.Click += (sender, args) => ButtonPersonalChatEntry_OnClick(sender, args, chatId);
+        button.Click += (sender, args) => ButtonPersonalChatEntry_OnClick(sender, args, chat);
         button.Margin = new Thickness(0, 4, 0, 4);
         button.Width = 350;
         button.Height = 60;
@@ -288,23 +255,7 @@ public partial class Profile : Page
         chatPhoto.Width = 40;
         chatPhoto.Height = 40;
 
-        if (chat.Photo != null)
-        {
-            if (chat.Photo.Small.Local.Path != string.Empty)
-            {
-                chatPhoto.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path));
-            }
-            else
-            {
-                chatPhoto.DisplayName = chat.Title;
-                var file = await _client.DownloadFileAsync(fileId: chat.Photo.Small.Id, priority: 1).WaitAsync(new CancellationToken());
-                chatPhoto.ProfilePicture = new BitmapImage(new Uri(file.Local.Path));
-            }
-        }
-        else
-        {
-            chatPhoto.DisplayName = chat.Title;
-        }
+        MediaService.GetChatPhoto(chat, chatPhoto);
         
         stackPanel.Children.Add(chatPhoto);
         
@@ -327,30 +278,24 @@ public partial class Profile : Page
         StackPanelChats.Children.Add(button);
     }
 
-    private async void ButtonPersonalChatEntry_OnClick(object sender, RoutedEventArgs e, long chatId)
+    private async void ButtonPersonalChatEntry_OnClick(object sender, RoutedEventArgs e, TdApi.Chat chat)
     {
-        try
-        {
-            await _client.ExecuteAsync(new TdApi.SetPersonalChat { ChatId = chatId });
-        }
-        catch (TdException exception)
-        {
-            Debug.WriteLine(exception.Message);
-            throw;
-        }
-        _currentUserFullInfo = _client.GetUserFullInfoAsync(_currentUser.Id).Result;
+        await _client.SetPersonalChatAsync(chatId:chat.Id);
+        ContentDialogChangeConnectedChannel.Hide();
+    }
+    
+    private async void ButtonRemoveConnectedChannel_OnClick(object sender, RoutedEventArgs e)
+    {
         if (_currentUserFullInfo.PersonalChatId != 0)
         {
-            _personalChat = await _client.GetChatAsync(chatId: _currentUserFullInfo.PersonalChatId);
-            CardConnectedChannel.Description = $"Connected channel: {_personalChat.Title}";
+            await _client.SetPersonalChatAsync();
         }
-        ContentDialogChangeConnectedChannel.Hide();
     }
 
     private static Visibility ChangeShimmersVisibility(Visibility vis) => vis switch
     {
         Visibility.Collapsed => Visibility.Visible,
         Visibility.Visible => Visibility.Collapsed,
-        _ => throw new NotImplementedException()
+        _ => throw new Exception()
     };
 }

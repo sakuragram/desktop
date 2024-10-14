@@ -78,7 +78,7 @@ public partial class About : Page
             }
             else
             {
-                CardCheckForUpdates.Description = $"Current version: {Config.AppVersion}";
+                CardCheckForUpdates.Description = "No updates found";
             }
             
             ButtonCheckForUpdates.IsEnabled = true;

@@ -19,17 +19,9 @@
 		</Grid.RowDefinitions>
 		
 		<controls:TitleBar x:Name="TitleBar"
-		                   Title="sakuragram"
-		                   AutoConfigureCustomTitleBar="False"
+		                   AutoConfigureCustomTitleBar="True"
 		                   IsBackButtonVisible="False"
 		                   IsPaneButtonVisible="False">
-			<controls:TitleBar.Icon>
-				<BitmapIcon x:Name="Icon" 
-				            ShowAsMonochrome="False"
-				            UriSource="ms-appx:///StoreLogo.scale-400.ico"
-				            Width="32"
-				            Height="32"/>
-			</controls:TitleBar.Icon>
 		</controls:TitleBar>
 		
 		<Grid Grid.Row="1">

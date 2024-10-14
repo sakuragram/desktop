@@ -19,7 +19,7 @@ namespace sakuragram.Views
 		public LoginView()
 		{
 			InitializeComponent();
-			Title = "CherryMerryGram : Login";
+			Title = Config.AppName;
 			Window window = this;
 			window.ExtendsContentIntoTitleBar = true;
 			TrySetDesktopAcrylicBackdrop();
@@ -30,7 +30,7 @@ namespace sakuragram.Views
 			TextBlockCurrentAuthStateDescription.Text = "Please confirm your country code and enter your phone number.";
 		}
 
-		private async Task ProcessUpdates(TdApi.Update update)
+		private Task ProcessUpdates(TdApi.Update update)
 		{
 			switch (update)
 			{
@@ -47,6 +47,8 @@ namespace sakuragram.Views
 					break;
 				}
 			}
+
+			return Task.CompletedTask;
 		}
 
 		private bool TrySetDesktopAcrylicBackdrop()

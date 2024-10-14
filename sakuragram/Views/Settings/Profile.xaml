@@ -112,9 +112,16 @@
                                            Width="200"/>
                         </Grid>
                     </controls:SettingsCard.Description>
-                    <Button x:Name="ButtonChangeConnectedChannel"
-                            Content="Change"
-                            Click="ButtonChangeConnectedChannel_OnClick"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="ButtonRemoveConnectedChannel"
+                                Content="Remove"
+                                IsEnabled="False"
+                                Margin="0, 0, 4, 0"
+                                Click="ButtonRemoveConnectedChannel_OnClick"/>
+                        <Button x:Name="ButtonChangeConnectedChannel"
+                                Content="Change"
+                                Click="ButtonChangeConnectedChannel_OnClick"/>
+                    </StackPanel>
                 </controls:SettingsCard>
                 
                 <controls:SettingsCard Description="You can add add a few lines about yourself."

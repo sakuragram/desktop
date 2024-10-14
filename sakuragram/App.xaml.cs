@@ -30,6 +30,7 @@ public partial class App : Application
 	
 	public static bool _authNeeded;
 	public static bool _passwordNeeded;
+	public static bool _hasInternetConnection = true;
 
 	public static int _folderId = -1;
         
@@ -96,8 +97,22 @@ public partial class App : Application
 			case TdApi.Update.UpdateConnectionState { State: TdApi.ConnectionState.ConnectionStateReady }:
 				_authNeeded = false;
 				_passwordNeeded = false;
+				_hasInternetConnection = true;
 				ReadyToAuthenticate.Set();
 				break;
+			case TdApi.Update.UpdateConnectionState updateConnectionState:
+			{
+				_hasInternetConnection = updateConnectionState.State switch
+				{
+					TdApi.ConnectionState.ConnectionStateConnecting => false,
+					TdApi.ConnectionState.ConnectionStateUpdating => false,
+					TdApi.ConnectionState.ConnectionStateConnectingToProxy => false,
+					TdApi.ConnectionState.ConnectionStateWaitingForNetwork => false,
+					_ => false
+				};
+				break;
+			}
+			
 			case TdApi.Update.UpdateChatFolders updateChatFolders:
 			{
 				_folders = updateChatFolders.ChatFolders;

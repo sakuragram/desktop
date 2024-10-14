@@ -1,11 +1,8 @@
 ﻿using System;
-using CommunityToolkit.WinUI;
+using System.IO;
+using System.Diagnostics;
 using CommunityToolkit.WinUI.Controls;
-using Microsoft.UI;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using TdLib;
 
 namespace sakuragram.Views.Settings;
@@ -19,46 +16,54 @@ public partial class Folders : Page
     {
         InitializeComponent();
         
+        bool hasInternetConnection = App._hasInternetConnection;
+        
         foreach (var userFolder in _chatFolders)
         {
-            string folderIconName = userFolder.Icon.Name.ToLower();
-            var folderIcon = new ImageIcon {
-                Source = new BitmapImage(new Uri($"ms-appx:///Assets/icons/folders/folder_{folderIconName}@3.png")), 
-                Width = 72,
-                Height = 72,
-                MinWidth = 72,
-                MinHeight = 72,
-                MaxWidth = 72,
-                MaxHeight = 72,
-                Foreground = new SolidColorBrush(Colors.White)
-            };
+            string path = AppContext.BaseDirectory +
+                          $@"Assets\icons\folders\folders_{userFolder.Icon.Name.ToLower()}.png";
+            BitmapIcon folderIcon = new();
+					
+            if (File.Exists(path))
+            {
+                Uri folderIconPath = new(path);
+						
+                folderIcon.UriSource = folderIconPath;
+                folderIcon.ShowAsMonochrome = false;
+            }
+            
             TdApi.ChatFolder chatFolderInfo = _client.GetChatFolderAsync(userFolder.Id).Result;
 
+            Button button = new();
+            button.Content = "Delete";
+            button.Click += (sender, args) => _client.DeleteChatFolderAsync(userFolder.Id, []);
+            
             SettingsCard card = new();
             card.Header = userFolder.Title;
+            card.HeaderIcon = folderIcon != null ? folderIcon : null;
             card.Description = chatFolderInfo.IncludedChatIds.Length + " chats";
-            card.HeaderIcon = folderIcon;
+            card.Content = button;
             
             PanelUserFolders.Children.Add(card);
         }
-        
-        var recommendedFolders = _client.ExecuteAsync(new TdApi.GetRecommendedChatFolders()).Result;
 
-        foreach (var folder in recommendedFolders.ChatFolders)
+        if (hasInternetConnection)
         {
-            SettingsCard card = new()
-            {
-                Header = folder.Folder.Title,
-                Description = folder.Description
-            };
+            var recommendedFolders = _client.ExecuteAsync(new TdApi.GetRecommendedChatFolders()).Result;
 
-            Button button = new()
+            foreach (var folder in recommendedFolders.ChatFolders)
             {
-                Content = "Add"
-            };
+                SettingsCard card = new();
+                card.Header = folder.Folder.Title;
+                card.Description = folder.Description;
 
-            card.Content = button;
-            PanelUserRecommendedFolders.Children.Add(card);
+                Button button = new();
+                button.Content = "Add";
+                button.Click += async (sender, args) => await _client.CreateChatFolderAsync(folder.Folder);
+                
+                card.Content = button;
+                PanelUserRecommendedFolders.Children.Add(card);
+            }
         }
     }
 }
