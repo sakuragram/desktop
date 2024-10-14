@@ -38,46 +38,76 @@ public class MessageService
     
     public static Task<string> GetLastMessageContent(TdApi.Message message)
     {
-        var lastMessage = message.Content switch
+        var chat = _client.GetChatAsync(message.ChatId).Result;
+        
+        if (chat.DraftMessage != null)
         {
-            TdApi.MessageContent.MessageText messageText => $"{messageText.Text.Text}",
-            TdApi.MessageContent.MessageAnimation messageAnimation => 
-                $"GIF ({messageAnimation.Animation.Duration} sec), {messageAnimation.Caption.Text}",
-            TdApi.MessageContent.MessageAudio messageAudio =>
-                $"Audio message ({messageAudio.Audio.Duration} sec) {messageAudio.Caption.Text}",
-            TdApi.MessageContent.MessageVoiceNote messageVoiceNote =>
-                $"Voice message ({messageVoiceNote.VoiceNote.Duration} sec) {messageVoiceNote.Caption.Text}",
-            TdApi.MessageContent.MessageVideo messageVideo =>
-                $"Video ({messageVideo.Video.Duration} sec)",
-            TdApi.MessageContent.MessageVideoNote messageVideoNote =>
-                $"Video message ({messageVideoNote.VideoNote.Duration} sec)",
-            TdApi.MessageContent.MessagePhoto messagePhoto =>
-                $"Photo, {messagePhoto.Caption.Text}",
-            TdApi.MessageContent.MessageSticker messageSticker =>
-                $"{messageSticker.Sticker.Emoji} Sticker message",
-            TdApi.MessageContent.MessagePoll messagePoll => $"📊 {messagePoll.Poll.Question.Text}",
-            TdApi.MessageContent.MessagePinMessage messagePinMessage =>
-                $"pinned",
-            
-            // Chat messages
-            TdApi.MessageContent.MessageChatAddMembers messageChatAddMembers => $"{messageChatAddMembers.MemberUserIds}",
-            TdApi.MessageContent.MessageChatChangeTitle messageChatChangeTitle => $"changed chat title to {messageChatChangeTitle.Title}",
-            TdApi.MessageContent.MessageChatChangePhoto => "updated group photo",
-            
-            TdApi.MessageContent.MessageChatDeleteMember messageChatDeleteMember => 
-                $"removed user {_client.GetUserAsync(userId: messageChatDeleteMember.UserId).Result.FirstName}",
-            TdApi.MessageContent.MessageChatDeletePhoto => $"deleted group photo",
-            
-            TdApi.MessageContent.MessageChatUpgradeFrom messageChatUpgradeFrom => 
-                $"{messageChatUpgradeFrom.Title} upgraded to supergroup",
-            TdApi.MessageContent.MessageChatUpgradeTo messageChatUpgradeTo => $"",
-            
-            TdApi.MessageContent.MessageChatJoinByLink => $"joined by link",
-            TdApi.MessageContent.MessageChatJoinByRequest => $"joined by request",
-            
-            _ => "Unsupported message type"
-        };
+            string lastMessage = chat.DraftMessage.InputMessageText switch
+            {
+                TdApi.InputMessageContent.InputMessageText messageText => $"Draft: {messageText.Text.Text}",
+                _ => "Draft message"
+            };
+            return Task.FromResult(lastMessage);
+        }
+        else
+        {
+            string lastMessage = message.Content switch
+            {
+                TdApi.MessageContent.MessageText messageText => $"{messageText.Text.Text}",
+                
+                TdApi.MessageContent.MessageVideoNote =>  "Video message",
+                
+                TdApi.MessageContent.MessageSticker messageSticker =>
+                    $"{messageSticker.Sticker.Emoji} Sticker message",
+                
+                TdApi.MessageContent.MessagePoll messagePoll => $"📊 {messagePoll.Poll.Question.Text}",
 
-        return Task.FromResult(lastMessage);
+                #region MessageContent with caption
+                
+                TdApi.MessageContent.MessageAnimation messageAnimation => messageAnimation.Caption.Text != string.Empty ? 
+                    $"GIF, {messageAnimation.Caption.Text}" : "GIF",
+                
+                TdApi.MessageContent.MessageAudio messageAudio => messageAudio.Caption.Text != string.Empty ? 
+                    $"{messageAudio.Audio.Title}, {messageAudio.Caption.Text}" : 
+                    messageAudio.Audio.Title,
+                
+                TdApi.MessageContent.MessageVoiceNote messageVoiceNote => messageVoiceNote.Caption.Text != string.Empty ? 
+                    $"Voice message, {messageVoiceNote.Caption.Text}" : "Voice message",
+                
+                TdApi.MessageContent.MessageVideo messageVideo => messageVideo.Caption.Text != string.Empty ?
+                    $"Video, {messageVideo.Caption.Text}" : "Video",
+                
+                TdApi.MessageContent.MessagePhoto messagePhoto => messagePhoto.Caption.Text != string.Empty ?
+                    $"Photo, {messagePhoto.Caption.Text}" : "Photo",
+                
+                TdApi.MessageContent.MessageDocument messageDocument => messageDocument.Caption.Text != string.Empty ?
+                    $"{messageDocument.Document.FileName}, {messageDocument.Caption.Text}" : 
+                    messageDocument.Document.FileName,
+                
+                #endregion
+                
+                TdApi.MessageContent.MessagePinMessage messagePinMessage =>
+                    $"pinned message: {messagePinMessage.MessageId}",
+                
+                // Chat messages
+                TdApi.MessageContent.MessageChatAddMembers messageChatAddMembers => $"{messageChatAddMembers.MemberUserIds}",
+                TdApi.MessageContent.MessageChatChangeTitle messageChatChangeTitle => $"changed chat title to {messageChatChangeTitle.Title}",
+                TdApi.MessageContent.MessageChatChangePhoto => "updated group photo",
+                
+                TdApi.MessageContent.MessageChatDeleteMember messageChatDeleteMember => 
+                    $"removed user {_client.GetUserAsync(userId: messageChatDeleteMember.UserId).Result.FirstName}",
+                TdApi.MessageContent.MessageChatDeletePhoto => $"deleted group photo",
+                
+                TdApi.MessageContent.MessageChatUpgradeFrom messageChatUpgradeFrom => 
+                    $"{messageChatUpgradeFrom.Title} upgraded to supergroup",
+                TdApi.MessageContent.MessageChatUpgradeTo messageChatUpgradeTo => $"",
+                
+                TdApi.MessageContent.MessageChatJoinByLink => $"joined by link",
+                TdApi.MessageContent.MessageChatJoinByRequest => $"joined by request",
+                
+                _ => "Unsupported message type"
+            };
+            return Task.FromResult(lastMessage);
+        }
     }
 }
