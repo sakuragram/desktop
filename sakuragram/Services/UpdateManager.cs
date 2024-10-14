@@ -1,19 +1,27 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Net;
-using System.Threading.Tasks;
+using System.IO;
+using System.Net.Http;
 using Octokit;
+using FileMode = Octokit.FileMode;
 
 namespace sakuragram.Services;
 
 public class UpdateManager
 {
+    private readonly HttpClient _httpClient;
     private static readonly GitHubClient _gitHubClient = App._githubClient;
+    
     public string _newVersion;
-    public AsyncCompletedEventHandler _asyncCompletedEventHandler;
 
-    private static async Task<string> GetLatestReleaseFromGitHub()
+    public UpdateManager()
+    {
+        _httpClient = new HttpClient();
+    }
+    
+    public async Task<string> GetLatestReleaseFromGitHub()
     {
         var releases = await _gitHubClient.Repository.Release.GetAll(Config.GitHubRepoOwner, Config.GitHubRepoName).ConfigureAwait(false);
         Release latestRelease = releases[0];
@@ -21,7 +29,6 @@ public class UpdateManager
         return latestRelease.TagName;
     }
     
-    [Obsolete("Obsolete")]
     public async Task<bool> CheckForUpdates()
     {
         var newVersion = await GetLatestReleaseFromGitHub();
@@ -49,32 +56,37 @@ public class UpdateManager
         }
     }
 
-    private void InitScript()
+    public async Task UpdateApplicationAsync()
     {
-        string path = AppContext.BaseDirectory + @"\installUpdate.bat";
-        
-        Process process = new Process();
-        process.StartInfo.FileName = path;
-        process.StartInfo.Arguments = "";
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.CreateNoWindow = true;
-        process.StartInfo.RedirectStandardOutput = true;
+        string updateLink = _gitHubClient.Repository.Release.GetLatest(Config.GitHubRepoOwner, Config.GitHubRepoName)
+            .Result.Assets[1].BrowserDownloadUrl;
+    
+        var latestVersion = await GetLatestReleaseFromGitHub();
+        var currentVersion = Config.AppVersion;
+
+        if (latestVersion != currentVersion)
+        {
+            var updateResponse = await _httpClient.GetAsync(updateLink);
+            updateResponse.EnsureSuccessStatusCode();
+
+            var updateFilePath = Path.Combine(Path.GetTempPath(), $"{Config.AppName}_{latestVersion}.msi");
+            await using (var fileStream = new FileStream(updateFilePath, System.IO.FileMode.Create))
+            {
+                await updateResponse.Content.CopyToAsync(fileStream);
+            }
+
+            ApplyUpdate(updateFilePath);
+        }
+    }
+    
+    public static void ApplyUpdate(string file)
+    {
+        Process process = new();
+        process.StartInfo.FileName = "msiexec.exe";
+        process.StartInfo.Arguments = $"/i {file} /quiet";
+        process.StartInfo.UseShellExecute = true;
         process.StartInfo.Verb = "runas";
         process.Start();
         Environment.Exit(1);
-    }
-
-    [Obsolete("Obsolete")]
-    public void DownloadUpdate()
-    {
-        WebClient client = new WebClient();
-        string path = AppContext.BaseDirectory + @"\sakuragram_Release_x64.msi"; 
-        client.DownloadFileCompleted += _asyncCompletedEventHandler;
-        client.DownloadFileAsync(new Uri(Config.LinkForUpdate), path);
-    }
-
-    public void Update()
-    {
-        InitScript();
     }
 }
