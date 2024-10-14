@@ -36,6 +36,52 @@ public class UserService
         var sender = GetSender(message.SenderId).Result;
         TdApi.Chat chat = _client.GetChatAsync(message.ChatId).Result;
         
+        if (message.ForwardInfo != null)
+        {
+            if (message.ForwardInfo.Source != null)
+            {
+                if (message.ForwardInfo.Source.SenderName != string.Empty) 
+                    return Task.FromResult(message.ForwardInfo.Source.SenderName);
+                else
+                {
+                    var user = GetSender(message.ForwardInfo.Source.SenderId).Result; 
+                    if (user.User != null) return Task.FromResult(user.User.FirstName + " " + user.User.LastName);
+                    if (user.Chat != null) return Task.FromResult(user.Chat.Title);
+                }
+            }
+            else if (message.ForwardInfo.Origin != null)
+            {
+                switch (message.ForwardInfo.Origin)
+                {
+                    case TdApi.MessageOrigin.MessageOriginChannel originChannel:
+                    {
+                        var foundedChannel = _client.GetChatAsync(chatId: originChannel.ChatId).Result;
+                        string forwardInfo = foundedChannel.Title;
+
+                        if (originChannel.AuthorSignature != string.Empty)
+                        {
+                            forwardInfo = forwardInfo + $" ({originChannel.AuthorSignature})";
+                        }
+                        
+                        return Task.FromResult(forwardInfo);
+                    }
+                    case TdApi.MessageOrigin.MessageOriginChat originChat:
+                    {
+                        return Task.FromResult(originChat.AuthorSignature);
+                    }
+                    case TdApi.MessageOrigin.MessageOriginUser user:
+                    {
+                        var originUser = _client.GetUserAsync(userId: user.SenderUserId).Result;
+                        return Task.FromResult(originUser.FirstName + " " + originUser.LastName);
+                    }
+                    case TdApi.MessageOrigin.MessageOriginHiddenUser hiddenUser:
+                    {
+                        return Task.FromResult(hiddenUser.SenderName);
+                    }
+                }
+            }
+        }
+        
         if (sender.User != null)
         {
             return chat.Type switch
@@ -55,7 +101,7 @@ public class UserService
                 _ => Task.FromResult(sender.Chat.Title)
             };
         }
-
+        
         return null;
     }
 }
