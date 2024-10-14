@@ -34,47 +34,23 @@ public class NotificationService
         try
         {
             TdApi.Chat chat = await _client.ExecuteAsync(new TdApi.GetChat {ChatId = message.ChatId});
+            var sender = await UserService.GetSender(message.SenderId).ConfigureAwait(false);
+            var senderName = await UserService.GetSenderName(message).ConfigureAwait(false);
             
-            switch (chat.NotificationSettings.MuteFor)
-            {
-                case 419749343:
-                    return;
-                case 0:
-                {
-                    long sender = message.SenderId switch
-                    {
-                        TdApi.MessageSender.MessageSenderUser u => u.UserId,
-                        TdApi.MessageSender.MessageSenderChat c => c.ChatId,
-                        _ => 0
-                    };
-
-                    if (sender > 0)
-                    {
-                        TdApi.User user = _client.GetUserAsync(sender).Result;
-                        var builder = new AppNotificationBuilder()
-                            .AddArgument("conversationId", chat.Id.ToString())
-                            .AddText(user.FirstName + " " + user.LastName + " sent a message")
-                            .AddText(message.Content.ToString())
-                            .AddButton(new AppNotificationButton("Reply")
-                                .AddArgument("action", "reply"))
-                            .AddButton(new AppNotificationButton("Mark as read")
-                                .AddArgument("action", "markasread"));
-                    }
-                    else
-                    {
-                        var builder = new AppNotificationBuilder()
-                            .AddArgument("conversationId", chat.Id.ToString())
-                            .AddText(chat.Title + " sent a message")
-                            .AddText(message.Content.ToString())
-                            .AddButton(new AppNotificationButton("Reply")
-                                .AddArgument("action", "reply"))
-                            .AddButton(new AppNotificationButton("Mark as read")
-                                .AddArgument("action", "markasread"));
-                    }
-
-                    break;
-                }
-            }
+            if (sender.User != null && sender.User.Id == _client.GetMeAsync().Result.Id) return;
+            if (chat.NotificationSettings.MuteFor > 100000000) return;
+            
+            new ToastContentBuilder()
+                .AddArgument("conversationId", chat.Id)
+                .AddText($"{senderName} sent you new message!")
+                .AddText(MessageService.GetLastMessageContent(message).Result)
+                .AddButton(new ToastButton()
+                    .SetContent("Reply"))
+                .AddArgument("action", "reply")
+                .AddButton(new ToastButton()
+                    .SetContent("Mark as read")
+                    .AddArgument("action", "markasread"))
+                .Show();
         }
         catch (TdException e)
         {

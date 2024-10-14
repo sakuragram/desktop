@@ -121,7 +121,7 @@ namespace sakuragram.Views.Chats
                 UnreadMessagesCount.Visibility = Visibility.Collapsed;
             }
 
-            if (_chat.NotificationSettings.MuteFor <= 0)
+            if (_chat.NotificationSettings.MuteFor > 100000000)
             {
                 UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray);
             }

@@ -3,12 +3,13 @@ using System.IO;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
+using sakuragram.Services;
 using TdLib;
+using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 
 namespace sakuragram
 {
@@ -102,6 +103,7 @@ namespace sakuragram
 			}
 			
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+            NotificationService notificationService = new();
 		}
 
 		private Task ProcessUpdates(TdApi.Update update)
