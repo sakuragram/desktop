@@ -7,8 +7,10 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
+using Octokit;
 using sakuragram.Services;
 using TdLib;
+using Application = ABI.Microsoft.UI.Xaml.Application;
 using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 
 namespace sakuragram
@@ -21,6 +23,11 @@ namespace sakuragram
 
 		private NavigationViewItem _lastItem;
 		private int _totalUnreadCount;
+		private string _updateFilePath;
+		private bool _updateAvailable;
+		
+		private UpdateManager _updateManager = App.UpdateManager;
+		private GitHubClient _gitHubClient = App._githubClient;
 		
 		public MainWindow()
 		{
@@ -88,7 +95,7 @@ namespace sakuragram
 					}
 
 					var folderItem = new NavigationViewItem();
-					folderItem.Icon = folderIcon != null ? folderIcon : null;
+					//folderItem.Icon = folderIcon != null ? folderIcon : null;
 					folderItem.Content = chatFolderInfo.Title;
 					folderItem.Tag = "ChatsView";
 					folderItem.Name = $"{chatFolderInfo.Title}_{chatFolderInfo.Id}";
@@ -101,11 +108,28 @@ namespace sakuragram
 					throw;
 				}
 			}
+
+			CheckForUpdates();
 			
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
             NotificationService notificationService = new();
 		}
 
+		private async void CheckForUpdates()
+		{
+			if (await _updateManager.CheckForUpdates())
+			{
+				var update = await _gitHubClient.Repository.Release.GetLatest(Config.GitHubRepoOwner, Config.GitHubRepoName);
+
+				if (update.PublishedAt != null)
+					TextBlockNewVersion.Text = update.Prerelease
+						? $"Pre-release {update.TagName}"
+						: $"Release {update.TagName}" + $", {update.PublishedAt.Value:dd.MM.yyyy}";
+				TextBlockPatchNotes.Text = update.Body;
+				ContentDialogNewVersion.ShowAsync();
+			}
+		}
+		
 		private Task ProcessUpdates(TdApi.Update update)
 		{
 			switch (update)
@@ -172,33 +196,44 @@ namespace sakuragram
 
 		private bool NavigateToView(string clickedView, NavigationViewItem item)
 		{
+			switch (clickedView)
+			{
+				case "ChatsView" when item != null:
+				{
+					foreach (var folder in _folders)
+					{
+						if (item.Name == $"{folder.Title}_{folder.Id}")
+						{
+							App._folderId = folder.Id;
+							break;
+						}
+						else if (item.Name == "NavViewChats")
+						{
+							App._folderId = -1;
+							break;
+						}
+						else
+						{
+							continue;
+						}
+					}
+
+					break;
+				}
+				case "NewUpdate":
+					ContentDialogNewVersion.ShowAsync();
+					return false;
+				case "InstallUpdate":
+					_updateManager.ApplyUpdate(_updateFilePath);
+					return false;
+			}
+			
 			var view = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.{clickedView}");
 
 			if (string.IsNullOrEmpty(clickedView) || view == null)
 				return false;
 
 			ContentFrame.Navigate(view, null, new EntranceNavigationTransitionInfo());
-
-			if (clickedView == "ChatsView" && item != null)
-			{
-				foreach (var folder in _folders)
-				{
-					if (item.Name == $"{folder.Title}_{folder.Id}")
-					{
-						App._folderId = folder.Id;
-						break;
-					}
-					else if (item.Name == "NavViewChats")
-					{
-						App._folderId = -1;
-						break;
-					}
-					else
-					{
-						continue;
-					}
-				}
-			}
 
 			NavigationView.PaneDisplayMode = clickedView switch
 			{
@@ -219,5 +254,33 @@ namespace sakuragram
 		{
 
 		}
-    }
+
+		private async void ContentDialogNewVersion_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+		{
+			NavigationView.FooterMenuItems.RemoveAt(NavigationView.FooterMenuItems.Count - 1);
+			
+			_updateFilePath = await _updateManager.UpdateApplicationAsync();
+			
+			NavigationViewItem item = new();
+			item.Content = "Install update";
+			item.Tag = "InstallUpdate";
+			item.Icon = new SymbolIcon(Symbol.Refresh);
+			
+			NavigationView.FooterMenuItems.Add(item);
+		}
+
+		private void ContentDialogNewVersion_OnCloseButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+		{
+			if (_updateAvailable) return;
+			
+			NavigationViewItem item = new();
+			item.Content = "New update available!";
+			item.Tag = "NewUpdate";
+			item.Icon = new SymbolIcon(Symbol.Refresh);
+			
+			NavigationView.FooterMenuItems.Add(item);
+			
+			_updateAvailable = true;
+		}
+	}
 }

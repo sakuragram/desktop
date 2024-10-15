@@ -47,6 +47,31 @@
 				</NavigationView.FooterMenuItems>
 				<Frame x:Name="ContentFrame" NavigationFailed="ContentFrame_NavigationFailed"/>
 			</NavigationView>
+			
+			<ContentDialog x:Name="ContentDialogNewVersion"
+			               PrimaryButtonText="Update"
+			               PrimaryButtonClick="ContentDialogNewVersion_OnPrimaryButtonClick"
+			               CloseButtonText="Later"
+			               CloseButtonClick="ContentDialogNewVersion_OnCloseButtonClick"
+			               DefaultButton="Primary">
+				<ContentDialog.TitleTemplate>
+					<DataTemplate>
+						<TextBlock Text="New update available!"/>
+					</DataTemplate>
+				</ContentDialog.TitleTemplate>
+				<ScrollViewer Width="300"
+				              Height="400">
+					<StackPanel>
+						<TextBlock x:Name="TextBlockNewVersion" 
+						           Foreground="{StaticResource TextFillColorSecondaryBrush}" />
+						<MenuFlyoutSeparator Margin="0, 4"/>
+						<TextBlock x:Name="TextBlockPatchNotes" 
+						           Foreground="{StaticResource TextFillColorTertiaryBrush}"
+						           IsTextSelectionEnabled="True"
+						           TextWrapping="Wrap"/>
+					</StackPanel>
+				</ScrollViewer>
+			</ContentDialog>
 		</Grid>
 	</Grid>
 </Window>
