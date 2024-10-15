@@ -14,7 +14,7 @@ public class UpdateManager
     private readonly HttpClient _httpClient;
     private static readonly GitHubClient _gitHubClient = App._githubClient;
     
-    public string _newVersion;
+    public string _latestVersion;
 
     public UpdateManager()
     {
@@ -31,22 +31,22 @@ public class UpdateManager
     
     public async Task<bool> CheckForUpdates()
     {
-        var newVersion = await GetLatestReleaseFromGitHub();
+        var latestVersion = await GetLatestReleaseFromGitHub();
         var currentVersion = Config.AppVersion;
 
-        if (newVersion != null && newVersion != currentVersion)
+        if (latestVersion != null && latestVersion != currentVersion)
         {
-            newVersion = newVersion.Replace(".", "");
+            latestVersion = latestVersion.Replace(".", "");
             currentVersion = currentVersion.Replace(".", "");
 
-            if (Convert.ToInt32(newVersion) > Convert.ToInt32(currentVersion))
+            if (Convert.ToInt32(latestVersion) > Convert.ToInt32(currentVersion))
             {
-                _newVersion = newVersion;
+                _latestVersion = latestVersion;
                 return true;
             }
             else
             {
-                _newVersion = currentVersion;
+                _latestVersion = currentVersion;
                 return false;
             }
         }
@@ -56,30 +56,30 @@ public class UpdateManager
         }
     }
 
-    public async Task UpdateApplicationAsync()
+    public async Task<string> UpdateApplicationAsync()
     {
         string updateLink = _gitHubClient.Repository.Release.GetLatest(Config.GitHubRepoOwner, Config.GitHubRepoName)
-            .Result.Assets[1].BrowserDownloadUrl;
-    
-        var latestVersion = await GetLatestReleaseFromGitHub();
-        var currentVersion = Config.AppVersion;
+            .Result.Assets[0].BrowserDownloadUrl;
 
-        if (latestVersion != currentVersion)
+        if (_latestVersion != Config.AppVersion)
         {
             var updateResponse = await _httpClient.GetAsync(updateLink);
             updateResponse.EnsureSuccessStatusCode();
 
-            var updateFilePath = Path.Combine(Path.GetTempPath(), $"{Config.AppName}_{latestVersion}.msi");
+            var updateFilePath = Path.Combine(Path.GetTempPath(), $"{Config.AppName}_{_latestVersion}.msi");
             await using (var fileStream = new FileStream(updateFilePath, System.IO.FileMode.Create))
             {
                 await updateResponse.Content.CopyToAsync(fileStream);
             }
-
-            ApplyUpdate(updateFilePath);
+            return updateFilePath;
+        }
+        else
+        {
+            return string.Empty;
         }
     }
     
-    public static void ApplyUpdate(string file)
+    public void ApplyUpdate(string file)
     {
         Process process = new();
         process.StartInfo.FileName = "msiexec.exe";
