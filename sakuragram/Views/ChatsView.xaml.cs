@@ -316,7 +316,7 @@ namespace sakuragram.Views
                 {
                     Title = TextBoxGroupName.Text,
                     UserIds = null,
-                });
+                }).ConfigureAwait(false);
 
                 await _client.ExecuteAsync(new TdApi.SetChatPhoto
                 {
@@ -347,7 +347,7 @@ namespace sakuragram.Views
                     IsChannel = true,
                     Title = TextBoxChannelName.Text,
                     Description = TextBoxChannelDescription.Text
-                });
+                }).ConfigureAwait(false);
                 
                 await _client.ExecuteAsync(new TdApi.SetChatPhoto
                 {

@@ -81,10 +81,14 @@
                     </DataTemplate>
                 </ContentDialog.TitleTemplate>
                 <StackPanel>
-                    <Button x:Name="CreateNewGroup" Content="Create group" HorizontalAlignment="Stretch" 
+                    <Button x:Name="CreateNewGroup" Content="Create group" 
+                            HorizontalAlignment="Stretch"
+                            Width="Auto"
                             Margin="0, 0, 0, 4" 
                             Click="CreateNewGroup_OnClick"/>
-                    <Button x:Name="CreateNewChannel" Content="Create channel" HorizontalAlignment="Stretch" 
+                    <Button x:Name="CreateNewChannel" Content="Create channel" 
+                            Width="Auto"
+                            HorizontalAlignment="Stretch" 
                             Click="CreateNewChannel_OnClick"/>
                     <ScrollViewer MinHeight="50" MaxHeight="100">
                         <StackPanel x:Name="ContactList"/>
@@ -102,24 +106,39 @@
                         <TextBlock Text="New Group" />
                     </DataTemplate>
                 </ContentDialog.TitleTemplate>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            Width="Auto">
                     <StackPanel Orientation="Vertical"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center">
-                        <PersonPicture x:Name="NewGroupPicture" />
+                        <PersonPicture x:Name="NewGroupPicture"
+                                       Margin="4"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Stretch"
+                                Width="180">
+                        <TextBox x:Name="TextBoxGroupName" PlaceholderText="Group name"
+                                 HorizontalAlignment="Stretch"
+                                 Margin="0, 0, 0, 4" 
+                                 Width="180"
+                                 VerticalAlignment="Center"/>
                         <Button x:Name="ButtonUploadGroupPhoto"
+                                HorizontalAlignment="Stretch"
+                                Width="Auto"
                                 Content="Upload"
                                 Click="ButtonUploadGroupPhoto_OnClick"/>
+                        <TextBlock x:Name="TextBlockGroupCreateException"
+                                   Visibility="Collapsed"/>
                     </StackPanel>
-                    <TextBox x:Name="TextBoxGroupName" PlaceholderText="Group name"
-                             HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TextBlockGroupCreateException"
-                               Visibility="Collapsed"/>
                 </StackPanel>
             </ContentDialog>
             
-            <ContentDialog x:Name="NewChannel" CloseButtonText="Cancel" PrimaryButtonText="Create"
+            <ContentDialog x:Name="NewChannel" 
+                           CloseButtonText="Cancel" 
+                           PrimaryButtonText="Create"
                            DefaultButton="Primary"
                            Opened="NewChannel_OnOpened"
                            Closed="NewChannel_OnClosed"
@@ -132,18 +151,30 @@
                 <StackPanel Orientation="Horizontal">
                     <StackPanel Orientation="Vertical"
                                 HorizontalAlignment="Left"
-                                VerticalAlignment="Center">
-                        <PersonPicture x:Name="NewChannelPicture" />
-                        <Button x:Name="ButtonUploadChannelPhoto"
-                                Content="Upload"
-                                Click="ButtonUploadGroupPhoto_OnClick"/>
+                                VerticalAlignment="Top">
+                        <PersonPicture x:Name="NewChannelPicture"
+                                       Margin="4"/>
                     </StackPanel>
                     <StackPanel Orientation="Vertical"
                                 HorizontalAlignment="Stretch"
+                                Width="270"
                                 VerticalAlignment="Center">
-                        <TextBox x:Name="TextBoxChannelName" PlaceholderText="Channel name " Margin="0, 0, 0, 4" />
-                        <TextBox x:Name="TextBoxChannelDescription" PlaceholderText="Channel description" MaxLength="255" 
-                                 MaxWidth="270"/>
+                        <TextBox x:Name="TextBoxChannelName" 
+                                 PlaceholderText="Channel name " 
+                                 Margin="0, 0, 0, 4" 
+                                 HorizontalAlignment="Stretch"
+                                 Width="270"/>
+                        <TextBox x:Name="TextBoxChannelDescription" 
+                                 PlaceholderText="Channel description (optional)" 
+                                 MaxLength="255"
+                                 Margin="0, 0, 0, 4" 
+                                 HorizontalAlignment="Stretch"
+                                 Width="270"/>
+                        <Button x:Name="ButtonUploadChannelPhoto"
+                                Content="Upload"
+                                HorizontalAlignment="Stretch"
+                                Width="Auto"
+                                Click="ButtonUploadGroupPhoto_OnClick"/>
                         <TextBlock x:Name="TextBlockChannelCreateException"
                                    Visibility="Collapsed"/>
                     </StackPanel>
