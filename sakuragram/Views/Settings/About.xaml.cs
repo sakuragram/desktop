@@ -7,6 +7,7 @@ using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Octokit;
+using sakuragram.Services;
 using Page = Microsoft.UI.Xaml.Controls.Page;
 
 namespace sakuragram.Views.Settings;
@@ -14,54 +15,25 @@ namespace sakuragram.Views.Settings;
 public partial class About : Page
 {
     private GitHubClient _githubClient = App._githubClient;
-    
-    private readonly ApplicationDataContainer _localSettings = ApplicationData.Current.LocalSettings;
+    private ApplicationDataContainer _localSettings = App._localSettings;
     private string _appName = Config.AppName;
     private string _appLatestVersionLink;
-    private static readonly Services.UpdateManager _updateManager = App.UpdateManager;
+    
+    private static readonly UpdateManager _updateManager = App.UpdateManager;
     
     public About()
     {
         InitializeComponent();
         
         _appLatestVersionLink = $"https://github.com/{Config.GitHubRepoOwner}/{Config.GitHubRepoName}/releases/tag/{Config.AppVersion}";
-        
         TextBlockVersionInfo.Text = $"Current version: {Config.AppVersion}, TdLib {Config.TdLibVersion}";
         
-        _updateManager._asyncCompletedEventHandler += AsyncCompletedEventHandler;
         CheckForUpdates();
-        
-        if (File.Exists(AppContext.BaseDirectory + @"\sakuragram_Release_x64.msi"))
-        {
-            ButtonNewVersionAvailable.Content = "Install";
-            ButtonNewVersionAvailable.IsEnabled = true;
-            ButtonNewVersionAvailable.Click += ButtonNewVersionAvailable_OnUpdateDownloaded;
-        }
-    }
-    
-    private void AsyncCompletedEventHandler(object sender, AsyncCompletedEventArgs e)
-    {
-        if (_localSettings.Values["AutoUpdate"] != null && (bool)_localSettings.Values["AutoUpdate"])
-        {
-            ButtonNewVersionAvailable.Content = "Installing...";
-            _updateManager.Update();
-        }
-        else
-        {
-            ButtonNewVersionAvailable.Content = "Install";
-            ButtonNewVersionAvailable.IsEnabled = true;
-            ButtonNewVersionAvailable.Click += ButtonNewVersionAvailable_OnUpdateDownloaded;
-        }
     }
 
     private void ButtonCheckForUpdates_OnClick(object sender, RoutedEventArgs e)
     {
         CheckForUpdates();
-    }
-    
-    private void ButtonNewVersionAvailable_OnUpdateDownloaded(object sender, RoutedEventArgs e)
-    {
-        _updateManager.Update();
     }
 
     private async void CheckForUpdates()
@@ -69,12 +41,14 @@ public partial class About : Page
         try
         {
             ButtonCheckForUpdates.IsEnabled = false;
+            CardNewVersionAvailable.Visibility = Visibility.Collapsed;
             CardCheckForUpdates.Description = "Checking for updates...";
             
             if (await _updateManager.CheckForUpdates())
             {
-                CardCheckForUpdates.Description = $"New version available: {ThisAssembly.Git.BaseTag}";
+                CardCheckForUpdates.Description = $"New version available: {_updateManager.GetLatestReleaseFromGitHub().Result}";
                 CardNewVersionAvailable.Visibility = Visibility.Visible;
+                ButtonNewVersionAvailable.Click += ButtonNewVersionAvailable_OnClick;
             }
             else
             {
@@ -89,19 +63,32 @@ public partial class About : Page
             throw;
         }
     }
-    
-    private void ButtonNewVersionAvailable_OnClick(object sender, RoutedEventArgs e)
+
+    private async void ButtonNewVersionAvailable_OnClick(object sender, RoutedEventArgs e)
     {
         try
         {
-            _updateManager.DownloadUpdate();
             ButtonNewVersionAvailable.Content = "Downloading...";
             ButtonNewVersionAvailable.IsEnabled = false;
+            string updateFilePath = await _updateManager.UpdateApplicationAsync();
+            
+            if (updateFilePath != string.Empty)
+            {
+                ButtonNewVersionAvailable.Content = "Install";
+                ButtonNewVersionAvailable.IsEnabled = true;
+                ButtonNewVersionAvailable.Click += (o, args) =>
+                {
+                    ButtonNewVersionAvailable.Content = "Installing...";
+                    ButtonNewVersionAvailable.IsEnabled = false;
+                    _updateManager.ApplyUpdate(updateFilePath);
+                };
+            }
         }
         catch (Exception exception)
         {
             CardNewVersionAvailable.Description = $"Error: {exception.Message}";
             ButtonNewVersionAvailable.Content = "Download failed";
+            ButtonNewVersionAvailable.IsEnabled = true;
             throw;
         }
     }
@@ -115,14 +102,18 @@ public partial class About : Page
         {
             foreach (var release in releases)
             {
-                string releaseName = release.Prerelease ? "Pre-release " + release.Name : "Release " + release.Name;
-                string releaseBody = release.Body != string.Empty ? release.Body : "The release does not have a changelog";
+                if (release.PublishedAt != null)
+                {
+                    string releaseName = release.Prerelease ? "Pre-release " + release.Name : "Release " + release.Name 
+                        + ", " + release.PublishedAt.Value.ToString("MM/dd/yyyy");
+                    string releaseBody = release.Body != string.Empty ? release.Body : "The release does not have a changelog";
 
-                SettingsCard card = new();
-                card.Header = releaseName;
-                card.Description = releaseBody;
+                    SettingsCard card = new();
+                    card.Header = releaseName;
+                    card.Description = releaseBody;
 
-                ExpanderReleases.Items.Add(card);
+                    ExpanderReleases.Items.Add(card);
+                }
             }
         });
     }
