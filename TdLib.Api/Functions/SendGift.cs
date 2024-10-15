@@ -11,7 +11,7 @@ namespace TdLib
     public static partial class TdApi
     {
         /// <summary>
-        /// Send a gift to another user
+        /// Sends a gift to another user. May return an error with a message "STARGIFT_USAGE_LIMITED" if the gift was sold out
         /// </summary>
         public class SendGift : Function<Ok>
         {
@@ -57,7 +57,7 @@ namespace TdLib
         }
 
         /// <summary>
-        /// Send a gift to another user
+        /// Sends a gift to another user. May return an error with a message "STARGIFT_USAGE_LIMITED" if the gift was sold out
         /// </summary>
         public static Task<Ok> SendGiftAsync(
             this Client client, long giftId = default, long userId = default, FormattedText text = default, bool isPrivate = default)

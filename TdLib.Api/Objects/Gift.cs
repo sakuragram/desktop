@@ -55,7 +55,7 @@ namespace TdLib
             public long DefaultSellStarCount { get; set; }
 
             /// <summary>
-            /// Number of remaining times the gift can be purchased by all users; 0 if not limited
+            /// Number of remaining times the gift can be purchased by all users; 0 if not limited or the gift was sold out
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("remaining_count")]
