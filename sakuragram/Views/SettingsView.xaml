@@ -35,7 +35,8 @@
             <NavigationViewItem x:Name="NavViewNotificationsAndSounds" 
                                 Content="Notifications and Sounds" 
                                 Tag="NotificationsAndSounds" 
-                                Icon="Volume"/>
+                                Icon="Volume"
+                                IsEnabled="False"/>
             <NavigationViewItem x:Name="NavViewPrivacyAndSecurity" 
                                 Content="Privacy and Security" 
                                 Tag="PrivacyAndSecurity" >
@@ -46,7 +47,8 @@
             <NavigationViewItem x:Name="NavViewChatSettings" 
                                 Content="Chat settings" 
                                 Tag="ChatSettings"
-                                Icon="People"/>
+                                Icon="People"
+                                IsEnabled="False"/>
             <NavigationViewItem x:Name="NavViewFolders" 
                                 Content="Folders" 
                                 Tag="Folders"
@@ -58,10 +60,12 @@
             <NavigationViewItem x:Name="NavViewSpeakersAndCamera" 
                                 Content="Speakers and Camera" 
                                 Tag="SpeakersAndCamera"
-                                Icon="Camera"/>
+                                Icon="Camera"
+                                IsEnabled="False"/>
             <NavigationViewItem x:Name="NavViewBatteryAndAnimations" 
                                 Content="Battery and Animations" 
-                                Tag="BatteryAndAnimations">
+                                Tag="BatteryAndAnimations"
+                                IsEnabled="False">
                 <NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE850;"/>
                 </NavigationViewItem.Icon>
