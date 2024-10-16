@@ -7,17 +7,19 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 	
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-	    <Border Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}" CornerRadius="4">
-		    <StackPanel Orientation="Horizontal" Margin="5">
-			    <Button x:Name="ButtonMute" Content="Mute" Click="ButtonMute_OnClick" Margin="0,0,5,0"/>
-			    <Button x:Name="ButtonShareScreen" Content="Share screen" Click="ButtonShareScreen_OnClick" 
-			            Margin="0,0,5,0"/>
-			    <Button x:Name="ButtonEnableVideo" Content="Enable video" Click="ButtonEnableVideo_OnClick"
-			            Margin="0,0,5,0"/>
-			    <Button x:Name="ButtonEndCall" Content="End" Click="ButtonEndCall_OnClick"/>
-		    </StackPanel>
-	    </Border>
-    </StackPanel>
+	<RelativePanel>
+		<StackPanel Orientation="Horizontal" 
+		            Margin="5"
+		            RelativePanel.AlignBottomWithPanel="True"
+		            RelativePanel.AlignHorizontalCenterWithPanel="True">
+			<Button x:Name="ButtonMute" Content="Mute" Click="ButtonMute_OnClick" Margin="0,0,5,0"/>
+			<Button x:Name="ButtonShareScreen" Content="Share screen" Click="ButtonShareScreen_OnClick" 
+			        Margin="0,0,5,0"/>
+			<Button x:Name="ButtonEnableVideo" Content="Enable video" Click="ButtonEnableVideo_OnClick"
+			        Margin="0,0,5,0"/>
+			<Button x:Name="ButtonEndCall" Content="End" Click="ButtonEndCall_OnClick"/>
+		</StackPanel>
+		
+	</RelativePanel>
 	
 </Window>
