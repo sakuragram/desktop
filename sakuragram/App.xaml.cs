@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Storage;
 using Microsoft.UI.Xaml;
 using Octokit;
 using sakuragram.Services;
@@ -22,6 +23,7 @@ public partial class App : Application
         
 	public static TdClient _client;
 	public static GitHubClient _githubClient;
+	public static ApplicationDataContainer _localSettings;
 	
 	public static TdApi.ChatFolderInfo[] _folders = [];
 	private static readonly ManualResetEventSlim ReadyToAuthenticate = new();
@@ -34,7 +36,7 @@ public partial class App : Application
 
 	public static int _folderId = -1;
         
-	private void PrepareTelegramApi()
+	private void PrepareApplication()
 	{
 		using var jsonClient = new TdJsonClient();
 
@@ -47,7 +49,7 @@ public partial class App : Application
 
 		_githubClient = new GitHubClient(new ProductHeaderValue(Config.AppName));
 		_githubClient.Credentials = new Credentials(Config.GitHubAuthToken);
-		
+			
 		_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
 
 		ReadyToAuthenticate.Wait();
@@ -123,7 +125,7 @@ public partial class App : Application
         
 	protected override void OnLaunched(LaunchActivatedEventArgs args)
 	{
-		PrepareTelegramApi();
+		PrepareApplication();
 
 		if (_authNeeded)
 		{

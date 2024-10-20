@@ -48,7 +48,7 @@
                                    MaxLines="1"/>
                     </StackPanel>
                 </Border>
-                <TextBlock x:Name="MessageContent" Text="messageContent" TextWrapping="Wrap" 
+                <TextBlock x:Name="MessageContent" TextWrapping="Wrap" 
                            win:IsTextSelectionEnabled="True" />
                 <StackPanel x:Name="StackPanelReactions"/>
                 <StackPanel Orientation="Horizontal" 

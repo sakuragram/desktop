@@ -40,7 +40,7 @@ public partial class Folders : Page
             
             SettingsCard card = new();
             card.Header = userFolder.Title;
-            card.HeaderIcon = folderIcon != null ? folderIcon : null;
+            //card.HeaderIcon = folderIcon != null ? folderIcon : null;
             card.Description = chatFolderInfo.IncludedChatIds.Length + " chats";
             card.Content = button;
             

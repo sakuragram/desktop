@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.UI.Text;
 using Microsoft.UI;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -126,18 +127,7 @@ namespace sakuragram.Views.Chats.Messages
                 MediaService.GetChatPhoto(chat, ProfilePicture);
             }
             
-            try
-            {
-                DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-                dateTime = dateTime.AddSeconds(message.Date).ToLocalTime();
-                string sendTime = dateTime.ToShortTimeString();
-
-                TextBlockSendTime.Text = sendTime;
-            } 
-            catch 
-            {
-                // ignored
-            }
+            TextBlockSendTime.Text = MathService.CalculateDateTime(message.Date).ToShortTimeString();
             
             if (message.ForwardInfo != null)
             {
@@ -224,31 +214,130 @@ namespace sakuragram.Views.Chats.Messages
             switch (message.Content)
             {
                 case TdApi.MessageContent.MessageText messageText:
-                    var text = messageText.Text.Text;
-                    var regex = new Regex(@"(https?://[^\s]+)");
-                    var match = regex.Match(text);
-
-                    if (match.Success)
-                    {
-                        var link = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri(link),
-                            Foreground = new SolidColorBrush(Colors.Azure),
-                            TextDecorations = TextDecorations.Underline
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = link });
-                        MessageContent.Inlines.Add(new Run { Text = text.Substring(0, match.Index) });
-                        MessageContent.Inlines.Add(hyperlink);
-                        MessageContent.Inlines.Add(new Run { Text = text.Substring(match.Index + match.Length) });
-                    }
-                    else
-                    {
-                        MessageContent.Text = text;
-                    }
+                    MessageContent.Text = messageText.Text.Text;
+                    // foreach (var entity in messageText.Text.Entities)
+                    // {
+                    //     switch (entity.Type)
+                    //     {
+                    //         default:
+                    //         {
+                    //             MessageContent.Text = messageText.Text.Text;
+                    //             break;
+                    //         }
+                    //         case TdApi.TextEntityType.TextEntityTypeUrl:
+                    //         {
+                    //             var text = messageText.Text.Text;
+                    //             var regex = new Regex(@"(https?://[^\s]+)");
+                    //             var match = regex.Match(text);
+                    //             
+                    //             if (match.Success)
+                    //             {
+                    //                 var link = match.Value;
+                    //                 var hyperlink = new Hyperlink
+                    //                 {
+                    //                     NavigateUri = new Uri(link),
+                    //                     Foreground = new SolidColorBrush(Colors.Azure),
+                    //                     TextDecorations = TextDecorations.Underline
+                    //                 };
+                    //                 hyperlink.Inlines.Add(new Run { Text = link });
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(0, match.Index) });
+                    //                 MessageContent.Inlines.Add(hyperlink);
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(match.Index + match.Length) });
+                    //             }
+                    //             break;
+                    //         }
+                    //         case TdApi.TextEntityType.TextEntityTypeTextUrl url:
+                    //         {
+                    //             string text = messageText.Text.Text;
+                    //             var hyperlink = new Hyperlink
+                    //             {
+                    //                 NavigateUri = new Uri(url.Url),
+                    //                 Foreground = new SolidColorBrush(Colors.Azure),
+                    //                 TextDecorations = TextDecorations.Underline
+                    //             };
+                    //             hyperlink.Inlines.Add(new Run { Text = text });
+                    //             MessageContent.Inlines.Add(new Run { Text = text.Substring(0, entity.Offset) });
+                    //             MessageContent.Inlines.Add(hyperlink);
+                    //             MessageContent.Inlines.Add(new Run { Text = text.Substring(entity.Offset + entity.Length) });
+                    //             break;
+                    //         }
+                    //         case TdApi.TextEntityType.TextEntityTypeHashtag:
+                    //         {
+                    //             var text = messageText.Text.Text;
+                    //             var regex = new Regex(@"(#\w+)");
+                    //             var match = regex.Match(text);
+                    //             
+                    //             if (match.Success)
+                    //             {
+                    //                 var hashtag = match.Value;
+                    //                 var hyperlink = new Hyperlink
+                    //                 {
+                    //                     NavigateUri = new Uri("https://t.me/sakuragram/"),
+                    //                     Foreground = new SolidColorBrush(Colors.Azure)
+                    //                 };
+                    //                 hyperlink.Inlines.Add(new Run { Text = hashtag });
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(0, match.Index) });
+                    //                 MessageContent.Inlines.Add(hyperlink);
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(match.Index + match.Length) });
+                    //             }
+                    //             break;
+                    //         }
+                    //         case TdApi.TextEntityType.TextEntityTypeMentionName mentionName:
+                    //         {
+                    //             var text = messageText.Text.Text;
+                    //             var regex = new Regex(@"(@\w+)");
+                    //             var match = regex.Match(text);
+                    //             
+                    //             if (match.Success)
+                    //             {
+                    //                 var mention = match.Value;
+                    //                 var hyperlink = new Hyperlink
+                    //                 {
+                    //                     NavigateUri = new Uri($"https://t.me/{mentionName.UserId}"),
+                    //                     Foreground = new SolidColorBrush(Colors.Azure)
+                    //                 };
+                    //                 hyperlink.Inlines.Add(new Run { Text = mention });
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(0, match.Index) });
+                    //                 MessageContent.Inlines.Add(hyperlink);
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(match.Index + match.Length) });
+                    //             }
+                    //             break;
+                    //         }
+                    //         case TdApi.TextEntityType.TextEntityTypeMention:
+                    //         {
+                    //             var text = messageText.Text.Text;
+                    //             var regex = new Regex(@"(@\w+)");
+                    //             var match = regex.Match(text);
+                    //             
+                    //             if (match.Success)
+                    //             {
+                    //                 var mention = match.Value;
+                    //                 var hyperlink = new Hyperlink
+                    //                 {
+                    //                     NavigateUri = new Uri($"https://t.me/{mention}"),
+                    //                     Foreground = new SolidColorBrush(Colors.Azure)
+                    //                 };
+                    //                 hyperlink.Inlines.Add(new Run { Text = mention });
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(0, match.Index) });
+                    //                 MessageContent.Inlines.Add(hyperlink);
+                    //                 MessageContent.Inlines.Add(new Run { Text = text.Substring(match.Index + match.Length) });
+                    //             }
+                    //             break;
+                    //         }
+                    //         case TdApi.TextEntityType.TextEntityTypeBold:{
+                    //             var text = messageText.Text.Text;
+                    //             string boldText = text.Substring(entity.Offset, entity.Length);
+                    //             
+                    //             MessageContent.Inlines.Add(new Run { Text = text.Substring(0, entity.Offset) });
+                    //             MessageContent.Inlines.Add(new Run { Text = boldText, FontWeight = FontWeights.Bold, FontStyle = FontStyle.Italic });
+                    //             MessageContent.Inlines.Add(new Run { Text = text.Substring(entity.Offset + entity.Length) });
+                    //             break;
+                    //         }
+                    //     }
+                    // }
                     break;
                 case TdApi.MessageContent.MessageUnsupported:
-                    MessageContent.Text = "Your version of CherryMerryGram does not support this type of message, make sure that you are using the latest version of the client.";
+                    MessageContent.Text = $"Your version of {Config.AppName} does not support this type of message, make sure that you are using the latest version of the client.";
                     break;
                 default:
                     MessageContent.Text = "Unsupported message type";
