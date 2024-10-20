@@ -15,7 +15,6 @@ public class Config_Example
     public const string GitHubAuthToken = "your_github_auth_token";
     public const string GitHubRepoOwner = "your_github_repo_owner";
     public const string GitHubRepoName = "your_github_repo_name";
-    public const string LinkForUpdate = $"https://api.github.com/repos/{GitHubRepoOwner}/{GitHubRepoName}/releases/latest";
     
     private static string GetAppVersion() {
         System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
