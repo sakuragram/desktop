@@ -71,28 +71,5 @@ namespace sakuragram.Views
             ContentFrame.Navigate(view, null, new EntranceNavigationTransitionInfo());
             return true;
         }
-        
-        public async Task GetLocalSettingsAsync()
-        {
-            try
-            {
-                ApplicationData applicationData = await ApplicationData.Current.RequestAccessAsync();
-                if (applicationData == null || !applicationData.Available)
-                {
-                    return;
-                }
-
-                ApplicationDataContainer localSettings = applicationData.LocalSettings;
-                if (localSettings.Values[Config.AppName] != null)
-                {
-                    Debug.WriteLine($"{applicationData.LocalFolder.Name}, {applicationData.LocalFolder.Path}");
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.Message);
-                throw;
-            }
-        }
     }
 }
