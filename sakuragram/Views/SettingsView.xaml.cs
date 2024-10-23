@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -16,6 +17,7 @@ namespace sakuragram.Views
     public sealed partial class SettingsView : Page
     {
         private TdClient _client = App._client;
+        private ApplicationDataContainer _localSettings;
         private NavigationViewItem _lastItem;
         
         public SettingsView()
@@ -24,6 +26,19 @@ namespace sakuragram.Views
             
             NavigationView.SelectedItem = NavigationView.MenuItems[0];
             NavigateToView("Profile");
+            
+            try
+            {
+                if (ApplicationData.Current.LocalSettings.Values[Config.AppName] != null)
+                {
+                    Debug.WriteLine(ApplicationData.Current.LocalFolder.Name + ", " + ApplicationData.Current.LocalFolder.Path);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+                throw;
+            }
         }
 
         private void NavigationView_OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -55,6 +70,29 @@ namespace sakuragram.Views
 
             ContentFrame.Navigate(view, null, new EntranceNavigationTransitionInfo());
             return true;
+        }
+        
+        public async Task GetLocalSettingsAsync()
+        {
+            try
+            {
+                ApplicationData applicationData = await ApplicationData.Current.RequestAccessAsync();
+                if (applicationData == null || !applicationData.Available)
+                {
+                    return;
+                }
+
+                ApplicationDataContainer localSettings = applicationData.LocalSettings;
+                if (localSettings.Values[Config.AppName] != null)
+                {
+                    Debug.WriteLine($"{applicationData.LocalFolder.Name}, {applicationData.LocalFolder.Path}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+                throw;
+            }
         }
     }
 }

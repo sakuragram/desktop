@@ -46,6 +46,7 @@
   </Applications>
 
   <Capabilities>
-    <rescap:Capability Name="runFullTrust" />
+    <Capability Name="runFullTrust" />
+    <Capability Name="applicationData" />
   </Capabilities>
 </Package>

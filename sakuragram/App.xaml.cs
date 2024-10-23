@@ -23,7 +23,6 @@ public partial class App : Application
         
 	public static TdClient _client;
 	public static GitHubClient _githubClient;
-	public static ApplicationDataContainer _localSettings;
 	
 	public static TdApi.ChatFolderInfo[] _folders = [];
 	private static readonly ManualResetEventSlim ReadyToAuthenticate = new();

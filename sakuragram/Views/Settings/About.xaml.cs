@@ -15,7 +15,7 @@ namespace sakuragram.Views.Settings;
 public partial class About : Page
 {
     private GitHubClient _githubClient = App._githubClient;
-    private ApplicationDataContainer _localSettings = App._localSettings;
+    private ApplicationDataContainer _localSettings = MainWindow._localSettings;
     private string _appName = Config.AppName;
     private string _appLatestVersionLink;
     

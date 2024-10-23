@@ -3,6 +3,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
+using Windows.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -28,6 +29,7 @@ namespace sakuragram
 		
 		private UpdateManager _updateManager = App.UpdateManager;
 		private GitHubClient _gitHubClient = App._githubClient;
+		public static ApplicationDataContainer _localSettings;
 		
 		public MainWindow()
 		{
