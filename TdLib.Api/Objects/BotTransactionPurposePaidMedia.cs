@@ -29,7 +29,7 @@ namespace TdLib
                 public override string Extra { get; set; }
 
                 /// <summary>
-                /// The bought media if the trancastion wasn't refunded
+                /// The bought media if the transaction wasn't refunded
                 /// </summary>
                 [JsonProperty("media", ItemConverterType = typeof(Converter))]
                 public PaidMedia[] Media { get; set; }

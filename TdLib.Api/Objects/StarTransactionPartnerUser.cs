@@ -12,7 +12,7 @@ namespace TdLib
         public partial class StarTransactionPartner : Object
         {
             /// <summary>
-            /// The transaction is a transcation with another user
+            /// The transaction is a transaction with another user
             /// </summary>
             public class StarTransactionPartnerUser : StarTransactionPartner
             {

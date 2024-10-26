@@ -43,6 +43,13 @@ namespace TdLib
                 public long ReceiverUserId { get; set; }
 
                 /// <summary>
+                /// Message added to the gifted Telegram Premium by the sender
+                /// </summary>
+                [JsonConverter(typeof(Converter))]
+                [JsonProperty("text")]
+                public FormattedText Text { get; set; }
+
+                /// <summary>
                 /// Currency for the paid amount
                 /// </summary>
                 [JsonConverter(typeof(Converter))]

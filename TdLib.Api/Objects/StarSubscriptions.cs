@@ -34,7 +34,7 @@ namespace TdLib
             public long StarCount { get; set; }
 
             /// <summary>
-            /// List of subbscriptions for Telegram Stars
+            /// List of subscriptions for Telegram Stars
             /// </summary>
             [JsonProperty("subscriptions", ItemConverterType = typeof(Converter))]
             public StarSubscription[] Subscriptions { get; set; }

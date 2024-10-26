@@ -35,7 +35,7 @@ namespace TdLib
                 public Document[] Documents { get; set; }
 
                 /// <summary>
-                /// Settings for the cloud theme
+                /// Settings for the cloud theme; may be null if unknown
                 /// </summary>
                 [JsonConverter(typeof(Converter))]
                 [JsonProperty("settings")]
