@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -31,11 +32,44 @@ namespace sakuragram.Views
         private StorageFile _newProfilePicture;
         private List<long> _chatsIds = [];
         private List<long> _pinnedChats = [];
+        private List<Button> _foldersButtons = [];
+        private List<ChatEntry> _chats = [];
         
         public ChatsView()
         {
             InitializeComponent();
             UpdateArchivedChatsCount();
+            
+            Button buttonAllChats = new();
+            buttonAllChats.Margin = new Thickness(0, 0, 5, 0);
+            buttonAllChats.Content = "All chats";
+            buttonAllChats.Click += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+            _foldersButtons.Add(buttonAllChats);
+            
+            foreach (var folder in App._folders)
+            {
+                Button button = new();
+                button.Margin = new Thickness(0, 0, 5, 0);
+                button.Content = folder.Title;
+                button.Tag = $"{folder.Title}_{folder.Id}";
+                button.Click += (_, _) =>
+                {
+                    App._folderId = folder.Id;
+                    GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
+                };
+                _foldersButtons.Add(button);
+            }
+            
+            if (App._folderId != -1)
+            {
+                GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});
+            }
+            else
+            {
+                GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+                App._folderId = -1;
+            }
+            
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
         }
 
@@ -74,7 +108,7 @@ namespace sakuragram.Views
                                     _chat = updateNewChat.Chat,
                                     ChatId = updateNewChat.Chat.Id
                                 };
-                                ChatsList.Children.Insert(0, chatEntry);
+                                ChatsList.Items.Insert(0, chatEntry);
                                 _chatsIds.Add(updateNewChat.Chat.Id);
                             });
                         }
@@ -107,20 +141,17 @@ namespace sakuragram.Views
             ArchiveUnreadChats.Value = _totalUnreadArchivedChatsCount;
         }
 
-        private void UpdateChatPosition(long chatId, StackPanel chatsListToRemove, StackPanel chatsListToInsert)
+        private void UpdateChatPosition(long chatId, ItemsControl chatsListToRemove, ItemsControl chatsListToInsert)
         {
-            ChatsList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High, () =>
+            ChatsList.DispatcherQueue.EnqueueAsync(() =>
             {
-                var chatToMove = ChatsList.Children
+                var chatToMove = ChatsList.Items
                     .OfType<ChatEntry>()
                     .FirstOrDefault(chat => chat.ChatId == chatId);
-                        
-                if (chatToMove != null && chatToMove.ChatId == chatId)
-                {
-                    chatsListToRemove.Children.Remove(chatToMove);
-                    chatsListToInsert.Children.Insert(0, chatToMove);
-                    chatToMove.UpdateChatInfo();
-                }
+                if (chatToMove == null || chatToMove.ChatId != chatId) return;
+                chatsListToRemove.Items.Remove(chatToMove);
+                chatToMove.UpdateChatInfo();
+                chatsListToInsert.Items.Insert(0, chatToMove);
             });
         }
         
@@ -154,22 +185,20 @@ namespace sakuragram.Views
             Chat.Children.Remove(_currentChat);
         }
         
-        private async void GenerateChatEntries(TdApi.ChatList chatList)
+        private async Task GenerateChatEntries(TdApi.ChatList chatList)
         {
-            await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() =>
-            {
-                ChatsList.Children.Clear();
-                PinnedChatsList.Children.Clear();
-                _chatsIds.Clear();
-                _pinnedChats.Clear();
-            });
+            PinnedChatsList.Items.Clear();
+            ChatsList.Items.Clear();
+            _pinnedChats.Clear();
+            _chatsIds.Clear();
+            _chats.Clear();
             
-            _addedChats = await _client.GetChatsAsync(chatList, 10000);
-            
+            _addedChats = await _client.GetChatsAsync(chatList, 10000).ConfigureAwait(false);
+                     
             foreach (var chatId in _addedChats.ChatIds)
             {
                 var chat = await _client.GetChatAsync(chatId);
-                
+
                 foreach (var chatPosition in chat.Positions)
                 {
                     if (!chatPosition.IsPinned) continue;
@@ -192,29 +221,35 @@ namespace sakuragram.Views
                         }
                     }
                 }
-                
-                if (_pinnedChats.Count == 0) Separator.Visibility = Visibility.Collapsed;
-                
-                await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() =>
+
+                if (_pinnedChats.Count == 0)
+                    DispatcherQueue.TryEnqueue(() => Separator.Visibility = Visibility.Collapsed);
+                else DispatcherQueue.TryEnqueue(() => Separator.Visibility = Visibility.Visible);
+
+                await DispatcherQueue.EnqueueAsync(() =>
                 {
-                    var chatEntry = new ChatEntry();
-                    chatEntry._ChatsView = this;
-                    chatEntry.ChatPage = Chat;
-                    chatEntry._chat = chat;
-                    chatEntry.ChatId = chat.Id;
-                    _chatsIds.Add(chat.Id);
+                    ChatEntry chatEntry = new()
+                    {
+                        _ChatsView = this,
+                        ChatPage = Chat,
+                        _chat = chat,
+                        ChatId = chat.Id,
+                    };
                     chatEntry.UpdateChatInfo();
-                    
+
+                    _chatsIds.Add(chat.Id);
+                    _chats.Add(chatEntry);
+
                     if (_pinnedChats.Contains(chat.Id))
                     {
-                        PinnedChatsList.Children.Add(chatEntry);
+                        PinnedChatsList.Items.Add(chatEntry);
                     }
                     else
                     {
-                        ChatsList.Children.Add(chatEntry);
+                        ChatsList.Items.Add(chatEntry);
                     }
                 });
-            }
+            }   
             
             _firstGenerate = false;
         }
@@ -233,7 +268,7 @@ namespace sakuragram.Views
                 return;
             }
             
-            ChatsList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High, () => ChatsList.Children.Clear());
+            ChatsList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High, () => ChatsList.Items.Clear());
             
             var foundedChats = await _client.ExecuteAsync(new TdApi.SearchChats
             {
@@ -262,13 +297,13 @@ namespace sakuragram.Views
                 };
                     
                 chatEntry.UpdateChatInfo();
-                await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() => ChatsList.Children.Add(chatEntry));
+                await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() => ChatsList.Items.Add(chatEntry));
             }
         }
 
         private void ButtonArchive_OnClick(object sender, RoutedEventArgs e)
         {
-            ChatsList.Children.Clear();
+            ChatsList.Items.Clear();
             if (!_bInArchive)
             {
                 ArchiveStatus.Text = "Back";
@@ -288,19 +323,6 @@ namespace sakuragram.Views
         private void ButtonSavedMessages_OnClick(object sender, RoutedEventArgs e)
         {
             OpenChat(_client.ExecuteAsync(new TdApi.GetMe()).Result.Id);
-        }
-
-        private void ChatList_OnLoaded(object sender, RoutedEventArgs e)
-        {
-            if (App._folderId != -1)
-            {
-                GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});
-            }
-            else
-            {
-                GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-                App._folderId = -1;
-            }
         }
 
         private void ButtonNewMessage_OnClick(object sender, RoutedEventArgs e)

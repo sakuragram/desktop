@@ -12,6 +12,15 @@
     VerticalContentAlignment="Stretch"
     KeyDown="ChatsView_OnKeyDown">
     
+    <Page.Resources>
+        <ItemsPanelTemplate x:Key="HorizontalItemsPanel">
+            <StackPanel Orientation="Horizontal"/>
+        </ItemsPanelTemplate>
+        <ItemsPanelTemplate x:Key="VerticalItemsPanel">
+            <StackPanel Orientation="Vertical"/>
+        </ItemsPanelTemplate>
+    </Page.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="350" />
@@ -22,6 +31,7 @@
             
             <Grid.RowDefinitions>
                 <RowDefinition Height="80" />
+                <RowDefinition Height="40" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             
@@ -51,7 +61,17 @@
                 </StackPanel>
                 <MenuFlyoutSeparator Margin="0, 0, 0, 4" />
             </StackPanel>
-            <RelativePanel Grid.Row="1" 
+            <ScrollViewer Grid.Row="1"
+                          Margin="4"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled"
+                          HorizontalScrollMode="Enabled"
+                          VerticalScrollMode="Disabled"
+                          CanBeScrollAnchor="True">
+                <ItemsControl ItemsSource="{x:Bind Path=_foldersButtons, Mode=TwoWay}"
+                              ItemsPanel="{StaticResource HorizontalItemsPanel}"/>
+            </ScrollViewer>
+            <RelativePanel Grid.Row="2" 
                            VerticalAlignment="Stretch" 
                            HorizontalAlignment="Stretch">
                 <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
@@ -60,9 +80,22 @@
                               Height="Auto"
                               ViewChanging="ScrollViewer_OnViewChanging">
                     <StackPanel>
-                        <StackPanel x:Name="PinnedChatsList" Width="350" Height="Auto"/>
+                        <ItemsControl x:Name="PinnedChatsList"
+                                      Width="Auto"
+                                      ItemsPanel="{StaticResource VerticalItemsPanel}"/>
                         <MenuFlyoutSeparator x:Name="Separator" Margin="0, 4, 0, 4" />
-                        <StackPanel x:Name="ChatsList" Width="350" Height="Auto" Loaded="ChatList_OnLoaded" />
+                        <ScrollViewer Margin="0"
+                                      Width="350" 
+                                      Height="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollMode="Disabled"
+                                      VerticalScrollMode="Enabled"
+                                      CanBeScrollAnchor="True">
+                            <ItemsControl x:Name="ChatsList"
+                                          Width="Auto"
+                                          ItemsPanel="{StaticResource VerticalItemsPanel}"/>
+                        </ScrollViewer>
                     </StackPanel>
                 </ScrollViewer>
                 <Button x:Name="ButtonNewMessage" Width="52" Height="52" Content="+" FontSize="18" Margin="5" 
@@ -95,7 +128,6 @@
                     </ScrollViewer>
                 </StackPanel>
             </ContentDialog>
-            
             <ContentDialog x:Name="NewGroup" CloseButtonText="Cancel" PrimaryButtonText="Create"
                            DefaultButton="Primary"
                            PrimaryButtonClick="NewGroup_OnPrimaryButtonClick"
@@ -135,7 +167,6 @@
                     </StackPanel>
                 </StackPanel>
             </ContentDialog>
-            
             <ContentDialog x:Name="NewChannel" 
                            CloseButtonText="Cancel" 
                            PrimaryButtonText="Create"

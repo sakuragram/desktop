@@ -125,7 +125,7 @@ public partial class App : Application
 	protected override void OnLaunched(LaunchActivatedEventArgs args)
 	{
 		PrepareApplication();
-
+		
 		if (_authNeeded)
 		{
 			_loginWindow = new LoginView();

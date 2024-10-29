@@ -1,8 +1,7 @@
 {
   "profiles": {
     "sakuragram (Package)": {
-      "commandName": "MsixPackage",
-      
+      "commandName": "MsixPackage"
     },
     "sakuragram (Unpackaged)": {
       "commandName": "Project"

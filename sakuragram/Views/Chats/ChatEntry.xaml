@@ -6,6 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:sakuragram.Controls"
     mc:Ignorable="d"
     Click="Button_OnClick"
     RightTapped="ChatEntry_OnRightTapped"
@@ -30,12 +31,12 @@
                         Orientation="Horizontal"
                         HorizontalAlignment="Left" 
                         VerticalAlignment="Center">
-                <PersonPicture x:Name="ChatEntryProfilePicture" 
-                               Width="46"
-                               Height="46"
-                               HorizontalAlignment="Left"
-                               VerticalAlignment="Top"
-                               Margin="10"/>
+                <controls:Avatar x:Name="ChatEntryProfilePicture" 
+                                 Width="46"
+                                 Height="46"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Top"
+                                 Margin="10"/>
                 <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                     <TextBlock x:Name="TextBlockChatName" 
                                FontSize="14" 

@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using Octokit;
 using sakuragram.Services;
+using sakuragram.Views;
 using TdLib;
 using Application = ABI.Microsoft.UI.Xaml.Application;
 using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
@@ -80,36 +81,36 @@ namespace sakuragram
 			_user = _client.GetMeAsync().Result;
 			NavigationView.PaneTitle = $"{_user.FirstName} ({_totalUnreadCount})";
 			
-			foreach (var chatFolderInfo in _folders)
-			{
-				try
-				{
-					string path = AppContext.BaseDirectory +
-					              $@"Assets\icons\folders\folders_{chatFolderInfo.Icon.Name.ToLower()}.png";
-					BitmapIcon folderIcon = new();
-					
-					if (File.Exists(path))
-					{
-						Uri folderIconPath = new(path);
-						
-						folderIcon.UriSource = folderIconPath;
-						folderIcon.ShowAsMonochrome = false;
-					}
-
-					var folderItem = new NavigationViewItem();
-					//folderItem.Icon = folderIcon != null ? folderIcon : null;
-					folderItem.Content = chatFolderInfo.Title;
-					folderItem.Tag = "ChatsView";
-					folderItem.Name = $"{chatFolderInfo.Title}_{chatFolderInfo.Id}";
-
-					NavigationView.MenuItems.Add(folderItem);
-				}
-				catch (UriFormatException e)
-				{
-					Debug.WriteLine($"Error: {e.Message})");
-					throw;
-				}
-			}
+			// foreach (var chatFolderInfo in _folders)
+			// {
+			// 	try
+			// 	{
+			// 		string path = AppContext.BaseDirectory +
+			// 		              $@"Assets\icons\folders\folders_{chatFolderInfo.Icon.Name.ToLower()}.png";
+			// 		BitmapIcon folderIcon = new();
+			// 		
+			// 		if (File.Exists(path))
+			// 		{
+			// 			Uri folderIconPath = new(path);
+			// 			
+			// 			folderIcon.UriSource = folderIconPath;
+			// 			folderIcon.ShowAsMonochrome = false;
+			// 		}
+			//
+			// 		var folderItem = new NavigationViewItem();
+			// 		//folderItem.Icon = folderIcon != null ? folderIcon : null;
+			// 		folderItem.Content = chatFolderInfo.Title;
+			// 		folderItem.Tag = "ChatsView";
+			// 		folderItem.Name = $"{chatFolderInfo.Title}_{chatFolderInfo.Id}";
+			//
+			// 		NavigationView.MenuItems.Add(folderItem);
+			// 	}
+			// 	catch (UriFormatException e)
+			// 	{
+			// 		Debug.WriteLine($"Error: {e.Message})");
+			// 		throw;
+			// 	}
+			// }
 
 			CheckForUpdates();
 			
@@ -239,7 +240,7 @@ namespace sakuragram
 
 			NavigationView.PaneDisplayMode = clickedView switch
 			{
-				"SettingsView" => NavigationViewPaneDisplayMode.LeftCompact,
+				"SettingsView" or "EditFolders" => NavigationViewPaneDisplayMode.LeftCompact,
 				"ChatsView" => NavigationViewPaneDisplayMode.Left,
 				_ => NavigationView.PaneDisplayMode
 			};

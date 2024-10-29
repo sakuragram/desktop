@@ -448,13 +448,28 @@ namespace sakuragram.Views.Chats
                     pollMessage.UpdateMessage(message);
                     break;
                 }
+                #if DEBUG
+                case TdApi.MessageContent.MessagePaidMedia:
+                {
+                    var paidMediaMessage = new ChatPaidMediaMessage();
+                    MessagesList.Children.Add(paidMediaMessage);
+                    paidMediaMessage.UpdateMessage(message);
+                    break;
+                }
+                #endif
             }
         }
         
         private async void SendMessage_OnClick(object sender, RoutedEventArgs e)
         {
-            if (UserMessageInput.Text.Length <= 0) return;
             
+            if (UserMessageInput.Text.Length <= 0) return;
+
+            var text = _client.ExecuteAsync(new TdApi.ParseTextEntities
+            {
+                Text = UserMessageInput.Text,
+                ParseMode = new TdApi.TextParseMode.TextParseModeMarkdown {Version = 0}
+            }).Result;
             if (_replyService.GetReplyMessageId() == 0)
             {
                 await _client.ExecuteAsync(new TdApi.SendMessage
@@ -462,10 +477,7 @@ namespace sakuragram.Views.Chats
                     ChatId = _chatId,
                     InputMessageContent = new TdApi.InputMessageContent.InputMessageText
                     {
-                        Text = new TdApi.FormattedText
-                        {
-                            Text = UserMessageInput.Text
-                        }
+                        Text = text,
                     }
                 });
             }
@@ -476,7 +488,7 @@ namespace sakuragram.Views.Chats
 
             MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
             //MessagesScrollViewer.ChangeView(0, 1, 1);
-            UserMessageInput.ClearValue(TextBox.TextProperty);
+            UserMessageInput.Text = string.Empty;
         }
 
         private void MoreActions_OnClick(object sender, RoutedEventArgs e)

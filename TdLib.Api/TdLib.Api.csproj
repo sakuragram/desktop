@@ -22,6 +22,7 @@ SPDX-License-Identifier: MIT
         <!-- REUSE-IgnoreStart -->
         <PackageLicenseExpression>$(PackageLicenseExpression) AND BSL-1.0</PackageLicenseExpression>
         <Copyright>$(Copyright); tdlib contributors &lt;https://github.com/tdlib/td&gt;</Copyright>
+        <Version>1.8.38</Version>
         <!-- REUSE-IgnoreEnd -->
     </PropertyGroup>
     <ItemGroup>

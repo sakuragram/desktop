@@ -90,16 +90,20 @@
 	<OutputPath>build\debug\</OutputPath>
     <DebugType>embedded</DebugType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>TRACE;MICROSOFT_WINDOWSAPPSDK_SELFCONTAINED; PACKAGED;</DefineConstants>
+    <DocumentationFile />
   </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Beta|x64'">
 	    <OutputPath>build\beta\</OutputPath>
 	    <DebugType>embedded</DebugType>
 	    <Optimize>True</Optimize>
 	    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	    <DocumentationFile />
     </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
 	<OutputPath>build\release\</OutputPath>
     <DebugType>embedded</DebugType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile />
   </PropertyGroup>
 </Project>

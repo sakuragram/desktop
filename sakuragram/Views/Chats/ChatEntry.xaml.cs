@@ -32,6 +32,8 @@ namespace sakuragram.Views.Chats
         public ChatEntry()
         {
             InitializeComponent();
+            
+            _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         }
 
         private Task ProcessUpdates(TdApi.Update update)
@@ -61,6 +63,20 @@ namespace sakuragram.Views.Chats
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         if (ChatId == updateChatLastMessage.LastMessage.ChatId)
+                        {
+                            string senderName = UserService.GetSenderName(_chat.LastMessage).Result;
+                            TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
+                            TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
+                        }
+                    });
+                    break;
+                }
+                case TdApi.Update.UpdateNewMessage updateNewMessage:
+                {
+                    if (updateNewMessage.Message == null) break;
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (ChatId == updateNewMessage.Message.ChatId)
                         {
                             string senderName = UserService.GetSenderName(_chat.LastMessage).Result;
                             TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
@@ -108,8 +124,7 @@ namespace sakuragram.Views.Chats
             TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
             TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
             TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty ? Visibility.Collapsed : Visibility.Visible;
-            
-            //GetLastMessage(_chat);
+            TextBlockSendTime.Text = MathService.CalculateDateTime(_chat.LastMessage.Date).ToShortTimeString();
             
             if (_chat.UnreadCount > 0)
             {
@@ -179,21 +194,6 @@ namespace sakuragram.Views.Chats
                     break;
                 }
             }
-
-            try
-            {
-                DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-                dateTime = dateTime.AddSeconds(_chat.LastMessage.Date).ToLocalTime();
-                string sendTime = dateTime.ToShortTimeString();
-
-                await DispatcherQueue.EnqueueAsync(() => TextBlockSendTime.Text = sendTime);
-            }
-            catch (Exception e)
-            {
-                await DispatcherQueue.EnqueueAsync(() => TextBlockSendTime.Text = e.Message);
-            }
-            
-            _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         }
 
         private static string GetMessageText(long chatId, long messageId)
@@ -222,7 +222,7 @@ namespace sakuragram.Views.Chats
         
         private void ChatEntry_OnRightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            ContextMenu.ShowAt(ButtonChatEntry);
+            //ContextMenu.ShowAt(ButtonChatEntry);
         }
 
         private void ContextMenuMarkAs_OnClick(object sender, RoutedEventArgs e)

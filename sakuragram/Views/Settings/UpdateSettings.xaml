@@ -39,6 +39,7 @@
                                        HeaderIcon="{ui:FontIcon Glyph=&#xE716;}">
                     <ToggleSwitch x:Name="ToggleSwitchAutoUpdate"
                                   IsOn="False"
+                                  IsEnabled="False"
                                   Toggled="ToggleSwitchAutoUpdate_OnToggled"/>
                 </controls:SettingsCard>
                 
@@ -47,6 +48,7 @@
                                        HeaderIcon="{ui:FontIcon Glyph=&#xE716;}">
                     <ToggleSwitch x:Name="ToggleSwitchInstallBeta"
                                   IsOn="False"
+                                  IsEnabled="False"
                                   Toggled="ToggleSwitch_OnToggled"/>
                 </controls:SettingsCard>
 

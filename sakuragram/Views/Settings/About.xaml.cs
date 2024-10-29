@@ -100,19 +100,29 @@ public partial class About : Page
         
         await DispatcherQueue.EnqueueAsync(() =>
         {
-            foreach (var release in releases)
+            if (releases.Count > 0)
             {
-                if (release.PublishedAt != null)
+                SettingsCard card = new();
+                card.Header = "Not found";
+
+                ExpanderReleases.Items.Add(card);
+            }
+            else
+            {
+                foreach (var release in releases)
                 {
-                    string releaseName = release.Prerelease ? "Pre-release " + release.Name : "Release " + release.Name 
-                        + ", " + release.PublishedAt.Value.ToString("MM/dd/yyyy");
-                    string releaseBody = release.Body != string.Empty ? release.Body : "The release does not have a changelog";
+                    if (release.PublishedAt != null)
+                    {
+                        string releaseName = release.Prerelease ? "Pre-release " + release.Name : "Release " + release.Name 
+                            + ", " + release.PublishedAt.Value.ToString("MM/dd/yyyy");
+                        string releaseBody = release.Body != string.Empty ? release.Body : "The release does not have a changelog";
 
-                    SettingsCard card = new();
-                    card.Header = releaseName;
-                    card.Description = releaseBody;
+                        SettingsCard card = new();
+                        card.Header = releaseName;
+                        card.Description = releaseBody;
 
-                    ExpanderReleases.Items.Add(card);
+                        ExpanderReleases.Items.Add(card);
+                    }
                 }
             }
         });

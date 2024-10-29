@@ -37,7 +37,6 @@ namespace sakuragram.Views
             catch (Exception e)
             {
                 Debug.WriteLine(e.Message);
-                throw;
             }
         }
 

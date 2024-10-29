@@ -84,6 +84,9 @@ public class MessageService
                     $"{messageDocument.Document.FileName}, {messageDocument.Caption.Text}" : 
                     messageDocument.Document.FileName,
                 
+                TdApi.MessageContent.MessagePaidMedia messagePaidMedia => messagePaidMedia.Caption.Text != string.Empty ?
+                    $"Paid Media, {messagePaidMedia.Caption.Text}" : "Paid Media",
+                
                 #endregion
                 
                 TdApi.MessageContent.MessagePinMessage messagePinMessage =>

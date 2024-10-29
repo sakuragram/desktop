@@ -11,12 +11,18 @@ public partial class Folders : Page
 {
     private readonly TdClient _client = App._client;
     private TdApi.ChatFolderInfo[] _chatFolders = App._folders;
+    private bool _hasInternetConnection = App._hasInternetConnection;
     
     public Folders()
     {
         InitializeComponent();
         
-        bool hasInternetConnection = App._hasInternetConnection;
+        GenerateFolders(_hasInternetConnection);
+    }
+    
+    private void GenerateFolders(bool hasInternetConnection)
+    {
+        PanelUserFolders.Children.Clear();
         
         foreach (var userFolder in _chatFolders)
         {
@@ -36,7 +42,11 @@ public partial class Folders : Page
 
             Button button = new();
             button.Content = "Delete";
-            button.Click += (sender, args) => _client.DeleteChatFolderAsync(userFolder.Id, []);
+            button.Click += (sender, args) =>
+            {
+                _client.DeleteChatFolderAsync(userFolder.Id, []);
+                GenerateFolders(_hasInternetConnection);
+            };
             
             SettingsCard card = new();
             card.Header = userFolder.Title;
@@ -59,7 +69,11 @@ public partial class Folders : Page
 
                 Button button = new();
                 button.Content = "Add";
-                button.Click += async (sender, args) => await _client.CreateChatFolderAsync(folder.Folder);
+                button.Click += async (sender, args) =>
+                {
+                    await _client.CreateChatFolderAsync(folder.Folder).ConfigureAwait(false);
+                    GenerateFolders(_hasInternetConnection);
+                };
                 
                 card.Content = button;
                 PanelUserRecommendedFolders.Children.Add(card);

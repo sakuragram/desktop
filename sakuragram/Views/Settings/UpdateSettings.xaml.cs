@@ -1,12 +1,7 @@
-﻿using System;
-using System.ComponentModel;
-using Windows.Storage;
-using Windows.System;
+﻿using Windows.Storage;
+using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using ApplicationData = Microsoft.Windows.Storage.ApplicationData;
-using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
-using ApplicationDataCreateDisposition = Microsoft.Windows.Storage.ApplicationDataCreateDisposition;
 
 namespace sakuragram.Views.Settings;
 
@@ -16,42 +11,51 @@ public partial class UpdateSettings : Page
     private string _appName;
     private readonly string _appLatestVersion;
     private string _appLatestVersionLink;
-    private static readonly Services.UpdateManager _updateManager = App.UpdateManager;
     
     public UpdateSettings()
     {
         InitializeComponent();
-        
-        _localSettings = ApplicationData.GetForUser(User.GetDefault()).LocalSettings.CreateContainer("LocalSettings", ApplicationDataCreateDisposition.Always);
-        
-        #region Settings
 
-        if (_localSettings != null)
+        DispatcherQueue.EnqueueAsync(() =>
         {
-            if (_localSettings.Values["AutoUpdate"] == null)
+            if (ApplicationData.Current.LocalSettings.Containers.ContainsKey(Config.AppName))
             {
-                ToggleSwitchAutoUpdate.IsOn = true;
-                _localSettings.Values["AutoUpdate"] = true;
+                _localSettings = ApplicationData.Current.LocalSettings.Containers[Config.AppName];
             }
             else
             {
-                var autoUpdateValue = _localSettings.Values["AutoUpdate"];
-                ToggleSwitchAutoUpdate.IsOn = (bool)autoUpdateValue;
+                _localSettings = ApplicationData.Current.LocalSettings.CreateContainer(Config.AppName, ApplicationDataCreateDisposition.Always);
             }
             
-            if (_localSettings.Values["InstallBeta"] == null)
-            {
-                ToggleSwitchInstallBeta.IsOn = false;
-                _localSettings.Values["InstallBeta"] = false;
-            }
-            else
-            {
-                var installBetaValue = _localSettings.Values["InstallBeta"];
-                ToggleSwitchInstallBeta.IsOn = (bool)installBetaValue;
-            }
-        }
+            #region Settings
 
-        #endregion
+            if (_localSettings != null)
+            {
+                if (_localSettings.Values["AutoUpdate"] == null)
+                {
+                    ToggleSwitchAutoUpdate.IsOn = true;
+                    _localSettings.Values["AutoUpdate"] = true;
+                }
+                else
+                {
+                    var autoUpdateValue = _localSettings.Values["AutoUpdate"];
+                    ToggleSwitchAutoUpdate.IsOn = (bool)autoUpdateValue;
+                }
+            
+                if (_localSettings.Values["InstallBeta"] == null)
+                {
+                    ToggleSwitchInstallBeta.IsOn = false;
+                    _localSettings.Values["InstallBeta"] = false;
+                }
+                else
+                {
+                    var installBetaValue = _localSettings.Values["InstallBeta"];
+                    ToggleSwitchInstallBeta.IsOn = (bool)installBetaValue;
+                }
+            }
+
+            #endregion
+        });
     }
     
     #region setting parameters
