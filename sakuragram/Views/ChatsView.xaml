@@ -25,6 +25,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="350" />
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="350" />
         </Grid.ColumnDefinitions>
             
         <Grid Grid.Column="0">
@@ -212,6 +213,18 @@
             </ContentDialog>
         </Grid>
         
-        <Grid x:Name="Chat" Grid.Column="1" />
+        <Grid x:Name="Chat" 
+              Grid.Column="1" />
+        
+        <Grid x:Name="Media" 
+              Grid.Column="2"
+              Visibility="Visible">
+            <Border HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Background="Black"
+                    CornerRadius="4">
+                
+            </Border>
+        </Grid>
     </Grid>
 </Page>

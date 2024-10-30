@@ -28,6 +28,7 @@ namespace sakuragram.Views
         private bool _firstGenerate = true;
         private bool _createChannelOpened = false;
         private bool _createGroupOpened = false;
+        private bool _mediaMenuOpened = false;
         private int _totalUnreadArchivedChatsCount = 0;
         private StorageFile _newProfilePicture;
         private List<long> _chatsIds = [];
@@ -125,6 +126,11 @@ namespace sakuragram.Views
             return Task.CompletedTask;
         }
 
+        private Visibility UpdateMediaVisibility()
+        {
+            return _mediaMenuOpened ? Visibility.Visible : Visibility.Collapsed;
+        }
+        
         private void UpdateArchivedChatsCount()
         {
             var chatsIds = _client.ExecuteAsync(new TdApi.GetChats
