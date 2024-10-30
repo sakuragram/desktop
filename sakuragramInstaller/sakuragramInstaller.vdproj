@@ -1248,8 +1248,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:sakuragram"
-        "ProductCode" = "8:{42B92AFD-D8C2-4D47-B7F8-A1D0287C4C43}"
-        "PackageCode" = "8:{344090C7-3FCE-4DC6-B82F-C8FDA07E2D1F}"
+        "ProductCode" = "8:{33CA86B4-6D35-4EDF-82CA-CD3E5F7ACDB9}"
+        "PackageCode" = "8:{D8F9E528-8D68-4F0A-8ADA-F6426B0D8219}"
         "UpgradeCode" = "8:{5D432482-983F-4921-B1ED-DF8033F8DAAB}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
