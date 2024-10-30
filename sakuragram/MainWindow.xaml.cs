@@ -45,7 +45,7 @@ namespace sakuragram
 			#if DEBUG
 			{
 				Title = $"{Config.AppName} debug";
-				TitleBar.Subtitle = $"debug ({Config.AppVersion}, TdLib {{Config.TdLibVersion}})";
+				TitleBar.Subtitle = "debug";
 			}
 			#elif BETA
 			{

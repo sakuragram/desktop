@@ -21,7 +21,12 @@
 		<controls:TitleBar x:Name="TitleBar"
 		                   AutoConfigureCustomTitleBar="True"
 		                   IsBackButtonVisible="False"
-		                   IsPaneButtonVisible="False">
+		                   IsPaneButtonVisible="False"
+		                   DisplayMode="Standard">
+			<controls:TitleBar.Content>
+				<AutoSuggestBox PlaceholderText="Search" />
+			</controls:TitleBar.Content>
+
 		</controls:TitleBar>
 		
 		<Grid Grid.Row="1">
