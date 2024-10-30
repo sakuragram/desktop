@@ -232,20 +232,20 @@ public partial class ChatPhotoMessage : Page
             }
         }
         
-        var messageReactions = _client.ExecuteAsync(new TdApi.GetMessageAddedReactions
-        {
-            ChatId = message.ChatId,
-            MessageId = message.Id,
-            Limit = 100,
-        }).Result;
-
-        if (messageReactions != null)
-        {
-            foreach (var reaction in messageReactions.Reactions)
-            {
-                GenerateReaction(reaction);
-            }
-        }
+        // var messageReactions = _client.ExecuteAsync(new TdApi.GetMessageAddedReactions
+        // {
+        //     ChatId = message.ChatId,
+        //     MessageId = message.Id,
+        //     Limit = 100,
+        // }).Result;
+        //
+        // if (messageReactions != null)
+        // {
+        //     foreach (var reaction in messageReactions.Reactions)
+        //     {
+        //         GenerateReaction(reaction);
+        //     }
+        // }
     }
 
     private void SetImageTransform(TdApi.MessageContent.MessagePhoto messagePhoto)
