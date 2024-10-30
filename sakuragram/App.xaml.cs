@@ -28,6 +28,7 @@ public partial class App : Application
 	private static readonly ManualResetEventSlim ReadyToAuthenticate = new();
 
 	public static UpdateManager UpdateManager = new();
+	public static ChatService ChatService = new();
 	
 	public static bool _authNeeded;
 	public static bool _passwordNeeded;
