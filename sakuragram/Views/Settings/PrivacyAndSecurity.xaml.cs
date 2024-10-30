@@ -12,7 +12,7 @@ namespace sakuragram.Views.Settings;
 
 public partial class PrivacyAndSecurity : Page
 {
-    private readonly TdClient _client = App._client;
+    private static readonly TdClient _client = App._client;
     
     private bool _canOpenBlockedUsers = false;
     private bool _canOpenConnectedWebsites = false;
@@ -110,8 +110,13 @@ public partial class PrivacyAndSecurity : Page
         TdApi.User bot = await _client.GetUserAsync(website.BotUserId);
         
         Border border = new();
+        border.Width = 350;
         border.HorizontalAlignment = HorizontalAlignment.Stretch;
         border.VerticalAlignment = VerticalAlignment.Stretch;
+        
+        RelativePanel relativePanel = new();
+        relativePanel.HorizontalAlignment = HorizontalAlignment.Stretch;
+        relativePanel.VerticalAlignment = VerticalAlignment.Stretch;
         
         StackPanel mainStackPanel = new();
         mainStackPanel.Orientation = Orientation.Horizontal;
@@ -133,28 +138,30 @@ public partial class PrivacyAndSecurity : Page
         TextBlock botNameTextBlock = new();
         botNameTextBlock.FontSize = 14;
         botNameTextBlock.Text = bot.FirstName + " " + bot.LastName;
+        botNameTextBlock.HorizontalAlignment = HorizontalAlignment.Stretch;
         textStackPanel.Children.Add(botNameTextBlock);
         
         TextBlock websiteInfo = new();
         websiteInfo.FontSize = 12;
         websiteInfo.Text = $"{website.DomainName}, {website.Browser}, {website.Platform}";
+        websiteInfo.HorizontalAlignment = HorizontalAlignment.Stretch;
         textStackPanel.Children.Add(websiteInfo);
         
         TextBlock websiteLocation = new();
         websiteLocation.FontSize = 12;
         websiteLocation.Foreground = new SolidColorBrush(Colors.Gray);
         websiteLocation.Text = website.Location + ", " + MathService.CalculateDateTime(website.LogInDate).ToShortDateString();
+        websiteLocation.HorizontalAlignment = HorizontalAlignment.Stretch;
         textStackPanel.Children.Add(websiteLocation);
 
         Button disconnectButton = new();
-        disconnectButton.Content = new FontIcon() { Glyph = "\uE8A3" };
+        disconnectButton.Content = new FontIcon { Glyph = "\uE711" };
         disconnectButton.Click += (sender, args) => DisconnectButton_Click(sender, args, website.Id);
-        disconnectButton.HorizontalAlignment = HorizontalAlignment.Right;
-        disconnectButton.VerticalAlignment = VerticalAlignment.Center;
         
         mainStackPanel.Children.Add(textStackPanel);
         mainStackPanel.Children.Add(disconnectButton);
-        border.Child = mainStackPanel;
+        relativePanel.Children.Add(mainStackPanel);
+        border.Child = relativePanel;
         PanelWebsites.Children.Add(border);
     }
 

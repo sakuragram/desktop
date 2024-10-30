@@ -40,26 +40,26 @@ namespace sakuragram.Views
             InitializeComponent();
             UpdateArchivedChatsCount();
             
-            Button buttonAllChats = new();
-            buttonAllChats.Margin = new Thickness(0, 0, 5, 0);
-            buttonAllChats.Content = "All chats";
-            buttonAllChats.Click += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-            _foldersButtons.Add(buttonAllChats);
-            
-            foreach (var folder in App._folders)
-            {
-                Button button = new();
-                button.Margin = new Thickness(0, 0, 5, 0);
-                button.Content = folder.Title;
-                button.Tag = $"{folder.Title}_{folder.Id}";
-                button.Click += (_, _) =>
-                {
-                    App._folderId = folder.Id;
-                    GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
-                };
-                _foldersButtons.Add(button);
-            }
-            
+            // Button buttonAllChats = new();
+            // buttonAllChats.Margin = new Thickness(0, 0, 5, 0);
+            // buttonAllChats.Content = "All chats";
+            // buttonAllChats.Click += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+            // _foldersButtons.Add(buttonAllChats);
+            //
+            // foreach (var folder in App._folders)
+            // {
+            //     Button button = new();
+            //     button.Margin = new Thickness(0, 0, 5, 0);
+            //     button.Content = folder.Title;
+            //     button.Tag = $"{folder.Title}_{folder.Id}";
+            //     button.Click += (_, _) =>
+            //     {
+            //         App._folderId = folder.Id;
+            //         GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
+            //     };
+            //     _foldersButtons.Add(button);
+            // }
+            //
             if (App._folderId != -1)
             {
                 GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});

@@ -13,7 +13,7 @@ public class NotificationService
 
     public NotificationService()
     {
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdate(update); };
+        //_client.UpdateReceived += async (_, update) => { await ProcessUpdate(update); };
     }
 
     private async Task ProcessUpdate(TdApi.Update update)

@@ -100,7 +100,7 @@ public partial class About : Page
         
         await DispatcherQueue.EnqueueAsync(() =>
         {
-            if (releases.Count > 0)
+            if (releases.Count <= 0)
             {
                 SettingsCard card = new();
                 card.Header = "Not found";

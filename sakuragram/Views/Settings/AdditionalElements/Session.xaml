@@ -37,7 +37,7 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Click="ButtonTerminateSession_OnClick"
-                    IsEnabled="False"/>
+                    IsEnabled="True"/>
         </Grid>
     </Border>
     

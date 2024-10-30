@@ -7,6 +7,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using sakuragram.Services;
 using TdLib;
 
 namespace sakuragram.Views.Settings.AdditionalElements;
@@ -24,14 +25,10 @@ public partial class Session : Page
     public void Update(TdApi.Session session)
     {
         _session = session;
+        string loginDate = MathService.CalculateDateTime(session.LogInDate).ToShortTimeString();
         
         TextBlockApplicationName.Text = session.ApplicationName + " " + session.ApplicationVersion;
         TextBlockPlatformAndVersion.Text = session.DeviceModel;
-        
-        DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-        dateTime = dateTime.AddSeconds(session.LogInDate).ToLocalTime();
-        string loginDate = dateTime.ToShortTimeString();
-        
         TextBlockLocationAndDate.Text = session.Location + ", " + loginDate;
 
         BorderAppColor.Background = session.ApplicationName switch
