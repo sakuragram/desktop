@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading;
+using CommunityToolkit.WinUI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using TdLib;
@@ -20,7 +22,8 @@ public class MediaService
 
         if (chat.Photo.Small.Local.Path != string.Empty)
         {
-            avatar.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path));
+            await avatar.DispatcherQueue.EnqueueAsync(() =>
+                avatar.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path)));
         }
         else
         {
@@ -28,9 +31,12 @@ public class MediaService
             {
                 FileId = chat.Photo.Small.Id,
                 Priority = 1
-            }).WaitAsync(new CancellationToken());
+            }).ConfigureAwait(false);
             if (file.Local.IsDownloadingCompleted) 
-                avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty ? file.Local.Path : chat.Photo.Small.Local.Path));
+                await avatar.DispatcherQueue.EnqueueAsync(() => 
+                    avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty 
+                        ? file.Local.Path 
+                        : chat.Photo.Small.Local.Path)));
         }
     }
     
@@ -44,7 +50,8 @@ public class MediaService
         
         if (user.ProfilePhoto.Small.Local.Path != string.Empty)
         {
-            avatar.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path));
+            await avatar.DispatcherQueue.EnqueueAsync(() =>
+                avatar.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path)));
         }
         else
         {
@@ -52,9 +59,12 @@ public class MediaService
             {
                 FileId = user.ProfilePhoto.Small.Id,
                 Priority = 1
-            }).WaitAsync(new CancellationToken());
-            if (file.Local.IsDownloadingCompleted) 
-                avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty ? file.Local.Path : user.ProfilePhoto.Small.Local.Path));
+            }).ConfigureAwait(false);
+            if (file.Local.IsDownloadingCompleted)
+                await avatar.DispatcherQueue.EnqueueAsync(() =>
+                    avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty
+                        ? file.Local.Path
+                        : user.ProfilePhoto.Small.Local.Path)));
         }
     }
 }
