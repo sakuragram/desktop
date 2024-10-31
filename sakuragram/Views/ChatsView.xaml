@@ -212,7 +212,6 @@
             </ContentDialog>
         </Grid>
         
-        <Grid x:Name="Chat" Grid.Column="1" />
         <Grid x:Name="Chat" 
               Grid.Column="1" />
         
