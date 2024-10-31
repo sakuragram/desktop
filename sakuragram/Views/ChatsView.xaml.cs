@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
+using sakuragram.Controls.Messages;
+using sakuragram.Services;
 using sakuragram.Views.Chats;
 using TdLib;
 using DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue;
@@ -21,6 +24,7 @@ namespace sakuragram.Views
     public sealed partial class ChatsView : Page
     {
         private static TdClient _client = App._client;
+        private ChatService _chatService = App.ChatService;
         private TdApi.Chats _addedChats;
         
         public Chat _currentChat;
@@ -28,7 +32,7 @@ namespace sakuragram.Views
         private bool _firstGenerate = true;
         private bool _createChannelOpened = false;
         private bool _createGroupOpened = false;
-        private bool _mediaMenuOpened = false;
+        private bool _mediaMenuOpened = true;
         private int _totalUnreadArchivedChatsCount = 0;
         private StorageFile _newProfilePicture;
         private List<long> _chatsIds = [];
@@ -165,22 +169,15 @@ namespace sakuragram.Views
         {
             try
             {
-                var chat = await _client.ExecuteAsync(new TdApi.GetChat {ChatId = chatId});
-            
-                _currentChat = new Chat
+                await DispatcherQueue.EnqueueAsync(() =>
                 {
-                    _ChatsView = this,
-                    _chatId = chat.Id
-                };
-                await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() =>
-                {
-                    _currentChat.UpdateChat(chat.Id);
+                    _currentChat = _chatService.OpenChat(chatId).Result;
                     Chat.Children.Add(_currentChat);
                 });
             }
-            catch
+            catch (Exception e)
             {
-                // ignored
+                Debug.WriteLine(e);
             }
         }
 
@@ -475,6 +472,39 @@ namespace sakuragram.Views
             if (scrollViewer.VerticalOffset + scrollViewer.ViewportHeight >= scrollViewer.ScrollableHeight)
             {
                 for (int i = 0; i < 10; i++) ;
+            }
+        }
+
+        private async void GridStickers_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            var stickers = await _client.ExecuteAsync(new TdApi.GetRecentStickers { IsAttached = false });
+
+            int row = 0;
+            int col = 0;
+
+            foreach (var sticker in stickers.Stickers_)
+            {
+                var newSticker = new Sticker(sticker);
+
+                if (col == 5) // max 5 columns
+                {
+                    col = 0;
+                    row++;
+                    if (row >= GridStickers.RowDefinitions.Count)
+                    {
+                        GridStickers.RowDefinitions.Add(new RowDefinition { });
+                    }
+                }
+
+                if (col >= GridStickers.ColumnDefinitions.Count)
+                {
+                    GridStickers.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64, GridUnitType.Auto) });
+                }
+
+                GridStickers.Children.Add(newSticker);
+                Grid.SetRow(newSticker, row);
+                Grid.SetColumn(newSticker, col);
+                col++;
             }
         }
     }

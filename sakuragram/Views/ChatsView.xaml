@@ -25,7 +25,6 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="350" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="350" />
         </Grid.ColumnDefinitions>
             
         <Grid Grid.Column="0">
@@ -213,17 +212,21 @@
             </ContentDialog>
         </Grid>
         
+        <Grid x:Name="Chat" Grid.Column="1" />
         <Grid x:Name="Chat" 
               Grid.Column="1" />
         
         <Grid x:Name="Media" 
               Grid.Column="2"
-              Visibility="Visible">
+              Visibility="{x:Bind UpdateMediaVisibility(), Mode=OneWay}">
             <Border HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Background="Black"
                     CornerRadius="4">
-                
+                <ScrollViewer>
+                    <Grid x:Name="GridStickers"
+                                Loaded="GridStickers_OnLoaded"/>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>
