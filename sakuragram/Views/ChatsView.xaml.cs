@@ -11,6 +11,7 @@ using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Controls.Messages;
 using sakuragram.Services;
@@ -43,7 +44,6 @@ namespace sakuragram.Views
         public ChatsView()
         {
             InitializeComponent();
-            UpdateArchivedChatsCount();
             
             // Button buttonAllChats = new();
             // buttonAllChats.Margin = new Thickness(0, 0, 5, 0);
@@ -74,6 +74,9 @@ namespace sakuragram.Views
                 GenerateChatEntries(new TdApi.ChatList.ChatListMain());
                 App._folderId = -1;
             }
+            
+            ColumnMediaPanel.Width = new GridLength(0);
+            ColumnForumTopics.Width = new GridLength(0);
             
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
         }
@@ -134,22 +137,6 @@ namespace sakuragram.Views
         {
             return _mediaMenuOpened ? Visibility.Visible : Visibility.Collapsed;
         }
-        
-        private void UpdateArchivedChatsCount()
-        {
-            var chatsIds = _client.ExecuteAsync(new TdApi.GetChats
-            {
-                Limit = 100, ChatList = new TdApi.ChatList.ChatListArchive()
-            }).Result.ChatIds;
-            
-            foreach (var chatId in chatsIds)
-            {
-                var chat = _client.ExecuteAsync(new TdApi.GetChat {ChatId = chatId}).Result;
-                if (chat.UnreadCount > 0) _totalUnreadArchivedChatsCount++;
-            }
-            
-            ArchiveUnreadChats.Value = _totalUnreadArchivedChatsCount;
-        }
 
         private void UpdateChatPosition(long chatId, ItemsControl chatsListToRemove, ItemsControl chatsListToInsert)
         {
@@ -165,13 +152,20 @@ namespace sakuragram.Views
             });
         }
         
-        private async void OpenChat(long chatId)
+        private async void OpenChat(long chatId, bool isForum, TdApi.ForumTopic forumTopic)
         {
             try
             {
                 await DispatcherQueue.EnqueueAsync(() =>
                 {
-                    _currentChat = _chatService.OpenChat(chatId).Result;
+                    if (isForum)
+                    {
+                        _currentChat = _chatService.OpenForum(chatId, forumTopic).Result;
+                    }
+                    else
+                    {
+                        _currentChat = _chatService.OpenChat(chatId).Result;
+                    }
                     Chat.Children.Add(_currentChat);
                 });
             }
@@ -179,6 +173,66 @@ namespace sakuragram.Views
             {
                 Debug.WriteLine(e);
             }
+        }
+
+        public async void OpenForum(TdApi.Supergroup supergroup, TdApi.Chat chat)
+        {
+            var forumTopics = await _client.ExecuteAsync(new TdApi.GetForumTopics
+            {
+                ChatId = chat.Id,
+                Limit = 100,
+                OffsetMessageId = chat.LastMessage.Id,
+                OffsetMessageThreadId = chat.LastMessage.MessageThreadId
+            });
+            
+            await DispatcherQueue.EnqueueAsync(() =>
+            {
+                MediaService.GetChatPhoto(chat, ChatPhoto);
+                ChatTitle.Text = chat.Title;
+                ChatMembers.Text = $"{supergroup.MemberCount} members";
+                
+                foreach (var forumTopic in forumTopics.Topics)
+                {
+                    Button button = new(); 
+                    button.Height = 50;
+                    button.Width = 180;
+                    button.Margin = new Thickness(4, 4, 4, 0);
+                    button.Click += (_, _) =>
+                    {
+                        try
+                        {
+                            OpenChat(chat.Id, true, forumTopic);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine(e);
+                            throw;
+                        }
+                    };
+                    
+                    StackPanel stackPanel = new();
+                    stackPanel.Orientation = Orientation.Vertical;
+                    stackPanel.HorizontalAlignment = HorizontalAlignment.Left;
+                    stackPanel.VerticalAlignment = VerticalAlignment.Stretch;
+                    
+                    TextBlock topicNameTextBlock = new();
+                    topicNameTextBlock.Text = forumTopic.Info.Name;
+                    topicNameTextBlock.FontSize = 12;
+                    stackPanel.Children.Add(topicNameTextBlock);
+                    
+                    TextBlock topicLastMessageTextBlock = new();
+                    topicLastMessageTextBlock.Text = UserService.GetSenderName(forumTopic.LastMessage).Result + ": " 
+                        + MessageService.GetLastMessageContent(forumTopic.LastMessage).Result;
+                    topicLastMessageTextBlock.FontSize = 10;
+                    topicLastMessageTextBlock.Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"];
+                    stackPanel.Children.Add(topicLastMessageTextBlock);
+                    
+                    button.Content = stackPanel;
+                    PanelForumTopics.Children.Add(button);
+                }
+            });
+            
+            ColumnForumTopics.Width = new GridLength(200);
         }
 
         public void CloseChat()
@@ -259,25 +313,25 @@ namespace sakuragram.Views
 
         private async void TextBoxSearch_OnTextChanged(object sender, TextChangedEventArgs e)
         {
-            if (TextBoxSearch.Text == "")
-            {
-                if (_bInArchive)
-                {
-                    ArchiveStatus.Text = "Archive";
-                    ArchiveUnreadChats.Visibility = Visibility.Visible;
-                    _bInArchive = false;
-                }
-                GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-                return;
-            }
+            // if (TextBoxSearch.Text == "")
+            // {
+            //     if (_bInArchive)
+            //     {
+            //         ArchiveStatus.Text = "Archive";
+            //         ArchiveUnreadChats.Visibility = Visibility.Visible;
+            //         _bInArchive = false;
+            //     }
+            //     GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+            //     return;
+            // }
             
             ChatsList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High, () => ChatsList.Items.Clear());
             
-            var foundedChats = await _client.ExecuteAsync(new TdApi.SearchChats
-            {
-                Query = TextBoxSearch.Text,
-                Limit = 100
-            });
+            // var foundedChats = await _client.ExecuteAsync(new TdApi.SearchChats
+            // {
+            //     Query = TextBoxSearch.Text,
+            //     Limit = 100
+            // });
 
             var foundedMessages = await _client.ExecuteAsync(new TdApi.SearchMessages
             {
@@ -287,45 +341,26 @@ namespace sakuragram.Views
             });
             
             
-            foreach (var chatId in foundedChats.ChatIds)
-            {
-                var chat = _client.GetChatAsync(chatId).Result;
-                
-                var chatEntry = new ChatEntry
-                {
-                    _ChatsView = this,
-                    ChatPage = Chat,
-                    _chat = chat,
-                    ChatId = chat.Id
-                };
-                    
-                chatEntry.UpdateChatInfo();
-                await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() => ChatsList.Items.Add(chatEntry));
-            }
-        }
-
-        private void ButtonArchive_OnClick(object sender, RoutedEventArgs e)
-        {
-            ChatsList.Items.Clear();
-            if (!_bInArchive)
-            {
-                ArchiveStatus.Text = "Back";
-                ArchiveUnreadChats.Visibility = Visibility.Collapsed;
-                _bInArchive = true;
-                GenerateChatEntries(new TdApi.ChatList.ChatListArchive());
-            }
-            else
-            {
-                ArchiveStatus.Text = "Archive";
-                ArchiveUnreadChats.Visibility = Visibility.Visible;
-                _bInArchive = false;
-                GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-            }
+            // foreach (var chatId in foundedChats.ChatIds)
+            // {
+            //     var chat = _client.GetChatAsync(chatId).Result;
+            //     
+            //     var chatEntry = new ChatEntry
+            //     {
+            //         _ChatsView = this,
+            //         ChatPage = Chat,
+            //         _chat = chat,
+            //         ChatId = chat.Id
+            //     };
+            //         
+            //     chatEntry.UpdateChatInfo();
+            //     await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() => ChatsList.Items.Add(chatEntry));
+            // }
         }
 
         private void ButtonSavedMessages_OnClick(object sender, RoutedEventArgs e)
         {
-            OpenChat(_client.ExecuteAsync(new TdApi.GetMe()).Result.Id);
+            OpenChat(_client.ExecuteAsync(new TdApi.GetMe()).Result.Id, false, null);
         }
 
         private void ButtonNewMessage_OnClick(object sender, RoutedEventArgs e)

@@ -23,55 +23,33 @@
     
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="350" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="350"/>
+            <ColumnDefinition Width="350"
+                              x:Name="ColumnChatList" />
+            <ColumnDefinition Width="200" 
+                              x:Name="ColumnForumTopics" />
+            <ColumnDefinition Width="*" 
+                              x:Name="ColumnChat" />
+            <ColumnDefinition Width="200"
+                              x:Name="ColumnMediaPanel" />
         </Grid.ColumnDefinitions>
             
         <Grid Grid.Column="0">
             
             <Grid.RowDefinitions>
-                <RowDefinition Height="80" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             
-            <StackPanel Grid.Row="0">
-                <TextBox x:Name="TextBoxSearch" 
-                         PlaceholderText="Search" 
-                         Width="Auto" 
-                         Height="30" 
-                         Margin="4"
-                         TextChanged="TextBoxSearch_OnTextChanged"/>
-                <StackPanel Orientation="Horizontal" Margin="0, 0, 0, 4" HorizontalAlignment="Center">
-                    <Button x:Name="ButtonArchive" 
-                            Width="170"
-                            Height="30"
-                            Click="ButtonArchive_OnClick">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="ArchiveStatus" Text="Archive" Margin="0, 0, 5, 0" />
-                            <InfoBadge x:Name="ArchiveUnreadChats" Value="0" />
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="ButtonSavedMessages" 
-                            Content="Saved" 
-                            Width="170" 
-                            Height="30" 
-                            Margin="5, 0, 0, 0"
-                            Click="ButtonSavedMessages_OnClick" />
-                </StackPanel>
-                <MenuFlyoutSeparator Margin="0, 0, 0, 4" />
-            </StackPanel>
-            <ScrollViewer Grid.Row="1"
-                          Margin="4"
-                          HorizontalScrollBarVisibility="Hidden"
-                          VerticalScrollBarVisibility="Disabled"
-                          HorizontalScrollMode="Enabled"
-                          VerticalScrollMode="Disabled"
-                          CanBeScrollAnchor="True">
-                <ItemsControl ItemsSource="{x:Bind Path=_foldersButtons, Mode=TwoWay}"
-                              ItemsPanel="{StaticResource HorizontalItemsPanel}"/>
-            </ScrollViewer>
-            <RelativePanel Grid.Row="2" 
+            <!-- <ScrollViewer Grid.Row="1" -->
+            <!--               Margin="4" -->
+            <!--               HorizontalScrollBarVisibility="Hidden" -->
+            <!--               VerticalScrollBarVisibility="Disabled" -->
+            <!--               HorizontalScrollMode="Enabled" -->
+            <!--               VerticalScrollMode="Disabled" -->
+            <!--               CanBeScrollAnchor="True"> -->
+            <!--     <ItemsControl ItemsSource="{x:Bind Path=_foldersButtons, Mode=TwoWay}" -->
+            <!--                   ItemsPanel="{StaticResource HorizontalItemsPanel}"/> -->
+            <!-- </ScrollViewer> -->
+            <RelativePanel Grid.Row="0" 
                            VerticalAlignment="Stretch" 
                            HorizontalAlignment="Stretch">
                 <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
@@ -213,11 +191,46 @@
             </ContentDialog>
         </Grid>
         
+        <Grid x:Name="GridForumTopics"
+              Grid.Column="1">
+            <Border HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    CornerRadius="4"
+                    Margin="4, 0">
+                <StackPanel>
+                    <Border x:Name="TopBar" Background="#1a1a1a" VerticalAlignment="Center" HorizontalAlignment="Stretch" 
+                        CornerRadius="4" 
+                        Padding="5">
+                        <Grid x:Name="ChatInfo" HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" 
+                                        VerticalAlignment="Center" 
+                                        HorizontalAlignment="Left"
+                                        Margin="5"
+                                        MinWidth="200">
+                                <PersonPicture x:Name="ChatPhoto"
+                                               Width="30" 
+                                               Height="30"
+                                               Margin="0,0,4,0"/>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock x:Name="ChatTitle" FontSize="14" TextAlignment="Left" />
+                                    <TextBlock x:Name="ChatMembers" FontSize="10" Foreground="Gray" TextAlignment="Left"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <ScrollViewer>
+                        <StackPanel x:Name="PanelForumTopics" />
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Grid>
+        
         <Grid x:Name="Chat" 
-              Grid.Column="1" />
+                  Grid.Column="2" />
         
         <Grid x:Name="Media" 
-              Grid.Column="2"
+              Grid.Column="3"
               Visibility="{x:Bind UpdateMediaVisibility(), Mode=OneWay}">
             <Border HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"

@@ -25,6 +25,7 @@ public sealed partial class Chat : Page
     private static TdClient _client = App._client;
     private static ChatService _chatService = App.ChatService;
     public TdApi.Chat _chat;
+    private TdApi.ForumTopic _forumTopic;
     private static TdApi.Background _background;
     public ChatsView _ChatsView;
     private List<TdApi.Message> _messagesList = [];
@@ -41,19 +42,24 @@ public sealed partial class Chat : Page
     private int _pollOptionsCount = 2;
     private bool _isProfileOpened = false;
     private bool _hasInternetConnection = true;
+    private bool _isForum = false;
         
     private ReplyService _replyService;
     private MessageService _messageService;
     private MediaService _mediaService = new();
 
-    public Chat()
+    public Chat(long id, bool isForum, TdApi.ForumTopic forumTopic)
     {
         InitializeComponent();
-
+        
+        _chatId = id;
+        _isForum = isForum;
+        _forumTopic = forumTopic;
         _replyService = new ReplyService();
         _messageService = new MessageService();
-            
-        UpdateChat();
+
+        Task.Run(async () => await UpdateChat()).ConfigureAwait(false);
+        Task.Run(async () => await GetMessagesAsync(_chatId, _isForum));
         
         #if DEBUG
         {
@@ -225,24 +231,41 @@ public sealed partial class Chat : Page
 
         return Task.CompletedTask;
     }
-        
-    public async Task UpdateChat()
+
+    private async Task UpdateChat()
     {
         try
         {
+            await _client.OpenChatAsync(_chatId);
             _chat = _client.GetChatAsync(_chatService._openedChatId).Result;
-            _chatId = _chat.Id;
-            ChatTitle.Text = _chat.Title;
+            await DispatcherQueue.EnqueueAsync(() => ChatTitle.Text = _isForum 
+                ? _forumTopic.Info.Name
+                : _chat.Title);
+            
+            if (_isForum) ChatPhoto.Visibility = Visibility.Collapsed;
+            else MediaService.GetChatPhoto(_chat, ChatPhoto);
 
-            MediaService.GetChatPhoto(_chat, ChatPhoto);
-
-            if (_chat.DraftMessage != null)
+            if (_isForum)
             {
-                UserMessageInput.Text = _chat.DraftMessage.InputMessageText switch
+                if (_forumTopic.DraftMessage != null)
                 {
-                    TdApi.InputMessageContent.InputMessageText text => text.Text.Text,
-                    _ => string.Empty
-                };
+                    UserMessageInput.Text = _forumTopic.DraftMessage.InputMessageText switch
+                    {
+                        TdApi.InputMessageContent.InputMessageText text => text.Text.Text,
+                        _ => string.Empty
+                    };
+                }
+            }
+            else
+            {
+                if (_chat.DraftMessage != null)
+                {
+                    UserMessageInput.Text = _chat.DraftMessage.InputMessageText switch
+                    {
+                        TdApi.InputMessageContent.InputMessageText text => text.Text.Text,
+                        _ => string.Empty
+                    };
+                }
             }
 
             if (_chat.Background != null)
@@ -368,13 +391,7 @@ public sealed partial class Chat : Page
         // }
     }
 
-    private void UpdateChatMembersText()
-    {
-        ChatMembers.Text = _onlineMemberCount > 0 ? $"{_memberCount} members, {_onlineMemberCount} online" : 
-            $"{_memberCount} members";
-    }
-
-    private async Task GetMessagesAsync(long chatId)
+    private async Task GetMessagesAsync(long chatId, bool isForum)
     {
         try
         {
@@ -390,7 +407,7 @@ public sealed partial class Chat : Page
                 TdApi.Messages messages = await _client.ExecuteAsync(new TdApi.GetChatHistory
                 {
                     ChatId = chatId,
-                    FromMessageId = chat.LastMessage?.Id ?? 0,
+                    FromMessageId = isForum ? _forumTopic.Info.MessageThreadId : chat.LastMessage?.Id ?? 0,
                     Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100),
                     Offset = offset,
                     OnlyLocal = _hasInternetConnection
@@ -546,11 +563,6 @@ public sealed partial class Chat : Page
         if (MessagesList.Children.Count > 0) MessagesList.Children.Clear();
         _client.CloseChatAsync(_chatId);
         _ChatsView.CloseChat();
-    }
-
-    private async void MessagesList_OnLoaded(object sender, RoutedEventArgs e)
-    {
-        await GetMessagesAsync(_chatId);
     }
         
     private void ContextMenuNotifications_OnClick(object sender, RoutedEventArgs e)

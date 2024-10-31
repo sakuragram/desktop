@@ -29,7 +29,8 @@
 
 		</controls:TitleBar>
 		
-		<Grid Grid.Row="1">
+		<Grid Grid.Row="1"
+		      Margin="4">
 			<NavigationView
 				x:Name="NavigationView"
 				PaneDisplayMode="Left"

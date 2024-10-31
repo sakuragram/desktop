@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using sakuragram.Views.Chats;
 using TdLib;
 
@@ -16,11 +18,34 @@ public class ChatService
     
     public async Task<Chat> OpenChat(long chatId)
     {
-        _openedChatId = chatId;
-        await _client.ExecuteAsync(new TdApi.OpenChat { ChatId = _openedChatId });
-        _isChatOpen = true;
-        CurrentChat = new Chat();
-        return CurrentChat;
+        try
+        {
+            _openedChatId = chatId;
+            _isChatOpen = true;
+            CurrentChat = new Chat(_openedChatId, false, null);
+            return CurrentChat;
+        }
+        catch (TdException e)
+        {
+            Debug.WriteLine(e);
+            throw;
+        }
+    }
+
+    public async Task<Chat> OpenForum(long chatId, TdApi.ForumTopic forumTopic)
+    {
+        try
+        {
+            _openedChatId = chatId;
+            _isChatOpen = true;
+            CurrentChat = new Chat(_openedChatId, true, forumTopic);
+            return CurrentChat;
+        }
+        catch (TdException e)
+        {
+            Debug.WriteLine(e);
+            throw;
+        }
     }
     
     public async Task CloseChat()

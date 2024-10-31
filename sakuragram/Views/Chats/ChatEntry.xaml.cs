@@ -200,13 +200,37 @@ namespace sakuragram.Views.Chats
         private void Button_OnClick(object sender, RoutedEventArgs e)
         {
             _ChatsView.CloseChat();
-            DispatcherQueue.EnqueueAsync(async () =>
+            switch (_chat.Type)
             {
-                _chatWidget = await _chatService.OpenChat(_chat.Id);
-                _chatWidget._ChatsView = _ChatsView;
-                _ChatsView._currentChat = _chatWidget;
-                ChatPage.Children.Add(_chatWidget);
-            });
+                case TdApi.ChatType.ChatTypePrivate or TdApi.ChatType.ChatTypeSecret or TdApi.ChatType.ChatTypeBasicGroup:
+                    DispatcherQueue.EnqueueAsync(async () =>
+                    {
+                        _chatWidget = await _chatService.OpenChat(_chat.Id);
+                        _chatWidget._ChatsView = _ChatsView;
+                        _ChatsView._currentChat = _chatWidget;
+                        ChatPage.Children.Add(_chatWidget);
+                    });
+                    break;
+                case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
+                    var supergroup = _client.GetSupergroupAsync(typeSupergroup.SupergroupId).Result;
+                    if (typeSupergroup.IsChannel)
+                    {
+                        DispatcherQueue.EnqueueAsync(async () =>
+                        {
+                            _chatWidget = await _chatService.OpenChat(_chat.Id);
+                            _chatWidget._ChatsView = _ChatsView;
+                            _ChatsView._currentChat = _chatWidget;
+                            ChatPage.Children.Add(_chatWidget);
+                        });
+                    }
+                    else if (supergroup.IsForum)
+                    {
+                        _ChatsView.OpenForum(supergroup, _chat);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
         
         private void ChatEntry_OnRightTapped(object sender, RightTappedRoutedEventArgs e)
