@@ -239,7 +239,6 @@
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
                             Visibility="Collapsed"
-                            Click="ButtonFastAction_OnClick"
                             RelativePanel.AlignRightWithPanel="True"
                             RelativePanel.AlignLeftWithPanel="True"
                             RelativePanel.AlignBottomWithPanel="True"
