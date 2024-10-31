@@ -25,7 +25,7 @@ public partial class About : Page
     {
         InitializeComponent();
         
-        _appLatestVersionLink = $"https://github.com/{Config.GitHubRepoOwner}/{Config.GitHubRepoName}/releases/tag/{Config.AppVersion}";
+        _appLatestVersionLink = $"https://github.com/{Config.GitHubRepoOwner}/{Config.GitHubRepoName}/releases/tag/v{Config.AppVersion}";
         TextBlockVersionInfo.Text = $"Current version: {Config.AppVersion}, TdLib {Config.TdLibVersion}";
         
         CheckForUpdates();

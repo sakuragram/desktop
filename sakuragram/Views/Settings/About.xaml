@@ -82,7 +82,7 @@
                                     <HyperlinkButton Content="Forum" 
                                                      NavigateUri="https://t.me/sakuragramchat" />
                                     <HyperlinkButton Content="Source code" 
-                                                     NavigateUri="https://github.com/cherryymerryy/sakuragram" />
+                                                     NavigateUri="https://github.com/sakuragram/desktop" />
                                     <HyperlinkButton x:Name="HyperlinkButtonLatestRelease" 
                                                      Content="Latest release"
                                                      NavigateUri="{x:Bind _appLatestVersionLink}" />
