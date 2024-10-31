@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using Windows.Media.Core;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -14,6 +16,7 @@ public class Sticker : Button
     private static TdApi.Sticker _sticker;
     private static ChatService _chatService = App.ChatService;
     private Image StickerImage { get; }
+    private MediaPlayerElement StickerVideo { get; }
     
     public Sticker(TdApi.Sticker sticker)
     {
@@ -22,14 +25,33 @@ public class Sticker : Button
         
         Width = 64;
         Height = 64;
+
+        switch (sticker.Format)
+        {
+            case TdApi.StickerFormat.StickerFormatWebp:
+                StickerImage = new();
+                if (sticker.Sticker_.Local.Path != string.Empty)
+                    StickerImage.Source = new BitmapImage(new Uri(sticker.Sticker_.Local.Path));
+                else
+                    Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
+                Content = StickerImage;
+                break;
+            case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
+                StickerVideo = new();
+                if (sticker.Sticker_.Local.Path != string.Empty)
+                {
+                    StickerVideo.Source = MediaSource.CreateFromUri(new Uri(sticker.Sticker_.Local.Path));
+                    StickerVideo.MediaPlayer.IsLoopingEnabled = true;
+                    StickerVideo.MediaPlayer.Position = TimeSpan.Zero;
+                    StickerVideo.MediaPlayer.AutoPlay = true;
+                    StickerVideo.MediaPlayer.Play();
+                }
+                else
+                    Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
+                Content = StickerVideo;
+                break;
+        }
         
-        StickerImage = new();
-        if (sticker.Sticker_.Local.Path != string.Empty)
-            StickerImage.Source = new BitmapImage(new Uri(sticker.Sticker_.Local.Path));
-        else
-            Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
-        
-        Content = StickerImage;
         Click += OnClick;
     }
 
@@ -39,9 +61,28 @@ public class Sticker : Button
         {
             case TdApi.Update.UpdateFile updateFile:
                 if (updateFile.File.Id != _sticker.Sticker_.Id) return Task.CompletedTask;
-                StickerImage.Source = updateFile.File.Local.Path != string.Empty ?
-                    new BitmapImage(new Uri(updateFile.File.Local.Path)) : 
-                    new BitmapImage(new Uri(_sticker.Sticker_.Local.Path));
+                switch (_sticker.Format)
+                {
+                    case TdApi.StickerFormat.StickerFormatWebp:
+                        if (updateFile.File.Local.Path != string.Empty)
+                            StickerImage.Source = updateFile.File.Local.Path != string.Empty ?
+                                new BitmapImage(new Uri(updateFile.File.Local.Path)) : 
+                                new BitmapImage(new Uri(_sticker.Sticker_.Local.Path));
+                        break;
+                    case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
+                        if (updateFile.File.Local.Path != string.Empty)
+                        {
+                            StickerVideo.Source = MediaSource.CreateFromUri(
+                                new Uri(updateFile.File.Local.Path != string.Empty
+                                    ? updateFile.File.Local.Path
+                                    : _sticker.Sticker_.Local.Path));
+                            StickerVideo.MediaPlayer.IsLoopingEnabled = true;
+                            StickerVideo.MediaPlayer.Position = TimeSpan.Zero;
+                            StickerVideo.MediaPlayer.AutoPlay = true;
+                            StickerVideo.MediaPlayer.Play();
+                        }
+                        break;
+                }
                 break;
         }
         return Task.CompletedTask;
@@ -49,13 +90,24 @@ public class Sticker : Button
 
     private void OnClick(object sender, RoutedEventArgs e)
     {
-        _client.ExecuteAsync(new TdApi.SendMessage
+        try
         {
-            ChatId = _chatService._openedChatId,
-            InputMessageContent = new TdApi.InputMessageContent.InputMessageSticker
+            _client.ExecuteAsync(new TdApi.SendMessage
             {
-                Sticker = new TdApi.InputFile.InputFileRemote { Id = _sticker.Sticker_.Remote.Id }
-            }
-        });
+                ChatId = _chatService._openedChatId,
+                InputMessageContent = new TdApi.InputMessageContent.InputMessageSticker
+                {
+                    Sticker = new TdApi.InputFile.InputFileId { Id = _sticker.Sticker_.Id },
+                    Emoji = _sticker.Emoji,
+                    Height = _sticker.Height,
+                    Width = _sticker.Width
+                }
+            });
+        }
+        catch (TdException exception)
+        {
+            Debug.WriteLine(exception);
+            throw;
+        }
     }
 }
