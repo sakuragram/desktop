@@ -113,8 +113,8 @@ public partial class About : Page
                 {
                     if (release.PublishedAt != null)
                     {
-                        string releaseName = release.Prerelease ? "Pre-release " + release.Name : "Release " + release.Name 
-                            + ", " + release.PublishedAt.Value.ToString("MM/dd/yyyy");
+                        string releaseName = release.Prerelease ? "Pre-release " + release.Name : "Release " + release.Name;
+                        releaseName = releaseName + ", " + release.PublishedAt.Value.ToString("MM/dd/yyyy");
                         string releaseBody = release.Body != string.Empty ? release.Body : "The release does not have a changelog";
 
                         SettingsCard card = new();
