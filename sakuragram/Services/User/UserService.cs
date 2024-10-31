@@ -45,7 +45,9 @@ public class UserService
                 else
                 {
                     var user = GetSender(message.ForwardInfo.Source.SenderId).Result; 
-                    if (user.User != null) return Task.FromResult(user.User.FirstName + " " + user.User.LastName);
+                    if (user.User != null) return user.User.LastName != string.Empty 
+                        ? Task.FromResult(user.User.FirstName + " " + user.User.LastName) 
+                        : Task.FromResult(user.User.FirstName);
                     if (user.Chat != null) return Task.FromResult(user.Chat.Title);
                 }
             }
@@ -87,10 +89,12 @@ public class UserService
             return chat.Type switch
             {
                 TdApi.ChatType.ChatTypePrivate or TdApi.ChatType.ChatTypeSecret => Task.FromResult(string.Empty),
-                _ => Task.FromResult(sender.User.FirstName + " " + sender.User.LastName)
+                _ => Task.FromResult(sender.User.LastName != string.Empty 
+                    ? sender.User.FirstName + " " + sender.User.LastName 
+                    : sender.User.FirstName)
             };
         }
-        else if (sender.Chat != null)
+        if (sender.Chat != null)
         {
             return chat.Type switch
             {
