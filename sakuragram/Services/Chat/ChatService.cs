@@ -14,11 +14,13 @@ public class ChatService
     public bool _isChatOpen;
     public bool _isMediaOpen;
     
-    public async Task OpenChat()
+    public async Task<Chat> OpenChat(long chatId)
     {
+        _openedChatId = chatId;
         await _client.ExecuteAsync(new TdApi.OpenChat { ChatId = _openedChatId });
         _isChatOpen = true;
         CurrentChat = new Chat();
+        return CurrentChat;
     }
     
     public async Task CloseChat()
