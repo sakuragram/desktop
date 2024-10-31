@@ -21,6 +21,7 @@ namespace sakuragram.Views.Chats
         public ChatsView _ChatsView;
 
         private static readonly TdClient _client = App._client;
+        private ChatService _chatService = App.ChatService;
         
         public TdApi.Chat _chat;
         public long ChatId;
@@ -195,26 +196,14 @@ namespace sakuragram.Views.Chats
                 }
             }
         }
-
-        private static string GetMessageText(long chatId, long messageId)
-        {
-            if (_client.ExecuteAsync(new TdApi.GetMessage
-                {
-                    ChatId = chatId,
-                    MessageId = messageId
-                }).Result.Content is not TdApi.MessageContent.MessageText message) return null;
-            var messageText = message.Text.Text;
-            return messageText;
-        }
         
         private void Button_OnClick(object sender, RoutedEventArgs e)
         {
             _ChatsView.CloseChat();
-            DispatcherQueue.GetForCurrentThread().EnqueueAsync(() =>
+            DispatcherQueue.EnqueueAsync(async () =>
             {
-                _chatWidget = new Chat();
+                _chatWidget = await _chatService.OpenChat(_chat.Id);
                 _chatWidget._ChatsView = _ChatsView;
-                _chatWidget.UpdateChat(_chat.Id);
                 _ChatsView._currentChat = _chatWidget;
                 ChatPage.Children.Add(_chatWidget);
             });

@@ -7,6 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:sakuragram.Controls"
+    xmlns:user="using:sakuragram.Controls.User"
     mc:Ignorable="d"
     Click="Button_OnClick"
     RightTapped="ChatEntry_OnRightTapped"
@@ -31,7 +32,7 @@
                         Orientation="Horizontal"
                         HorizontalAlignment="Left" 
                         VerticalAlignment="Center">
-                <controls:Avatar x:Name="ChatEntryProfilePicture" 
+                <user:ProfilePhoto x:Name="ChatEntryProfilePicture" 
                                  Width="46"
                                  Height="46"
                                  HorizontalAlignment="Left"
@@ -93,23 +94,23 @@
         
     </Grid>
     
-    <Button.Flyout>
-        <MenuFlyout x:Name="ContextMenu" Placement="Bottom">
-            <MenuFlyoutItem x:Name="ContextMenuArchive" 
-                            Text="Archive" 
-                            Click="ContextMenuArchive_OnClick"/>
-            <MenuFlyoutItem x:Name="ContextMenuPin" 
-                            Text="Pin" 
-                            Click="ContextMenuPin_OnClick"/>
-            <MenuFlyoutItem x:Name="ContextMenuNotifications" 
-                            Text="Mute" 
-                            Click="ContextMenuNotifications_OnClick"/>
-            <MenuFlyoutItem x:Name="ContextMenuMarkAs" 
-                            Text="Mark as" 
-                            Click="ContextMenuMarkAs_OnClick"/>
-            <MenuFlyoutItem x:Name="ContextMenuLeave" 
-                            Text="Leave" 
-                            Click="ContextMenuLeave_OnClick"/>
-        </MenuFlyout>
-    </Button.Flyout>
+    <!-- <Button.Flyout> -->
+    <!--     <MenuFlyout x:Name="ContextMenu" Placement="Bottom"> -->
+    <!--         <MenuFlyoutItem x:Name="ContextMenuArchive"  -->
+    <!--                         Text="Archive"  -->
+    <!--                         Click="ContextMenuArchive_OnClick"/> -->
+    <!--         <MenuFlyoutItem x:Name="ContextMenuPin"  -->
+    <!--                         Text="Pin"  -->
+    <!--                         Click="ContextMenuPin_OnClick"/> -->
+    <!--         <MenuFlyoutItem x:Name="ContextMenuNotifications"  -->
+    <!--                         Text="Mute"  -->
+    <!--                         Click="ContextMenuNotifications_OnClick"/> -->
+    <!--         <MenuFlyoutItem x:Name="ContextMenuMarkAs"  -->
+    <!--                         Text="Mark as"  -->
+    <!--                         Click="ContextMenuMarkAs_OnClick"/> -->
+    <!--         <MenuFlyoutItem x:Name="ContextMenuLeave"  -->
+    <!--                         Text="Leave"  -->
+    <!--                         Click="ContextMenuLeave_OnClick"/> -->
+    <!--     </MenuFlyout> -->
+    <!-- </Button.Flyout> -->
 </Button>
