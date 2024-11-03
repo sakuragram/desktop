@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
@@ -12,7 +13,7 @@ public class MediaService
 {
     private static TdClient _client = App._client;
     
-    public static async void GetChatPhoto(TdApi.Chat chat, PersonPicture avatar)
+    public static async Task GetChatPhoto(TdApi.Chat chat, PersonPicture avatar)
     {
         if (chat.Photo == null)
         {
@@ -40,7 +41,7 @@ public class MediaService
         }
     }
     
-    public static async void GetUserPhoto(TdApi.User user, PersonPicture avatar)
+    public static async Task GetUserPhoto(TdApi.User user, PersonPicture avatar)
     {
         if (user.ProfilePhoto == null)
         {
