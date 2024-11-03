@@ -28,10 +28,9 @@ public sealed partial class Chat : Page
     private TdApi.ForumTopic _forumTopic;
     private static TdApi.Background _background;
     public ChatsView _ChatsView;
-    private List<TdApi.Message> _messagesList = [];
     private List<TdApi.FormattedText> _pollOptionsList = [];
-        
-    public long _chatId = _chatService._openedChatId;
+
+    private long _chatId = _chatService._openedChatId;
     public long _linkedChatId;
     private string _backgroundUrl;
     private int _backgroundId;
@@ -46,7 +45,6 @@ public sealed partial class Chat : Page
         
     private ReplyService _replyService;
     private MessageService _messageService;
-    private MediaService _mediaService = new();
 
     public Chat(long id, bool isForum, TdApi.ForumTopic forumTopic)
     {
@@ -59,7 +57,7 @@ public sealed partial class Chat : Page
         _messageService = new MessageService();
 
         Task.Run(async () => await UpdateChat()).ConfigureAwait(false);
-        Task.Run(async () => await GetMessagesAsync(_chatId, _isForum));
+        GetMessagesAsync(_chatId, _isForum);
         
         #if DEBUG
         {
@@ -243,7 +241,7 @@ public sealed partial class Chat : Page
                 : _chat.Title);
             
             if (_isForum) ChatPhoto.Visibility = Visibility.Collapsed;
-            else MediaService.GetChatPhoto(_chat, ChatPhoto);
+            else await ChatPhoto.SetPhoto(null, _chat);
 
             if (_isForum)
             {
@@ -391,7 +389,7 @@ public sealed partial class Chat : Page
         // }
     }
 
-    private async Task GetMessagesAsync(long chatId, bool isForum)
+    private async void GetMessagesAsync(long chatId, bool isForum)
     {
         try
         {
@@ -400,126 +398,144 @@ public sealed partial class Chat : Page
             const int maxMessagesToLoad = 50;
             int offset = 0;
 
-            List<TdApi.Message> allMessages = new List<TdApi.Message>();
+            List<TdApi.Message> allMessages = [];
 
             while (totalMessagesLoaded < maxMessagesToLoad && chat != null)
             {
-                TdApi.Messages messages = await _client.ExecuteAsync(new TdApi.GetChatHistory
-                {
-                    ChatId = chatId,
-                    FromMessageId = isForum ? _forumTopic.Info.MessageThreadId : chat.LastMessage?.Id ?? 0,
-                    Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100),
-                    Offset = offset,
-                    OnlyLocal = _hasInternetConnection
-                }).ConfigureAwait(false);
+                TdApi.Messages messages;
+                if (!isForum)
+                    messages = await _client.ExecuteAsync(new TdApi.GetChatHistory
+                    {
+                        ChatId = chatId,
+                        FromMessageId = chat.LastMessage?.Id ?? 0,
+                        Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100),
+                        Offset = offset,
+                        OnlyLocal = _hasInternetConnection
+                    }).ConfigureAwait(false);
+                else
+                    messages = await _client.ExecuteAsync(new TdApi.GetMessageThreadHistory
+                    {
+                        ChatId = chatId,
+                        MessageId = _forumTopic.LastMessage.Id,
+                        Offset = offset,
+                        Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100)
+                    }).ConfigureAwait(false);
 
-                if (messages?.Messages_ == null || !messages.Messages_.Any())
+                if (messages.Messages_ == null || !messages.Messages_.Any())
                 {
                     break;
                 }
 
-                allMessages.AddRange(messages.Messages_);
-                totalMessagesLoaded += messages.Messages_.Length;
-                offset += messages.Messages_.Length;
+                try
+                {
+                    allMessages.AddRange(messages.Messages_);
+                    totalMessagesLoaded += messages.Messages_.Length;
+                    offset += messages.Messages_.Length;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
             }
 
             allMessages.Sort((m1, m2) => m1.Date.CompareTo(m2.Date));
 
-            await DispatcherQueue.EnqueueAsync(async () =>
+            foreach (var message in allMessages)
             {
-                foreach (var message in allMessages)
-                {
-                    GenerateMessageByType(message);
-                }
-            });
-        }
+                await GenerateMessageByType(message);
+            }
+        } 
         catch (Exception ex)
         {
             Debug.WriteLine(ex.Message);
         }
     }
 
-    private void GenerateMessageByType(TdApi.Message message)
+    private async Task GenerateMessageByType(TdApi.Message message)
     {
-        switch (message.Content)
+        await DispatcherQueue.EnqueueAsync(() =>
         {
-            case TdApi.MessageContent.MessageText:
+            switch (message.Content)
             {
-                var textMessage = new ChatTextMessage();
-                textMessage._messageService = _messageService;
-                textMessage.UpdateMessage(message);
-                MessagesList.Children.Add(textMessage);
-                break;
+                case TdApi.MessageContent.MessageText:
+                {
+                    var textMessage = new ChatMessage();
+                    textMessage._messageService = _messageService;
+                    textMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(textMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessageChatChangeTitle or TdApi.MessageContent.MessagePinMessage 
+                    or TdApi.MessageContent.MessageGiftedPremium
+                    or TdApi.MessageContent.MessageGameScore or TdApi.MessageContent.MessageChatBoost 
+                    or TdApi.MessageContent.MessageUnsupported or TdApi.MessageContent.:
+                {
+                    var changeTitleMessage = new ChatServiceMessage();
+                    changeTitleMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(changeTitleMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessageSticker or TdApi.MessageContent.MessageAnimation:
+                {
+                    var stickerMessage = new ChatMessage();
+                    stickerMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(stickerMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessageVideo:
+                {
+                    var videoMessage = new ChatVideoMessage();
+                    videoMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(videoMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessagePhoto:
+                {
+                    var photoMessage = new ChatPhotoMessage();
+                    photoMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(photoMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessageDocument:
+                {
+                    var documentMessage = new ChatDocumentMessage();
+                    documentMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(documentMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessageVideoNote:
+                {
+                    var videoNoteMessage = new ChatVideoNoteMessage();
+                    videoNoteMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(videoNoteMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessageVoiceNote:
+                {
+                    var voiceNoteMessage = new ChatVoiceNoteMessage();
+                    voiceNoteMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(voiceNoteMessage);
+                    break;
+                }
+                case TdApi.MessageContent.MessagePoll:
+                {
+                    var pollMessage = new ChatPollMessage();
+                    pollMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(pollMessage);
+                    break;
+                }
+    #if DEBUG
+                case TdApi.MessageContent.MessagePaidMedia:
+                {
+                    var paidMediaMessage = new ChatPaidMediaMessage();
+                    paidMediaMessage.UpdateMessage(message);
+                    MessagesList.Children.Add(paidMediaMessage);
+                    break;
+                }
+    #endif
             }
-            case TdApi.MessageContent.MessageChatChangeTitle or TdApi.MessageContent.MessagePinMessage 
-                or TdApi.MessageContent.MessageGiftedPremium
-                or TdApi.MessageContent.MessageGameScore or TdApi.MessageContent.MessageChatBoost 
-                or TdApi.MessageContent.MessageUnsupported:
-            {
-                var changeTitleMessage = new ChatServiceMessage();
-                changeTitleMessage.UpdateMessage(message);
-                MessagesList.Children.Add(changeTitleMessage);
-                break;
-            }
-            case TdApi.MessageContent.MessageSticker or TdApi.MessageContent.MessageAnimation:
-            {
-                var stickerMessage = new ChatStickerMessage();
-                stickerMessage.UpdateMessage(message);
-                MessagesList.Children.Add(stickerMessage);
-                break;
-            }
-            case TdApi.MessageContent.MessageVideo:
-            {
-                var videoMessage = new ChatVideoMessage();
-                videoMessage.UpdateMessage(message);
-                MessagesList.Children.Add(videoMessage);
-                break;
-            }
-            case TdApi.MessageContent.MessagePhoto:
-            {
-                var photoMessage = new ChatPhotoMessage();
-                photoMessage.UpdateMessage(message);
-                MessagesList.Children.Add(photoMessage);
-                break;
-            }
-            case TdApi.MessageContent.MessageDocument:
-            {
-                var documentMessage = new ChatDocumentMessage();
-                documentMessage.UpdateMessage(message);
-                MessagesList.Children.Add(documentMessage);
-                break;
-            }
-            case TdApi.MessageContent.MessageVideoNote:
-            {
-                var videoNoteMessage = new ChatVideoNoteMessage();
-                videoNoteMessage.UpdateMessage(message);
-                MessagesList.Children.Add(videoNoteMessage);
-                break;
-            }
-            case TdApi.MessageContent.MessageVoiceNote:
-            {
-                var voiceNoteMessage = new ChatVoiceNoteMessage();
-                voiceNoteMessage.UpdateMessage(message);
-                MessagesList.Children.Add(voiceNoteMessage);
-                break;
-            }
-            case TdApi.MessageContent.MessagePoll:
-            {
-                var pollMessage = new ChatPollMessage();
-                pollMessage.UpdateMessage(message);
-                MessagesList.Children.Add(pollMessage);
-                break;
-            }
-#if DEBUG
-            case TdApi.MessageContent.MessagePaidMedia:
-            {
-                var paidMediaMessage = new ChatPaidMediaMessage();
-                paidMediaMessage.UpdateMessage(message);
-                MessagesList.Children.Add(paidMediaMessage);
-                break;
-            }
-#endif
-        }
+        });
     }
         
     private async void SendMessage_OnClick(object sender, RoutedEventArgs e)

@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:user="using:sakuragram.Controls.User"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -40,7 +41,7 @@
                                     HorizontalAlignment="Left"
                                     Margin="5"
                                     MinWidth="200">
-                            <PersonPicture x:Name="ChatPhoto"
+                            <user:ProfilePhoto x:Name="ChatPhoto"
                                            Width="30" 
                                            Height="30"
                                            Margin="0,0,4,0"/>

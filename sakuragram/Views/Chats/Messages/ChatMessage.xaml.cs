@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Media.Core;
 using Windows.UI.Text;
+using CommunityToolkit.WinUI;
 using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
@@ -11,6 +14,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Services;
 using TdLib;
 
@@ -30,7 +34,8 @@ public partial class ChatMessage : Page
     private TextBlock _textMessage;
     private TextBlock _caption;
     private Image _photoMessage;
-    private Image _stickerMessage;
+    private Image _stickerStaticMessage;
+    private MediaPlayerElement _stickerDynamicMessage;
     private Image _videoMessage;
     private Image _voiceNoteMessage;
     private Image _documentMessage;
@@ -76,10 +81,39 @@ public partial class ChatMessage : Page
         return Task.CompletedTask;
     }
 
-    public void UpdateMessage(TdApi.Message message)
+    public async void UpdateMessage(TdApi.Message message)
     {
         _chatId = message.ChatId;
         _messageId = message.Id;
+
+        var sender = message.SenderId switch
+        {
+            TdApi.MessageSender.MessageSenderUser u => u.UserId,
+            TdApi.MessageSender.MessageSenderChat c => c.ChatId,
+            _ => 0
+        };
+
+        if (sender > 0) // if senderId > 0 then it's a user
+        {
+            var user = _client.GetUserAsync(sender).Result;
+            await MediaService.GetUserPhoto(user, ProfilePicture);
+        }
+        else // if senderId < 0 then it's a chat
+        {
+            var chat = _client.GetChatAsync(sender).Result;
+            await MediaService.GetChatPhoto(chat, ProfilePicture);
+        }
+
+        var name = await UserService.GetSender(message.SenderId);
+        DisplayName.Text = DisplayName.Text = name.User == null 
+            ? name.Chat.Title 
+            : (name.User.LastName ?? string.Empty) == string.Empty 
+                ? name.User.FirstName 
+                : name.User.FirstName + " " + name.User.LastName;
+        TextBlockSendTime.Text = MathService.CalculateDateTime(message.Date).ToShortTimeString();
+        TextBlockEdited.Visibility = message.EditDate != 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        #region ReplyInfo
 
         if (message.ReplyTo != null)
         {
@@ -124,27 +158,9 @@ public partial class ChatMessage : Page
             Reply.Visibility = Visibility.Visible;
         }
 
-        var sender = message.SenderId switch
-        {
-            TdApi.MessageSender.MessageSenderUser u => u.UserId,
-            TdApi.MessageSender.MessageSenderChat c => c.ChatId,
-            _ => 0
-        };
-
-        if (sender > 0) // if senderId > 0 then it's a user
-        {
-            var user = _client.GetUserAsync(sender).Result;
-            DisplayName.Text = user.FirstName + " " + user.LastName;
-            MediaService.GetUserPhoto(user, ProfilePicture);
-        }
-        else // if senderId < 0 then it's a chat
-        {
-            var chat = _client.GetChatAsync(sender).Result;
-            DisplayName.Text = chat.Title;
-            MediaService.GetChatPhoto(chat, ProfilePicture);
-        }
-
-        TextBlockSendTime.Text = MathService.CalculateDateTime(message.Date).ToShortTimeString();
+        #endregion
+        
+        #region ForwardInfo
 
         if (message.ForwardInfo != null)
         {
@@ -199,39 +215,58 @@ public partial class ChatMessage : Page
             TextBlockForwardInfo.Visibility = Visibility.Collapsed;
         }
 
-        TextBlockEdited.Visibility = message.EditDate != 0 ? Visibility.Visible : Visibility.Collapsed;
+        #endregion
 
-        if (message.InteractionInfo?.ViewCount > 0 && message.IsChannelPost)
-        {
-            TextBlockViews.Text = message.InteractionInfo.ViewCount + " views";
-            TextBlockViews.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            TextBlockViews.Text = string.Empty;
-            TextBlockViews.Visibility = Visibility.Collapsed;
-        }
+        #region InretactionInfo
 
-        if (message.InteractionInfo?.ReplyInfo != null)
+        if (message.InteractionInfo != null)
         {
-            if (message.InteractionInfo.ReplyInfo.ReplyCount > 0)
+            if (message.InteractionInfo.Reactions != null)
             {
-                TextBlockReplies.Text = message.InteractionInfo.ReplyInfo.ReplyCount + " replies";
-                TextBlockReplies.Visibility = Visibility.Visible;
+                foreach (var reaction in message.InteractionInfo.Reactions.Reactions)
+                {
+                    GenerateReactions(reaction);
+                }
+            }
+        
+            if (message.InteractionInfo.ViewCount > 0 && message.IsChannelPost)
+            {
+                TextBlockViews.Text = message.InteractionInfo.ViewCount + " views";
+                TextBlockViews.Visibility = Visibility.Visible;
             }
             else
             {
-                TextBlockReplies.Text = string.Empty;
-                TextBlockReplies.Visibility = Visibility.Collapsed;
+                TextBlockViews.Text = string.Empty;
+                TextBlockViews.Visibility = Visibility.Collapsed;
+            }
+
+            if (message.InteractionInfo.ReplyInfo != null)
+            {
+                if (message.InteractionInfo.ReplyInfo.ReplyCount > 0)
+                {
+                    TextBlockReplies.Text = message.InteractionInfo.ReplyInfo.ReplyCount + " replies";
+                    TextBlockReplies.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    TextBlockReplies.Text = string.Empty;
+                    TextBlockReplies.Visibility = Visibility.Collapsed;
+                }
             }
         }
+        
+        #endregion
+
+        #region MessageContent
 
         switch (message.Content)
         {
             case TdApi.MessageContent.MessageText messageText:
                 GenerateTextMessage(messageText);
                 break;
-            case 
+            case TdApi.MessageContent.MessageSticker messageSticker:
+                GenerateStickerMessage(messageSticker);
+                break;
             case TdApi.MessageContent.MessageUnsupported:
                 TextBlock textUnsupported = new();
                 textUnsupported.Text = "Unsupported message type";
@@ -246,29 +281,15 @@ public partial class ChatMessage : Page
                 break;
         }
 
-        // var messageReactions = _client.ExecuteAsync(new TdApi.GetMessageAddedReactions
-        // {
-        //     ChatId = message.ChatId,
-        //     MessageId = message.Id,
-        //     Limit = 100
-        // }).Result;
-        //
-        // if (messageReactions != null)
-        // {
-        //     foreach (var reaction in messageReactions.Reactions)
-        //     {
-        //         GenerateReaction(reaction);
-        //     }
-        // }
+        #endregion
 
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
 
-    private void GenerateReactions(TdApi.AddedReaction reaction)
+    private void GenerateReactions(TdApi.MessageReaction reaction)
     {
         var background = new Border();
         background.CornerRadius = new CornerRadius(4);
-        background.Padding = new Thickness(5);
         background.BorderBrush = new SolidColorBrush(Colors.Black);
 
         switch (reaction.Type)
@@ -277,11 +298,17 @@ public partial class ChatMessage : Page
             {
                 var text = new TextBlock();
                 text.Text = emoji.Emoji;
+                text.Padding = new Thickness(5);
                 background.Child = text;
                 break;
             }
             case TdApi.ReactionType.ReactionTypeCustomEmoji customEmoji:
             {
+                break;
+            }
+            case TdApi.ReactionType.ReactionTypePaid paid:
+            {
+                
                 break;
             }
         }
@@ -294,6 +321,7 @@ public partial class ChatMessage : Page
         TextBlock textMessage = new();
         textMessage.Text = messageText.Text.Text;
         textMessage.IsTextSelectionEnabled = true;
+        textMessage.TextWrapping = TextWrapping.Wrap;
         
         var tempSpan = new Span();
         var text = messageText.Text.Text;
@@ -421,6 +449,63 @@ public partial class ChatMessage : Page
         textMessage.Inlines.Add(tempSpan);
         PanelMessageContent.Children.Add(textMessage);
     }
+    
+    private async void GenerateStickerMessage(TdApi.MessageContent.MessageSticker messageSticker)
+    {
+        var stickerPath = await _client.DownloadFileAsync(fileId: messageSticker.Sticker.Sticker_.Id, priority: 1);
+        switch (messageSticker.Sticker.Format)
+        {
+            case TdApi.StickerFormat.StickerFormatWebp:
+            {
+                try
+                {
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        _stickerStaticMessage = new();
+                        _stickerStaticMessage.Source = stickerPath.Local.Path != string.Empty
+                            ? new BitmapImage(new Uri(stickerPath.Local.Path))
+                            : new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+                        _stickerStaticMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
+                        _stickerStaticMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
+                        PanelMessageContent.Children.Add(_stickerStaticMessage);
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
+                break;
+            }
+            case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
+            {
+                try
+                {
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        _stickerDynamicMessage = new();
+                        _stickerDynamicMessage.Source = stickerPath.Local.Path != string.Empty
+                            ? MediaSource.CreateFromUri(new Uri(stickerPath.Local.Path))
+                            : MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+                        _stickerDynamicMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
+                        _stickerDynamicMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
+                        _stickerDynamicMessage.MediaPlayer.IsLoopingEnabled = true;
+                        _stickerDynamicMessage.MediaPlayer.AutoPlay = true;
+                        _stickerDynamicMessage.MediaPlayer.Volume = 0;
+                        _stickerDynamicMessage.MediaPlayer.Position = TimeSpan.Zero;
+                        _stickerDynamicMessage.MediaPlayer.Play();
+                        PanelMessageContent.Children.Add(_stickerDynamicMessage);
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
+                break;
+            }
+        }
+    }
 
     private void ShowMenu(bool isTransient)
     {
@@ -439,7 +524,7 @@ public partial class ChatMessage : Page
     {
         _replyService.SelectMessageForReply(_messageId);
     }
-
+ 
     private async void Forward_OnClick(object sender, RoutedEventArgs e)
     {
         if (_messageService.GetSelectedMessages().Length == 0) _messageService.SelectMessage(_messageId);
