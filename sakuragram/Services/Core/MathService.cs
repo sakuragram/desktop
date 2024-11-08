@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace sakuragram.Services;
+namespace sakuragram.Services.Core;
 
 public static class MathService
 {

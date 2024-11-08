@@ -5,7 +5,7 @@ using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.Windows.AppNotifications.Builder;
 using TdLib;
 
-namespace sakuragram.Services;
+namespace sakuragram.Services.Core;
 
 public class NotificationService
 {

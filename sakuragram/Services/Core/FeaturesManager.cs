@@ -1,4 +1,4 @@
-﻿namespace sakuragram.Services;
+﻿namespace sakuragram.Services.Core;
 
 public class FeaturesManager
 {

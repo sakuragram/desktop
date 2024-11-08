@@ -7,7 +7,7 @@ using System.Net.Http;
 using Octokit;
 using FileMode = Octokit.FileMode;
 
-namespace sakuragram.Services;
+namespace sakuragram.Services.Core;
 
 public class UpdateManager
 {
