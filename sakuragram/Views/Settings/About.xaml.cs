@@ -1,13 +1,10 @@
 ﻿using System;
-using System.ComponentModel;
-using System.IO;
-using System.Threading.Tasks;
 using Windows.Storage;
 using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Octokit;
-using sakuragram.Services;
+using sakuragram.Services.Core;
 using Page = Microsoft.UI.Xaml.Controls.Page;
 
 namespace sakuragram.Views.Settings;

@@ -2,10 +2,10 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
 using Microsoft.UI.Xaml;
 using Octokit;
 using sakuragram.Services;
+using sakuragram.Services.Core;
 using sakuragram.Views;
 using TdLib;
 using TdLib.Bindings;

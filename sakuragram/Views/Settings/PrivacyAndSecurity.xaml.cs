@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using sakuragram.Services;
+using sakuragram.Services.Core;
 using sakuragram.Views.Settings.AdditionalElements;
 using TdLib;
 
@@ -133,7 +134,7 @@ public partial class PrivacyAndSecurity : Page
         botPhoto.Width = 42;
         botPhoto.Height = 42;
         mainStackPanel.Children.Add(botPhoto);
-        MediaService.GetUserPhoto(bot, botPhoto);
+        await MediaService.GetUserPhoto(bot, botPhoto);
         
         TextBlock botNameTextBlock = new();
         botNameTextBlock.FontSize = 14;

@@ -1,13 +1,9 @@
-﻿using System;
-using System.Diagnostics;
-using System.Threading;
-using Windows.UI.Core;
-using CommunityToolkit.WinUI;
+﻿using System.Diagnostics;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using sakuragram.Services;
+using sakuragram.Services.Core;
 using TdLib;
 
 namespace sakuragram.Views.Settings.AdditionalElements;
