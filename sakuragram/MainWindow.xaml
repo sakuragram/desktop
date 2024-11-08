@@ -20,39 +20,24 @@
 		
 		<controls:TitleBar x:Name="TitleBar"
 		                   AutoConfigureCustomTitleBar="True"
+		                   DisplayMode="Tall"
 		                   IsBackButtonVisible="False"
-		                   IsPaneButtonVisible="False"
-		                   DisplayMode="Standard">
+		                   IsPaneButtonVisible="False">
+			
 			<controls:TitleBar.Content>
 				<AutoSuggestBox PlaceholderText="Search" />
 			</controls:TitleBar.Content>
-
+			
+			<controls:TitleBar.Footer>
+				<PersonPicture Width="32"
+				                    Height="32"
+				                    Initials="AB"/>
+			</controls:TitleBar.Footer>
+			
 		</controls:TitleBar>
 		
-		<Grid Grid.Row="1"
-		      Margin="4">
-			<NavigationView
-				x:Name="NavigationView"
-				PaneDisplayMode="Left"
-				IsSettingsVisible="False"
-				IsBackEnabled="False"
-				IsBackButtonVisible="Collapsed"
-				ItemInvoked="NavView_ItemInvoked"
-				Loaded="NavView_Loaded"
-				SelectionChanged="NavView_SelectionChanged">
-				<NavigationView.MenuItems>
-					<NavigationViewItem x:Name="NavViewChats" Content="All chats" Tag="ChatsView" Icon="People">
-						<NavigationViewItem.InfoBadge>
-							<InfoBadge x:Name="UnreadMessagesCount" />
-						</NavigationViewItem.InfoBadge>
-					</NavigationViewItem>
-				</NavigationView.MenuItems>
-				<NavigationView.FooterMenuItems>
-					<NavigationViewItem x:Name="NavViewSettings" Content="Settings" Tag="SettingsView" Icon="Setting" />
-					<NavigationViewItem x:Name="NavViewHelp" Content="Help" Tag="HelpView" Icon="Help" />
-				</NavigationView.FooterMenuItems>
-				<Frame x:Name="ContentFrame" NavigationFailed="ContentFrame_NavigationFailed"/>
-			</NavigationView>
+		<Grid Grid.Row="1">
+			<Frame x:Name="ContentFrame" NavigationFailed="ContentFrame_NavigationFailed"/>
 			
 			<ContentDialog x:Name="ContentDialogNewVersion"
 			               PrimaryButtonText="Update"
