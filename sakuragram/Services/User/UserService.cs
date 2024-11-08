@@ -31,24 +31,24 @@ public class UserService
         }
     }
 
-    public static Task<string> GetSenderName(TdApi.Message message)
+    public static async Task<string> GetSenderName(TdApi.Message message)
     {
-        var sender = GetSender(message.SenderId).Result;
-        TdApi.Chat chat = _client.GetChatAsync(message.ChatId).Result;
+        var sender = await GetSender(message.SenderId);
+        TdApi.Chat chat = await _client.GetChatAsync(message.ChatId);
         
         if (message.ForwardInfo != null)
         {
             if (message.ForwardInfo.Source != null)
             {
                 if (message.ForwardInfo.Source.SenderName != string.Empty) 
-                    return Task.FromResult(message.ForwardInfo.Source.SenderName);
+                    return message.ForwardInfo.Source.SenderName;
                 else
                 {
                     var user = GetSender(message.ForwardInfo.Source.SenderId).Result; 
                     if (user.User != null) return user.User.LastName != string.Empty 
-                        ? Task.FromResult(user.User.FirstName + " " + user.User.LastName) 
-                        : Task.FromResult(user.User.FirstName);
-                    if (user.Chat != null) return Task.FromResult(user.Chat.Title);
+                        ? user.User.FirstName + " " + user.User.LastName
+                        : user.User.FirstName;
+                    if (user.Chat != null) return user.Chat.Title;
                 }
             }
             else if (message.ForwardInfo.Origin != null)
@@ -65,20 +65,20 @@ public class UserService
                             forwardInfo = forwardInfo + $" ({originChannel.AuthorSignature})";
                         }
                         
-                        return Task.FromResult(forwardInfo);
+                        return forwardInfo;
                     }
                     case TdApi.MessageOrigin.MessageOriginChat originChat:
                     {
-                        return Task.FromResult(originChat.AuthorSignature);
+                        return originChat.AuthorSignature;
                     }
                     case TdApi.MessageOrigin.MessageOriginUser user:
                     {
                         var originUser = _client.GetUserAsync(userId: user.SenderUserId).Result;
-                        return Task.FromResult(originUser.FirstName + " " + originUser.LastName);
+                        return originUser.FirstName + " " + originUser.LastName;
                     }
                     case TdApi.MessageOrigin.MessageOriginHiddenUser hiddenUser:
                     {
-                        return Task.FromResult(hiddenUser.SenderName);
+                        return hiddenUser.SenderName;
                     }
                 }
             }
@@ -86,23 +86,27 @@ public class UserService
         
         if (sender.User != null)
         {
+            var currentUser = await _client.GetMeAsync();
+            
             return chat.Type switch
             {
-                TdApi.ChatType.ChatTypePrivate or TdApi.ChatType.ChatTypeSecret => Task.FromResult(string.Empty),
-                _ => Task.FromResult(sender.User.LastName != string.Empty 
+                TdApi.ChatType.ChatTypePrivate or TdApi.ChatType.ChatTypeSecret => string.Empty,
+                _ => sender.User.Id != currentUser.Id
+                ? sender.User.LastName != string.Empty 
                     ? sender.User.FirstName + " " + sender.User.LastName 
-                    : sender.User.FirstName)
+                    : sender.User.FirstName
+                : "You"
             };
         }
         if (sender.Chat != null)
         {
             return chat.Type switch
             {
-                TdApi.ChatType.ChatTypeSupergroup typeSupergroup => Task.FromResult(typeSupergroup.IsChannel
+                TdApi.ChatType.ChatTypeSupergroup typeSupergroup => typeSupergroup.IsChannel
                     ? string.Empty
-                    : sender.Chat.Title),
-                TdApi.ChatType.ChatTypePrivate or TdApi.ChatType.ChatTypeSecret => Task.FromResult(string.Empty),
-                _ => Task.FromResult(sender.Chat.Title)
+                    : sender.Chat.Title,
+                TdApi.ChatType.ChatTypePrivate or TdApi.ChatType.ChatTypeSecret => string.Empty,
+                _ => sender.Chat.Title
             };
         }
         
