@@ -36,9 +36,9 @@ public class MessageService
         _selectedMessages.Clear();
     }
     
-    public static Task<string> GetLastMessageContent(TdApi.Message message)
+    public static async Task<string> GetLastMessageContent(TdApi.Message message)
     {
-        var chat = _client.GetChatAsync(message.ChatId).Result;
+        var chat = await _client.GetChatAsync(message.ChatId);
         
         if (chat.DraftMessage != null)
         {
@@ -47,7 +47,7 @@ public class MessageService
                 TdApi.InputMessageContent.InputMessageText messageText => $"Draft: {messageText.Text.Text}",
                 _ => "Draft message"
             };
-            return Task.FromResult(lastMessage);
+            return lastMessage;
         }
         else
         {
@@ -110,7 +110,7 @@ public class MessageService
                 
                 _ => "Unsupported message type"
             };
-            return Task.FromResult(lastMessage);
+            return lastMessage;
         }
     }
 }
