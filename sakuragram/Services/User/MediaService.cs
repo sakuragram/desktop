@@ -21,23 +21,22 @@ public class MediaService
             return;
         }
 
-        if (chat.Photo.Small.Local.Path != string.Empty)
+        if (chat.Photo.Small.Local.Path != null)
         {
-            await avatar.DispatcherQueue.EnqueueAsync(() =>
-                avatar.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path)));
+            avatar.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path));
+            return;
         }
-        else
+
+        var file = await _client.ExecuteAsync(new TdApi.DownloadFile
         {
-            var file = await _client.ExecuteAsync(new TdApi.DownloadFile
-            {
-                FileId = chat.Photo.Small.Id,
-                Priority = 1
-            }).ConfigureAwait(false);
-            if (file.Local.IsDownloadingCompleted) 
-                await avatar.DispatcherQueue.EnqueueAsync(() => 
-                    avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty 
-                        ? file.Local.Path 
-                        : chat.Photo.Small.Local.Path)));
+            FileId = chat.Photo.Small.Id,
+            Priority = 1
+        });
+
+        if (file.Local.IsDownloadingCompleted)
+        {
+            var path = file.Local.Path ?? chat.Photo.Small.Local.Path;
+            avatar.ProfilePicture = new BitmapImage(new Uri(path));
         }
     }
     
@@ -48,24 +47,23 @@ public class MediaService
             avatar.DisplayName = user.FirstName + " " + user.LastName;
             return;
         }
-        
-        if (user.ProfilePhoto.Small.Local.Path != string.Empty)
+
+        if (user.ProfilePhoto.Small.Local.Path != null)
         {
-            await avatar.DispatcherQueue.EnqueueAsync(() =>
-                avatar.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path)));
+            avatar.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path));
+            return;
         }
-        else
+
+        var file = await _client.ExecuteAsync(new TdApi.DownloadFile
         {
-            var file = await _client.ExecuteAsync(new TdApi.DownloadFile
-            {
-                FileId = user.ProfilePhoto.Small.Id,
-                Priority = 1
-            }).ConfigureAwait(false);
-            if (file.Local.IsDownloadingCompleted)
-                await avatar.DispatcherQueue.EnqueueAsync(() =>
-                    avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path != string.Empty
-                        ? file.Local.Path
-                        : user.ProfilePhoto.Small.Local.Path)));
+            FileId = user.ProfilePhoto.Small.Id,
+            Priority = 1
+        });
+
+        if (file.Local.IsDownloadingCompleted)
+        {
+            var path = file.Local.Path ?? user.ProfilePhoto.Small.Local.Path;
+            avatar.ProfilePicture = new BitmapImage(new Uri(path));
         }
     }
 }
