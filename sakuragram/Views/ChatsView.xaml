@@ -36,20 +36,21 @@
         <Grid Grid.Column="0">
             
             <Grid.RowDefinitions>
+                <RowDefinition Height="45" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             
-            <!-- <ScrollViewer Grid.Row="1" -->
-            <!--               Margin="4" -->
-            <!--               HorizontalScrollBarVisibility="Hidden" -->
-            <!--               VerticalScrollBarVisibility="Disabled" -->
-            <!--               HorizontalScrollMode="Enabled" -->
-            <!--               VerticalScrollMode="Disabled" -->
-            <!--               CanBeScrollAnchor="True"> -->
-            <!--     <ItemsControl ItemsSource="{x:Bind Path=_foldersButtons, Mode=TwoWay}" -->
-            <!--                   ItemsPanel="{StaticResource HorizontalItemsPanel}"/> -->
-            <!-- </ScrollViewer> -->
-            <RelativePanel Grid.Row="0" 
+            <ScrollViewer Grid.Row="0"
+                          Margin="4"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled"
+                          HorizontalScrollMode="Enabled"
+                          VerticalScrollMode="Disabled"
+                          CanBeScrollAnchor="True">
+                <ItemsControl ItemsSource="{x:Bind Path=_foldersButtons, Mode=TwoWay}"
+                              ItemsPanel="{StaticResource HorizontalItemsPanel}"/>
+            </ScrollViewer>
+            <RelativePanel Grid.Row="1" 
                            VerticalAlignment="Stretch" 
                            HorizontalAlignment="Stretch">
                 <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"

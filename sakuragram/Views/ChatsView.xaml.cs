@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -14,6 +15,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Controls.Messages;
 using sakuragram.Services;
+using sakuragram.Services.Core;
 using sakuragram.Views.Chats;
 using TdLib;
 using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
@@ -31,7 +33,7 @@ public sealed partial class ChatsView : Page
     private bool _firstGenerate = true;
     private bool _createChannelOpened = false;
     private bool _createGroupOpened = false;
-    private bool _mediaMenuOpened = true;
+    public bool _mediaMenuOpened = true;
     private bool _isForumOpened = false;
     private bool _isForumTopicOpened = false;
     private bool _isChatOpened = false;
@@ -46,26 +48,26 @@ public sealed partial class ChatsView : Page
     {
         InitializeComponent();
             
-        // Button buttonAllChats = new();
-        // buttonAllChats.Margin = new Thickness(0, 0, 5, 0);
-        // buttonAllChats.Content = "All chats";
-        // buttonAllChats.Click += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-        // _foldersButtons.Add(buttonAllChats);
-        //
-        // foreach (var folder in App._folders)
-        // {
-        //     Button button = new();
-        //     button.Margin = new Thickness(0, 0, 5, 0);
-        //     button.Content = folder.Title;
-        //     button.Tag = $"{folder.Title}_{folder.Id}";
-        //     button.Click += (_, _) =>
-        //     {
-        //         App._folderId = folder.Id;
-        //         GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
-        //     };
-        //     _foldersButtons.Add(button);
-        // }
-        //
+        Button buttonAllChats = new();
+        buttonAllChats.Margin = new Thickness(0, 0, 5, 0);
+        buttonAllChats.Content = "All chats";
+        buttonAllChats.Click += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+        _foldersButtons.Add(buttonAllChats);
+        
+        foreach (var folder in App._folders)
+        {
+            Button button = new();
+            button.Margin = new Thickness(0, 0, 5, 0);
+            button.Content = folder.Title;
+            button.Tag = $"{folder.Title}_{folder.Id}";
+            button.Click += (_, _) =>
+            {
+                App._folderId = folder.Id;
+                GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
+            };
+            _foldersButtons.Add(button);
+        }
+        
         if (App._folderId != -1)
         {
             GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});
@@ -79,7 +81,7 @@ public sealed partial class ChatsView : Page
         ColumnMediaPanel.Width = new GridLength(0);
         ColumnForumTopics.Width = new GridLength(0);
             
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
+        //_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
     }
 
     private Task ProcessUpdates(TdApi.Update update)
@@ -141,16 +143,16 @@ public sealed partial class ChatsView : Page
 
     private void UpdateChatPosition(long chatId, ItemsControl chatsListToRemove, ItemsControl chatsListToInsert)
     {
-        ChatsList.DispatcherQueue.EnqueueAsync(() =>
-        {
-            var chatToMove = ChatsList.Items
-                .OfType<ChatEntry>()
-                .FirstOrDefault(chat => chat.ChatId == chatId);
-            if (chatToMove == null || chatToMove.ChatId != chatId) return;
-            chatsListToRemove.Items.Remove(chatToMove);
-            chatToMove.UpdateChatInfo();
-            chatsListToInsert.Items.Insert(0, chatToMove);
-        });
+        // DispatcherQueue.EnqueueAsync(async () =>
+        // {
+        //     var chatToMove = ChatsList.Items
+        //         .OfType<ChatEntry>()
+        //         .FirstOrDefault(chat => chat.ChatId == chatId);
+        //     if (chatToMove == null || chatToMove.ChatId != chatId) return;
+        //     chatsListToRemove.Items.Remove(chatToMove);
+        //     await chatToMove.UpdateAsync();
+        //     chatsListToInsert.Items.Insert(0, chatToMove);
+        // });
     }
         
     private async void OpenChat(long chatId, bool isForum, TdApi.ForumTopic forumTopic)
@@ -298,7 +300,7 @@ public sealed partial class ChatsView : Page
                 DispatcherQueue.TryEnqueue(() => Separator.Visibility = Visibility.Collapsed);
             else DispatcherQueue.TryEnqueue(() => Separator.Visibility = Visibility.Visible);
 
-            await DispatcherQueue.EnqueueAsync(() =>
+            await DispatcherQueue.EnqueueAsync(async () =>
             {
                 ChatEntry chatEntry = new()
                 {
@@ -307,8 +309,9 @@ public sealed partial class ChatsView : Page
                     _chat = chat,
                     ChatId = chat.Id,
                 };
-                chatEntry.UpdateChatInfo();
-
+                
+                await chatEntry.UpdateAsync();
+                
                 _chatsIds.Add(chat.Id);
                 _chats.Add(chatEntry);
 
@@ -322,7 +325,7 @@ public sealed partial class ChatsView : Page
                 }
             });
         }   
-            
+        
         _firstGenerate = false;
     }
 
