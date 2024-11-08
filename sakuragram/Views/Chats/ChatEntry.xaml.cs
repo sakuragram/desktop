@@ -8,13 +8,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Services;
+using sakuragram.Services.Core;
 using TdLib;
 
 namespace sakuragram.Views.Chats
 {
-    public sealed partial class ChatEntry : Button
+    public sealed partial class ChatEntry
     {
         public Grid ChatPage;
         private static Chat _chatWidget;
@@ -28,13 +28,9 @@ namespace sakuragram.Views.Chats
         private int _profilePhotoFileId;
         private bool _inArchive;
         
-        private MediaService _mediaService = new();
-        
         public ChatEntry()
         {
             InitializeComponent();
-            
-            _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         }
 
         private Task ProcessUpdates(TdApi.Update update)
@@ -114,86 +110,105 @@ namespace sakuragram.Views.Chats
             return Task.CompletedTask;
         }
 
-        public async void UpdateChatInfo()
+        public async Task UpdateAsync()
         {
-            _chat = await _client.GetChatAsync(chatId: ChatId);
-            string senderName = await UserService.GetSenderName(_chat.LastMessage);
-            
-            MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
-            
-            TextBlockChatName.Text = _chat.Title;
-            TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
-            TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
-            TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty ? Visibility.Collapsed : Visibility.Visible;
-            TextBlockSendTime.Text = MathService.CalculateDateTime(_chat.LastMessage.Date).ToShortTimeString();
-            
-            if (_chat.UnreadCount > 0)
+            try
             {
-                UnreadMessagesCount.Visibility = Visibility.Visible;
-                UnreadMessagesCount.Value = _chat.UnreadCount;
-            }
-            else
-            {
-                UnreadMessagesCount.Visibility = Visibility.Collapsed;
-            }
+                _chat = await _client.GetChatAsync(chatId: ChatId);
+                string senderName = await UserService.GetSenderName(_chat.LastMessage);
 
-            if (_chat.NotificationSettings.MuteFor > 100000000)
-            {
-                UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray);
-            }
-            
-            switch (_chat.Type)
-            {
-                case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
+                await DispatcherQueue.EnqueueAsync(async () => {
+                    await MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
+                    TextBlockChatName.Text = _chat.Title;
+                    TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
+                    TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
+                    TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty
+                        ? Visibility.Collapsed
+                        : Visibility.Visible;
+                    TextBlockSendTime.Text = MathService.CalculateDateTime(_chat.LastMessage.Date).ToShortTimeString();
+                });
+
+                if (_chat.UnreadCount > 0)
                 {
-                    var supergroup = await _client.ExecuteAsync(new TdApi.GetSupergroup
+                    await DispatcherQueue.EnqueueAsync(() =>
                     {
-                        SupergroupId = typeSupergroup.SupergroupId
-                    }).ConfigureAwait(false);
+                        UnreadMessagesCount.Visibility = Visibility.Visible;
+                        UnreadMessagesCount.Value = _chat.UnreadCount;
+                    });
+                }
+                else
+                {
+                    await DispatcherQueue.EnqueueAsync(() => UnreadMessagesCount.Visibility = Visibility.Collapsed);
+                }
+                
+                if (_chat.NotificationSettings.MuteFor > 100000000)
+                {
+                    await DispatcherQueue.EnqueueAsync(() =>
+                        UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray));
+                }
 
-                    if (supergroup is { IsForum: true })
+                switch (_chat.Type)
+                {
+                    case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
                     {
-                        var message = await _client.GetMessageAsync(chatId: ChatId, messageId: _chat.LastMessage.Id)
-                            .ConfigureAwait(false);
-                        
-                        var topics = await _client.ExecuteAsync(new TdApi.GetForumTopics
+                        var supergroup = await _client.ExecuteAsync(new TdApi.GetSupergroup
                         {
-                            ChatId = ChatId,
-                            Limit = 100,
-                            Query = "",
-                            OffsetMessageId = message.Id,
-                            OffsetMessageThreadId = message.MessageThreadId
-                        }).ConfigureAwait(false);
-
-                        if (message.IsTopicMessage)
+                            SupergroupId = typeSupergroup.SupergroupId
+                        });
+                
+                        if (supergroup is { IsForum: true })
                         {
-                            var topic = await _client.ExecuteAsync(new TdApi.GetForumTopic
+                            var message = await _client.GetMessageAsync(ChatId, _chat.LastMessage.Id);
+                
+                            var topics = await _client.ExecuteAsync(new TdApi.GetForumTopics
                             {
                                 ChatId = ChatId,
-                                MessageThreadId = message.MessageThreadId
-                            }).ConfigureAwait(false);
-                            
-                            await DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                TextBlockForumName.Text = topic.Info.Name;
-                                TextBlockForumName.Visibility = Visibility.Visible;
+                                Limit = 100,
+                                Query = "",
+                                OffsetMessageId = message.Id,
+                                OffsetMessageThreadId = message.MessageThreadId
                             });
+                
+                            if (message.IsTopicMessage)
+                            {
+                                var topic = await _client.ExecuteAsync(new TdApi.GetForumTopic
+                                {
+                                    ChatId = ChatId,
+                                    MessageThreadId = message.MessageThreadId
+                                });
+                
+                                await DispatcherQueue.EnqueueAsync(() =>
+                                {
+                                    TextBlockForumName.Text = topic.Info.Name;
+                                    TextBlockForumName.Visibility = Visibility.Visible;
+                                });
+                            }
+                            else
+                            {
+                                await DispatcherQueue.EnqueueAsync(() =>
+                                {
+                                    TextBlockForumName.Text = topics.Topics[0].Info.Name;
+                                    TextBlockForumName.Visibility = Visibility.Visible;
+                                });
+                            }
                         }
                         else
                         {
                             await DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                TextBlockForumName.Text = topics.Topics[0].Info.Name;
-                                TextBlockForumName.Visibility = Visibility.Visible;
-                            });
+                                TextBlockForumName.Visibility = Visibility.Collapsed);
                         }
+                
+                        break;
                     }
-                    else
-                    {
-                        await DispatcherQueue.EnqueueAsync(() => TextBlockForumName.Visibility = Visibility.Collapsed);
-                    }
-                    break;
                 }
+                
+                // After some tests, I found out that for some reason, subscribing to Telegram updates slows down ChatEntry creation very much. Very interesting.
+                //_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                throw;
             }
         }
         
@@ -202,7 +217,9 @@ namespace sakuragram.Views.Chats
             _ChatsView.CloseChat();
             switch (_chat.Type)
             {
-                case TdApi.ChatType.ChatTypePrivate or TdApi.ChatType.ChatTypeSecret or TdApi.ChatType.ChatTypeBasicGroup:
+                case TdApi.ChatType.ChatTypePrivate 
+                    or TdApi.ChatType.ChatTypeSecret 
+                    or TdApi.ChatType.ChatTypeBasicGroup:
                     DispatcherQueue.EnqueueAsync(async () =>
                     {
                         _chatWidget = await _chatService.OpenChat(_chat.Id);
@@ -213,7 +230,11 @@ namespace sakuragram.Views.Chats
                     break;
                 case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
                     var supergroup = _client.GetSupergroupAsync(typeSupergroup.SupergroupId).Result;
-                    if (typeSupergroup.IsChannel)
+                    if (supergroup.IsForum)
+                    {
+                        _ChatsView.OpenForum(supergroup, _chat);
+                    }
+                    else
                     {
                         DispatcherQueue.EnqueueAsync(async () =>
                         {
@@ -222,10 +243,6 @@ namespace sakuragram.Views.Chats
                             _ChatsView._currentChat = _chatWidget;
                             ChatPage.Children.Add(_chatWidget);
                         });
-                    }
-                    else if (supergroup.IsForum)
-                    {
-                        _ChatsView.OpenForum(supergroup, _chat);
                     }
                     break;
                 default:
