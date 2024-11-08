@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Services;
+using sakuragram.Services.Core;
 using TdLib;
 
 namespace sakuragram.Views.Chats.Messages;
@@ -31,6 +33,8 @@ public partial class ChatMessage : Page
 
     #region MessageContent
 
+    private TdApi.MessageContent _messageContent;
+    
     private TextBlock _textMessage;
     private TextBlock _caption;
     private Image _photoMessage;
@@ -44,6 +48,10 @@ public partial class ChatMessage : Page
     private Image _pollMessage;
     private Image _paidMediaMessage;
     private Image _contactMessage;
+
+    /** can be used only for photo, video, audio and document messages */
+    private long _mediaAlbumId;
+    private List<TdApi.Message> _mediaAlbum;
 
     #endregion
 
@@ -61,6 +69,22 @@ public partial class ChatMessage : Page
     {
         switch (update)
         {
+            case TdApi.Update.UpdateNewMessage updateNewMessage:
+            {
+                if (updateNewMessage.Message.ChatId == _chatId &&
+                    updateNewMessage.Message.MediaAlbumId == _mediaAlbumId)
+                {
+                    switch (updateNewMessage.Message.Content)
+                    {
+                        case TdApi.MessageContent.MessagePhoto messagePhoto:
+                        {
+                            GeneratePhotoMessage(messagePhoto, _mediaAlbumId, _mediaAlbum);
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
             // case TdApi.Update.UpdateMessageEdited:
             // {
             //     var message = _client.ExecuteAsync(new TdApi.GetMessage
@@ -81,7 +105,7 @@ public partial class ChatMessage : Page
         return Task.CompletedTask;
     }
 
-    public async void UpdateMessage(TdApi.Message message)
+    public async void UpdateMessage(TdApi.Message message, List<TdApi.Message> album)
     {
         _chatId = message.ChatId;
         _messageId = message.Id;
@@ -267,6 +291,9 @@ public partial class ChatMessage : Page
             case TdApi.MessageContent.MessageSticker messageSticker:
                 GenerateStickerMessage(messageSticker);
                 break;
+            case TdApi.MessageContent.MessagePhoto messagePhoto:
+                GeneratePhotoMessage(messagePhoto, message.MediaAlbumId, album);
+                break;
             case TdApi.MessageContent.MessageUnsupported:
                 TextBlock textUnsupported = new();
                 textUnsupported.Text = "Unsupported message type";
@@ -286,34 +313,79 @@ public partial class ChatMessage : Page
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
 
-    private void GenerateReactions(TdApi.MessageReaction reaction)
+    private async void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto, long mediaAlbumId, List<TdApi.Message> album)
     {
-        var background = new Border();
-        background.CornerRadius = new CornerRadius(4);
-        background.BorderBrush = new SolidColorBrush(Colors.Black);
-
-        switch (reaction.Type)
+        _photoMessage = new();
+        _photoMessage.Width = messagePhoto.Photo.Sizes[1].Width * (1.0 / 1.5);
+        _photoMessage.Height = messagePhoto.Photo.Sizes[1].Height * (1.0 / 1.5);
+        
+        if (messagePhoto.Photo.Sizes[1].Photo.Local.Path != string.Empty)
         {
-            case TdApi.ReactionType.ReactionTypeEmoji emoji:
-            {
-                var text = new TextBlock();
-                text.Text = emoji.Emoji;
-                text.Padding = new Thickness(5);
-                background.Child = text;
-                break;
-            }
-            case TdApi.ReactionType.ReactionTypeCustomEmoji customEmoji:
-            {
-                break;
-            }
-            case TdApi.ReactionType.ReactionTypePaid paid:
-            {
-                
-                break;
-            }
+            _photoMessage.Source = new BitmapImage(new Uri(messagePhoto.Photo.Sizes[1].Photo.Local.Path));
+        }
+        else
+        {
+            await _client.DownloadFileAsync(messagePhoto.Photo.Sizes[1].Photo.Id, 1).ContinueWith(_ => {
+                    _photoMessage.Source = new BitmapImage(new Uri(messagePhoto.Photo.Sizes[1].Photo.Local.Path));
+                });
+        }
+        
+        if (messagePhoto.Caption != null)
+        {
+            _caption = new();
+            _caption.Text = messagePhoto.Caption.Text;
+            _caption.IsTextSelectionEnabled = true;
+            _caption.TextWrapping = TextWrapping.Wrap;
         }
 
-        GridReactions.Children.Add(background);
+        if (messagePhoto.ShowCaptionAboveMedia)
+        {
+            PanelMessageContent.Children.Add(_caption);
+            PanelMessageContent.Children.Add(_photoMessage);
+        }
+        else
+        {
+            PanelMessageContent.Children.Add(_photoMessage);
+            PanelMessageContent.Children.Add(_caption);
+        }
+        
+        if (album != null && mediaAlbumId != 0)
+        {
+            _mediaAlbum = album;
+            _mediaAlbumId = mediaAlbumId;
+
+            foreach (var media in _mediaAlbum)
+            {
+                if (media.MediaAlbumId == _mediaAlbumId)
+                {
+                    switch (media.Content)
+                    {
+                        case TdApi.MessageContent.MessagePhoto mediaPhoto:
+                        {
+                            Image image = new();
+                            image.Width = mediaPhoto.Photo.Sizes[1].Width * (1.0 / 1.5);
+                            image.Height = mediaPhoto.Photo.Sizes[1].Height * (1.0 / 1.5);
+        
+                            if (mediaPhoto.Photo.Sizes[1].Photo.Local.Path != string.Empty)
+                            {
+                                image.Source = new BitmapImage(new Uri(mediaPhoto.Photo.Sizes[1].Photo.Local.Path));
+                            }
+                            else
+                            {
+                                await _client.DownloadFileAsync(mediaPhoto.Photo.Sizes[1].Photo.Id, 1).ContinueWith(_ => {
+                                    image.Source = new BitmapImage(new Uri(mediaPhoto.Photo.Sizes[1].Photo.Local.Path));
+                                });
+                            }
+                            break;
+                        }
+                        case TdApi.MessageContent.MessageVideo mediaVideo:
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void GenerateTextMessage(TdApi.MessageContent.MessageText messageText)
@@ -421,7 +493,7 @@ public partial class ChatMessage : Page
                         var mention = match.Value;
                         var hyperlink = new Hyperlink
                         {
-                            NavigateUri = new Uri($"https://t.me/{mention}"),
+                            NavigateUri = new Uri($"https://t.me/{mention.Replace("@", string.Empty)}"),
                             Foreground = new SolidColorBrush(Colors.Azure)
                         };
                         hyperlink.Inlines.Add(new Run { Text = mention });
@@ -452,59 +524,94 @@ public partial class ChatMessage : Page
     
     private async void GenerateStickerMessage(TdApi.MessageContent.MessageSticker messageSticker)
     {
-        var stickerPath = await _client.DownloadFileAsync(fileId: messageSticker.Sticker.Sticker_.Id, priority: 1);
-        switch (messageSticker.Sticker.Format)
+        //var stickerPath = await _client.DownloadFileAsync(fileId: messageSticker.Sticker.Sticker_.Id, priority: 1);
+        
+        TextBlock debug = new();
+        debug.Text = messageSticker.Sticker.Id.ToString();
+        PanelMessageContent.Children.Add(debug);
+        
+        // switch (messageSticker.Sticker.Format)
+        // {
+        //     case TdApi.StickerFormat.StickerFormatWebp:
+        //     {
+        //         try
+        //         {
+        //             await DispatcherQueue.EnqueueAsync(() =>
+        //             {
+        //                 _stickerStaticMessage = new();
+        //                 _stickerStaticMessage.Source = stickerPath.Local.Path != string.Empty
+        //                     ? new BitmapImage(new Uri(stickerPath.Local.Path))
+        //                     : new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+        //                 _stickerStaticMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
+        //                 _stickerStaticMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
+        //                 PanelMessageContent.Children.Add(_stickerStaticMessage);
+        //             });
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Debug.WriteLine(e);
+        //             throw;
+        //         }
+        //         break;
+        //     }
+        //     case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
+        //     {
+        //         try
+        //         {
+        //             await DispatcherQueue.EnqueueAsync(() =>
+        //             {
+        //                 _stickerDynamicMessage = new();
+        //                 _stickerDynamicMessage.Source = stickerPath.Local.Path != string.Empty
+        //                     ? MediaSource.CreateFromUri(new Uri(stickerPath.Local.Path))
+        //                     : MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+        //                 _stickerDynamicMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
+        //                 _stickerDynamicMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
+        //                 _stickerDynamicMessage.MediaPlayer.IsLoopingEnabled = true;
+        //                 _stickerDynamicMessage.MediaPlayer.AutoPlay = true;
+        //                 _stickerDynamicMessage.MediaPlayer.Volume = 0;
+        //                 _stickerDynamicMessage.MediaPlayer.Position = TimeSpan.Zero;
+        //                 _stickerDynamicMessage.MediaPlayer.Play();
+        //                 PanelMessageContent.Children.Add(_stickerDynamicMessage);
+        //             });
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Debug.WriteLine(e);
+        //             throw;
+        //         }
+        //         break;
+        //     }
+        // }
+    }
+    
+    private void GenerateReactions(TdApi.MessageReaction reaction)
+    {
+        var background = new Border();
+        background.CornerRadius = new CornerRadius(4);
+        background.BorderBrush = new SolidColorBrush(Colors.Black);
+
+        switch (reaction.Type)
         {
-            case TdApi.StickerFormat.StickerFormatWebp:
+            case TdApi.ReactionType.ReactionTypeEmoji emoji:
             {
-                try
-                {
-                    await DispatcherQueue.EnqueueAsync(() =>
-                    {
-                        _stickerStaticMessage = new();
-                        _stickerStaticMessage.Source = stickerPath.Local.Path != string.Empty
-                            ? new BitmapImage(new Uri(stickerPath.Local.Path))
-                            : new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
-                        _stickerStaticMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
-                        _stickerStaticMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
-                        PanelMessageContent.Children.Add(_stickerStaticMessage);
-                    });
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                    throw;
-                }
+                var text = new TextBlock();
+                text.Text = emoji.Emoji;
+                text.Padding = new Thickness(5);
+                background.Child = text;
                 break;
             }
-            case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
+            case TdApi.ReactionType.ReactionTypeCustomEmoji customEmoji:
             {
-                try
-                {
-                    await DispatcherQueue.EnqueueAsync(() =>
-                    {
-                        _stickerDynamicMessage = new();
-                        _stickerDynamicMessage.Source = stickerPath.Local.Path != string.Empty
-                            ? MediaSource.CreateFromUri(new Uri(stickerPath.Local.Path))
-                            : MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
-                        _stickerDynamicMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
-                        _stickerDynamicMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
-                        _stickerDynamicMessage.MediaPlayer.IsLoopingEnabled = true;
-                        _stickerDynamicMessage.MediaPlayer.AutoPlay = true;
-                        _stickerDynamicMessage.MediaPlayer.Volume = 0;
-                        _stickerDynamicMessage.MediaPlayer.Position = TimeSpan.Zero;
-                        _stickerDynamicMessage.MediaPlayer.Play();
-                        PanelMessageContent.Children.Add(_stickerDynamicMessage);
-                    });
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                    throw;
-                }
+                break;
+            }
+            case TdApi.ReactionType.ReactionTypePaid paid:
+            {
+                
                 break;
             }
         }
+
+        GridReactions.Children.Add(background);
     }
 
     private void ShowMenu(bool isTransient)
