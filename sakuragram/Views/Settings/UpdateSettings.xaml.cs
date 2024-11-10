@@ -33,7 +33,9 @@ public partial class UpdateSettings : Page
         SettingsService.SaveSettings(new Services.Core.Settings
         {
             InstallBeta = ToggleSwitchInstallBeta.IsOn,
-            AutoUpdate = ToggleSwitchAutoUpdate.IsOn
+            AutoUpdate = ToggleSwitchAutoUpdate.IsOn,
+            Language = _localSettings.Language,
+            ChatBottomFastAction = _localSettings.ChatBottomFastAction
         });
     }
 
@@ -42,7 +44,9 @@ public partial class UpdateSettings : Page
         SettingsService.SaveSettings(new Services.Core.Settings
         {
             InstallBeta = ToggleSwitchInstallBeta.IsOn,
-            AutoUpdate = ToggleSwitchAutoUpdate.IsOn
+            AutoUpdate = ToggleSwitchAutoUpdate.IsOn,
+            Language = _localSettings.Language,
+            ChatBottomFastAction = _localSettings.ChatBottomFastAction
         });
     }
 
