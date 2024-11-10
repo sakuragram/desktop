@@ -524,64 +524,64 @@ public partial class ChatMessage : Page
     
     private async void GenerateStickerMessage(TdApi.MessageContent.MessageSticker messageSticker)
     {
-        //var stickerPath = await _client.DownloadFileAsync(fileId: messageSticker.Sticker.Sticker_.Id, priority: 1);
+        var stickerPath = await _client.DownloadFileAsync(fileId: messageSticker.Sticker.Sticker_.Id, priority: 1);
         
-        TextBlock debug = new();
-        debug.Text = messageSticker.Sticker.Id.ToString();
-        PanelMessageContent.Children.Add(debug);
+        // TextBlock debug = new();
+        // debug.Text = messageSticker.Sticker.Id.ToString();
+        // PanelMessageContent.Children.Add(debug);
         
-        // switch (messageSticker.Sticker.Format)
-        // {
-        //     case TdApi.StickerFormat.StickerFormatWebp:
-        //     {
-        //         try
-        //         {
-        //             await DispatcherQueue.EnqueueAsync(() =>
-        //             {
-        //                 _stickerStaticMessage = new();
-        //                 _stickerStaticMessage.Source = stickerPath.Local.Path != string.Empty
-        //                     ? new BitmapImage(new Uri(stickerPath.Local.Path))
-        //                     : new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
-        //                 _stickerStaticMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
-        //                 _stickerStaticMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
-        //                 PanelMessageContent.Children.Add(_stickerStaticMessage);
-        //             });
-        //         }
-        //         catch (Exception e)
-        //         {
-        //             Debug.WriteLine(e);
-        //             throw;
-        //         }
-        //         break;
-        //     }
-        //     case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
-        //     {
-        //         try
-        //         {
-        //             await DispatcherQueue.EnqueueAsync(() =>
-        //             {
-        //                 _stickerDynamicMessage = new();
-        //                 _stickerDynamicMessage.Source = stickerPath.Local.Path != string.Empty
-        //                     ? MediaSource.CreateFromUri(new Uri(stickerPath.Local.Path))
-        //                     : MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
-        //                 _stickerDynamicMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
-        //                 _stickerDynamicMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
-        //                 _stickerDynamicMessage.MediaPlayer.IsLoopingEnabled = true;
-        //                 _stickerDynamicMessage.MediaPlayer.AutoPlay = true;
-        //                 _stickerDynamicMessage.MediaPlayer.Volume = 0;
-        //                 _stickerDynamicMessage.MediaPlayer.Position = TimeSpan.Zero;
-        //                 _stickerDynamicMessage.MediaPlayer.Play();
-        //                 PanelMessageContent.Children.Add(_stickerDynamicMessage);
-        //             });
-        //         }
-        //         catch (Exception e)
-        //         {
-        //             Debug.WriteLine(e);
-        //             throw;
-        //         }
-        //         break;
-        //     }
-        // }
+        switch (messageSticker.Sticker.Format)
+        {
+            case TdApi.StickerFormat.StickerFormatWebp:
+            {
+                try
+                {
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        _stickerStaticMessage = new();
+                        _stickerStaticMessage.Source = stickerPath.Local.IsDownloadingCompleted
+                            ? new BitmapImage(new Uri(stickerPath.Local.Path))
+                            : new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+                        _stickerStaticMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
+                        _stickerStaticMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
+                        PanelMessageContent.Children.Add(_stickerStaticMessage);
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
+                break;
+            }
+            case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
+            {
+                try
+                {
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        _stickerDynamicMessage = new();
+                        _stickerDynamicMessage.Source = stickerPath.Local.IsDownloadingCompleted
+                            ? MediaSource.CreateFromUri(new Uri(stickerPath.Local.Path))
+                            : MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+                        _stickerDynamicMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
+                        _stickerDynamicMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
+                        _stickerDynamicMessage.MediaPlayer.IsLoopingEnabled = true;
+                        _stickerDynamicMessage.MediaPlayer.AutoPlay = true;
+                        _stickerDynamicMessage.MediaPlayer.Volume = 0;
+                        _stickerDynamicMessage.MediaPlayer.Position = TimeSpan.Zero;
+                        _stickerDynamicMessage.MediaPlayer.Play();
+                        PanelMessageContent.Children.Add(_stickerDynamicMessage);
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
+                break;
+            }
+        }
     }
     
     private void GenerateReactions(TdApi.MessageReaction reaction)
