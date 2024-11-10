@@ -237,10 +237,30 @@
                     VerticalAlignment="Stretch"
                     Background="Black"
                     CornerRadius="4">
-                <ScrollViewer>
-                    <StackPanel x:Name="PanelStickers"
-                                Loaded="PanelStickers_OnLoaded"/>
-                </ScrollViewer>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="ButtonEmoji"
+                                Content="Emoji"
+                                HorizontalAlignment="Stretch"/>
+                        <Button x:Name="ButtonStickers"
+                                Content="Stickers"
+                                HorizontalAlignment="Stretch"/>
+                        <Button x:Name="ButtonAnimations"
+                                Content="GIFs"
+                                HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1"
+                                  ViewChanged="ScrollViewer_OnViewChanged">
+                        <StackPanel x:Name="PanelMedia"
+                                    x:Load="{x:Bind _mediaMenuOpened}"
+                                    Loaded="PanelMedia_OnLoaded"/>
+                    </ScrollViewer>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

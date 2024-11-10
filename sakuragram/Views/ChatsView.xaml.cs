@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
 using CommunityToolkit.WinUI;
-using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -34,7 +31,7 @@ public sealed partial class ChatsView : Page
     private bool _firstGenerate = true;
     private bool _createChannelOpened = false;
     private bool _createGroupOpened = false;
-    public bool _mediaMenuOpened = true;
+    public bool _mediaMenuOpened = false;
     private bool _isForumOpened = false;
     private bool _isForumTopicOpened = false;
     private bool _isChatOpened = false;
@@ -44,6 +41,9 @@ public sealed partial class ChatsView : Page
     private List<long> _pinnedChats = [];
     private List<Button> _foldersButtons = [];
     private List<ChatEntry> _chats = [];
+    private List<TdApi.StickerSet> _stickerSets = [];
+    private List<TdApi.StickerSet> _alreadyAddedStickerSets = [];
+    private int _currentStickerSet = -1;
         
     public ChatsView()
     {
@@ -82,6 +82,10 @@ public sealed partial class ChatsView : Page
         ColumnMediaPanel.Width = new GridLength(0);
         ColumnForumTopics.Width = new GridLength(0);
             
+        ButtonEmoji.Click += (_, _) => SelectMediaPage(0);
+        ButtonStickers.Click += (_, _) => SelectMediaPage(1);
+        ButtonAnimations.Click += (_, _) => SelectMediaPage(2);
+        
         //_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
     }
 
@@ -541,10 +545,62 @@ public sealed partial class ChatsView : Page
         }
     }
 
-    private async void PanelStickers_OnLoaded(object sender, RoutedEventArgs e)
+    private void PanelMedia_OnLoaded(object sender, RoutedEventArgs e)
     {
+        var settings = SettingsService.LoadSettings();
+        int index = settings.StartMediaPage switch
+        {
+            "Emojis" => 0,
+            "Stickers" => 1,
+            "GIFs" => 2,
+            _ => 0,
+        };
+        
+        SelectMediaPage(index);
+    }
+
+    private void SelectMediaPage(int index)
+    {
+        switch (index)
+        {
+            case 0: // Emojis
+                ButtonEmoji.IsEnabled = false;
+                ButtonStickers.IsEnabled = true;
+                ButtonAnimations.IsEnabled = true;
+                break;
+            case 1: // Stickers
+                GenerateStickers();
+                ButtonEmoji.IsEnabled = true;
+                ButtonStickers.IsEnabled = false;
+                ButtonAnimations.IsEnabled = true;
+                break;
+            case 2: // GIFs
+                GenerateAnimations();
+                ButtonEmoji.IsEnabled = true;
+                ButtonStickers.IsEnabled = true;
+                ButtonAnimations.IsEnabled = false;
+                break;
+        }
+    }
+
+    private async void GenerateStickers()
+    {
+        PanelMedia.Children.Clear();
+        
         var favoriteStickers = await _client.ExecuteAsync(new TdApi.GetFavoriteStickers());
-        var stickers = await _client.ExecuteAsync(new TdApi.GetRecentStickers { IsAttached = false });
+        var recentStickers = await _client.ExecuteAsync(new TdApi.GetRecentStickers { IsAttached = false });
+        var stickerSets = await _client.ExecuteAsync(new TdApi.GetInstalledStickerSets());
+        
+        if (stickerSets.Sets.Length > 0)
+        {
+            foreach (var set in stickerSets.Sets)
+            {
+                var foundedSet = await _client.ExecuteAsync(new TdApi.GetStickerSet { SetId = set.Id });
+                _stickerSets.Add(foundedSet);
+            }
+
+            _alreadyAddedStickerSets.Add(_stickerSets[0]);
+        }
 
         if (favoriteStickers.Stickers_.Length > 0)
         {
@@ -555,12 +611,11 @@ public sealed partial class ChatsView : Page
             {
                 Text = "Favorite stickers",
                 FontSize = 12,
-                FontWeight = FontWeights.Bold,
             };
-            PanelStickers.Children.Add(textBlockPinnedStickers);
+            PanelMedia.Children.Add(textBlockPinnedStickers);
             
             Grid favoriteStickersGrid = new();
-            PanelStickers.Children.Add(favoriteStickersGrid);
+            PanelMedia.Children.Add(favoriteStickersGrid);
             
             foreach (var sticker in favoriteStickers.Stickers_)
             {
@@ -572,18 +627,28 @@ public sealed partial class ChatsView : Page
                     favoriteRow++;
                     if (favoriteRow >= favoriteStickersGrid.RowDefinitions.Count)
                     {
-                        favoriteStickersGrid.RowDefinitions.Add(new RowDefinition());
+                        await DispatcherQueue.EnqueueAsync(() =>
+                            favoriteStickersGrid.RowDefinitions.Add(new RowDefinition { }));
                     }
                 }
 
-                favoriteStickersGrid.Children.Add(newSticker);
-                Grid.SetRow(newSticker, favoriteRow);
-                Grid.SetColumn(newSticker, favoriteCol);
+                if (favoriteCol >= favoriteStickersGrid.ColumnDefinitions.Count)
+                {
+                    await DispatcherQueue.EnqueueAsync(() => favoriteStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                        { Width = new GridLength(64, GridUnitType.Auto) }));
+                }
+
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    favoriteStickersGrid.Children.Add(newSticker);
+                    Grid.SetRow(newSticker, favoriteRow);
+                    Grid.SetColumn(newSticker, favoriteCol);
+                });
                 favoriteCol++;
             }
         }
 
-        if (stickers.Stickers_.Length > 0)
+        if (recentStickers.Stickers_.Length > 0)
         {
             int recentRow = 0;
             int recentCol = 0;
@@ -592,14 +657,13 @@ public sealed partial class ChatsView : Page
             {
                 Text = "Recent stickers",
                 FontSize = 12,
-                FontWeight = FontWeights.Bold,
             };
-            PanelStickers.Children.Add(textBlockRecentStickers);
+            PanelMedia.Children.Add(textBlockRecentStickers);
         
             Grid recentStickersGrid = new();
-            PanelStickers.Children.Add(recentStickersGrid);
+            PanelMedia.Children.Add(recentStickersGrid);
             
-            foreach (var sticker in stickers.Stickers_)
+            foreach (var sticker in recentStickers.Stickers_)
             {
                 var newSticker = new Sticker(sticker);
 
@@ -609,20 +673,180 @@ public sealed partial class ChatsView : Page
                     recentRow++;
                     if (recentRow >= recentStickersGrid.RowDefinitions.Count)
                     {
-                        recentStickersGrid.RowDefinitions.Add(new RowDefinition { });
+                        await DispatcherQueue.EnqueueAsync(() =>
+                            recentStickersGrid.RowDefinitions.Add(new RowDefinition { }));
                     }
                 }
 
                 if (recentCol >= recentStickersGrid.ColumnDefinitions.Count)
                 {
-                    recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
-                        { Width = new GridLength(64, GridUnitType.Auto) });
+                    await DispatcherQueue.EnqueueAsync(() => recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                        { Width = new GridLength(64, GridUnitType.Auto) }));
                 }
 
-                recentStickersGrid.Children.Add(newSticker);
-                Grid.SetRow(newSticker, recentRow);
-                Grid.SetColumn(newSticker, recentCol);
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    recentStickersGrid.Children.Add(newSticker);
+                    Grid.SetRow(newSticker, recentRow);
+                    Grid.SetColumn(newSticker, recentCol);
+                });
                 recentCol++;
+            }
+        }
+
+        if (stickerSets.Sets.Length > 0)
+        {
+            int setRow = 0;
+            int setCol = 0;
+            TdApi.StickerSet stickerSet = await _client.GetStickerSetAsync(stickerSets.Sets[0].Id);
+            
+            TextBlock textBlockRecentStickers = new()
+            {
+                Text = stickerSets.Sets[0].Title,
+                FontSize = 12,
+            };
+            PanelMedia.Children.Add(textBlockRecentStickers);
+        
+            Grid recentStickersGrid = new();
+            PanelMedia.Children.Add(recentStickersGrid);
+            
+            foreach (var sticker in stickerSet.Stickers)
+            {
+                var newSticker = new Sticker(sticker);
+
+                if (setCol == 5)
+                {
+                    setCol = 0;
+                    setRow++;
+                    if (setRow >= recentStickersGrid.RowDefinitions.Count)
+                    {
+                        await DispatcherQueue.EnqueueAsync(() =>
+                            recentStickersGrid.RowDefinitions.Add(new RowDefinition { }));
+                    }
+                }
+
+                if (setCol >= recentStickersGrid.ColumnDefinitions.Count)
+                {
+                    await DispatcherQueue.EnqueueAsync(() => recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                        { Width = new GridLength(64, GridUnitType.Auto) }));
+                }
+
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    recentStickersGrid.Children.Add(newSticker);
+                    Grid.SetRow(newSticker, setRow);
+                    Grid.SetColumn(newSticker, setCol);
+                });
+                setCol++;
+            }
+
+            _currentStickerSet++;
+        }
+    }
+
+    private async void GenerateAnimations()
+    {
+        PanelMedia.Children.Clear();
+        
+        var animations = await _client.GetSavedAnimationsAsync();
+        int savedRow = 0;
+        int savedCol = 0;
+        
+        Grid savedAnimationsGrid = new();
+        PanelMedia.Children.Add(savedAnimationsGrid);
+        
+        foreach (var animation in animations.Animations_)
+        {
+            var newAnimation = new Animation(animation);
+
+            if (savedCol == 3)
+            {
+                savedCol = 0;
+                savedRow++;
+                if (savedRow >= savedAnimationsGrid.RowDefinitions.Count)
+                {
+                    await DispatcherQueue.EnqueueAsync(() => savedAnimationsGrid.RowDefinitions.Add(new RowDefinition()));
+                }
+            }
+            
+            if (savedCol >= savedAnimationsGrid.ColumnDefinitions.Count)
+            {
+                await DispatcherQueue.EnqueueAsync(() => savedAnimationsGrid.ColumnDefinitions.Add(new ColumnDefinition
+                    { Width = new GridLength(128, GridUnitType.Auto) }));
+            }
+
+            await DispatcherQueue.EnqueueAsync(() =>
+            {
+                savedAnimationsGrid.Children.Add(newAnimation);
+                Grid.SetRow(newAnimation, savedRow);
+                Grid.SetColumn(newAnimation, savedCol);
+            });
+            savedCol++;
+        }
+    }
+
+    private async void ScrollViewer_OnViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (!e.IsIntermediate)
+        {
+            var scrollViewer = (ScrollViewer)sender;
+            
+            double verticalOffset = scrollViewer.VerticalOffset;
+            double maxVerticalOffset = scrollViewer.ExtentHeight - scrollViewer.ViewportHeight;
+
+            if (verticalOffset >= maxVerticalOffset)
+            {
+                int startIndex = _stickerSets.Count;
+                int endIndex = 0;
+                for (int i = _currentStickerSet; i <= _currentStickerSet + 1; i++)
+                {
+                    if (_alreadyAddedStickerSets.Contains(_stickerSets[i])) continue;
+                    _alreadyAddedStickerSets.Add(_stickerSets[i]);
+                    
+                    endIndex = i;
+                    int setRow = 0;
+                    int setCol = 0;
+                    
+                    TextBlock textBlockRecentStickers = new()
+                    {
+                        Text = _stickerSets[i].Title,
+                        FontSize = 12,
+                    };
+                    PanelMedia.Children.Add(textBlockRecentStickers);
+        
+                    Grid recentStickersGrid = new();
+                    PanelMedia.Children.Add(recentStickersGrid);
+                    
+                    foreach (var sticker in _stickerSets[i].Stickers)
+                    {
+                        await DispatcherQueue.EnqueueAsync(() =>
+                        {
+                            var newSticker = new Sticker(sticker);
+
+                            if (setCol == 5)
+                            {
+                                setCol = 0;
+                                setRow++;
+                                if (setRow >= recentStickersGrid.RowDefinitions.Count)
+                                {
+                                    recentStickersGrid.RowDefinitions.Add(new RowDefinition { });
+                                }
+                            }
+
+                            if (setCol >= recentStickersGrid.ColumnDefinitions.Count)
+                            {
+                                recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                                    { Width = new GridLength(64, GridUnitType.Auto) });
+                            }
+
+                            recentStickersGrid.Children.Add(newSticker);
+                            Grid.SetRow(newSticker, setRow);
+                            Grid.SetColumn(newSticker, setCol);
+                        });
+                        setCol++;
+                    }
+                }
+                _currentStickerSet = endIndex;
             }
         }
     }
