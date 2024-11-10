@@ -16,7 +16,13 @@ public class SettingsService
     
     public static Settings LoadSettings()
     {
-        if (!File.Exists(SettingsPath)) return new Settings { AutoUpdate = true, InstallBeta = false };
+        if (!File.Exists(SettingsPath)) return new Settings
+        {
+            AutoUpdate = true, 
+            InstallBeta = false,
+            Language = "en",
+            ChatBottomFastAction = "Join"
+        };
         string jsonSettings = File.ReadAllText(SettingsPath);
         return JsonConvert.DeserializeObject<Settings>(jsonSettings);
     }
