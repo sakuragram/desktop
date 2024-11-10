@@ -6,6 +6,8 @@ public class Config_Example
     public const string AppName = "your_app_name";
     public static readonly string AppVersion = GetAppVersion();
     
+    public const string BaseLocation = "tdata";
+    
     /** You can get your Telegram API keys on the website my.telegram.org. I recommend updating the variable with its version every time TDLib is updated */
     public const int ApiId = 0;
     public const string ApiHash = "your_api_hash";
