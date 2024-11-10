@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +47,9 @@ public partial class App : Application
 			
 		_client = new TdClient();
 		_client.Bindings.SetLogVerbosityLevel(TdLogLevel.Fatal);
-
+		_client.Bindings.SetLogFilePath(Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\log.txt"));
+		_client.Bindings.SetLogFileMaxSize(4096);
+		
 		_githubClient = new GitHubClient(new ProductHeaderValue(Config.AppName));
 		_githubClient.Credentials = new Credentials(Config.GitHubAuthToken);
 			
@@ -60,7 +63,7 @@ public partial class App : Application
 		switch (update)
 		{
 			case TdApi.Update.UpdateAuthorizationState { AuthorizationState: TdApi.AuthorizationState.AuthorizationStateWaitTdlibParameters }:
-				var filesLocation = Path.Combine(AppContext.BaseDirectory, "db");
+				var filesLocation = Path.Combine(AppContext.BaseDirectory, Config.BaseLocation);
 				await _client.ExecuteAsync(new TdApi.SetTdlibParameters
 				{
 					ApiId = Config.ApiId,
@@ -70,7 +73,7 @@ public partial class App : Application
 					UseMessageDatabase = true,
 					UseSecretChats = true,
 					DeviceModel = "Desktop",
-					SystemLanguageCode = "en",
+					SystemLanguageCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName,
 					ApplicationVersion = Config.AppVersion,
 					DatabaseDirectory = filesLocation,
 					FilesDirectory = filesLocation,
