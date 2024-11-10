@@ -38,8 +38,7 @@
                 <controls:SettingsCard Header="Auto update"
                                        HeaderIcon="{ui:FontIcon Glyph=&#xE716;}">
                     <ToggleSwitch x:Name="ToggleSwitchAutoUpdate"
-                                  IsOn="False"
-                                  IsEnabled="False"
+                                  IsEnabled="True"
                                   Toggled="ToggleSwitchAutoUpdate_OnToggled"/>
                 </controls:SettingsCard>
                 
@@ -47,11 +46,9 @@
                                        Header="Install beta versions"
                                        HeaderIcon="{ui:FontIcon Glyph=&#xE716;}">
                     <ToggleSwitch x:Name="ToggleSwitchInstallBeta"
-                                  IsOn="False"
-                                  IsEnabled="False"
+                                  IsEnabled="True"
                                   Toggled="ToggleSwitch_OnToggled"/>
                 </controls:SettingsCard>
-
                 
             </StackPanel>
         </Grid>
