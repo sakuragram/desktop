@@ -60,8 +60,12 @@
 							</MenuFlyout>
 						</PersonPicture.ContextFlyout>
 					</PersonPicture>
-					<AutoSuggestBox PlaceholderText="Search"
-					                Width="200"/>
+					<AutoSuggestBox x:Name="SuggestBox"
+					                PlaceholderText="Search"
+					                Width="350"
+					                QueryIcon="Find"
+					                TextChanged="SuggestBox_OnTextChanged"
+					                SuggestionChosen="SuggestBox_OnSuggestionChosen"/>
 					<ScrollViewer Width="100"
 					              HorizontalScrollBarVisibility="Hidden"
 					              VerticalScrollBarVisibility="Disabled"

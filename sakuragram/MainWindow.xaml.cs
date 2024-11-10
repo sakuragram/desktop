@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -230,6 +231,83 @@ namespace sakuragram
 		{
 			var settingsView = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.SettingsView");
 			ContentFrame.Navigate(settingsView);
+		}
+		
+		private async void SuggestBox_OnTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+		{
+			if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+			{
+				int maxLength = 40;
+				var chats = await _client.SearchChatsAsync(SuggestBox.Text, 100);
+				var messages = await _client.SearchMessagesAsync(new TdApi.ChatList.ChatListMain(),
+					false, SuggestBox.Text, limit: 100, 
+					filter: new TdApi.SearchMessagesFilter.SearchMessagesFilterEmpty());
+				
+				var suitableItems = new List<string>();
+				var splitText = sender.Text.ToLower().Split(" ");
+				
+				foreach (var chatId in chats.ChatIds)
+				{
+					var chat = await _client.GetChatAsync(chatId);
+					var found = splitText.All(key=> chat.Title.ToLower().Contains(key));
+					if (found)
+					{
+						suitableItems.Add(TextService.Truncate(chat.Title, maxLength));
+					}
+				}
+				
+				foreach (var message in messages.Messages)
+				{
+					var messageContent = await MessageService.GetLastMessageContent(message);
+					var found = splitText.All(key => messageContent.ToLower().Contains(key));
+					if (found)
+					{
+						var messageSender = await UserService.GetSender(message.SenderId);
+						var messageSenderName = await UserService.GetSenderName(message);
+						
+						if (messageSender.User != null)
+						{
+							suitableItems.Add(TextService.Truncate($"{messageSenderName}: {messageContent}",
+								maxLength));
+						}
+						else if (messageSender.Chat != null)
+						{
+							switch (messageSender.Chat.Type)
+							{
+								case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
+								{
+									if (typeSupergroup.IsChannel)
+									{
+										suitableItems.Add(TextService.Truncate($"{messageSender.Chat.Title}: {messageContent}",
+											maxLength));
+									}
+									else
+									{
+										suitableItems.Add(TextService.Truncate($"{messageSenderName}: {messageContent}",
+											maxLength));
+									}
+									break;
+								}
+								case TdApi.ChatType.ChatTypeBasicGroup:
+									suitableItems.Add(TextService.Truncate($"{messageSenderName}: {messageContent}",
+										maxLength));
+									break;
+							}
+						}
+					}
+				}
+				
+				if(suitableItems.Count == 0)
+				{
+					suitableItems.Add("No results found");
+				}
+				sender.ItemsSource = suitableItems;
+			}
+		}
+
+		private void SuggestBox_OnSuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+		{
+			SuggestBox.Text = args.SelectedItem.ToString();
 		}
 	}
 }
