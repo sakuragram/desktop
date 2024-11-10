@@ -8,6 +8,7 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
 using CommunityToolkit.WinUI;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -136,9 +137,14 @@ public sealed partial class ChatsView : Page
         return Task.CompletedTask;
     }
 
-    private Visibility UpdateMediaVisibility()
+    public Visibility UpdateMediaVisibility()
     {
-        return _mediaMenuOpened ? Visibility.Visible : Visibility.Collapsed;
+        return Media.Visibility = _mediaMenuOpened ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public GridLength UpdateMediaLength()
+    {
+        return ColumnMediaPanel.Width = _mediaMenuOpened ? new GridLength(350) : new GridLength(0);
     }
 
     private void UpdateChatPosition(long chatId, ItemsControl chatsListToRemove, ItemsControl chatsListToInsert)
@@ -267,7 +273,7 @@ public sealed partial class ChatsView : Page
         _chatsIds.Clear();
         _chats.Clear();
             
-        _addedChats = await _client.GetChatsAsync(chatList, 10000).ConfigureAwait(false);
+        _addedChats = await _client.GetChatsAsync(chatList, 10000);
                      
         foreach (var chatId in _addedChats.ChatIds)
         {
@@ -277,6 +283,12 @@ public sealed partial class ChatsView : Page
             {
                 if (!chatPosition.IsPinned) continue;
                 if (_pinnedChats.Contains(chat.Id)) continue;
+
+                if (chatPosition.List is TdApi.ChatList.ChatListFolder folder && folder.ChatFolderId != App._folderId)
+                {
+                    continue;
+                }
+                
                 switch (chatPosition.List)
                 {
                     case TdApi.ChatList.ChatListMain:
@@ -297,8 +309,8 @@ public sealed partial class ChatsView : Page
             }
 
             if (_pinnedChats.Count == 0)
-                DispatcherQueue.TryEnqueue(() => Separator.Visibility = Visibility.Collapsed);
-            else DispatcherQueue.TryEnqueue(() => Separator.Visibility = Visibility.Visible);
+                await DispatcherQueue.EnqueueAsync(() => Separator.Visibility = Visibility.Collapsed);
+            else await DispatcherQueue.EnqueueAsync(() => Separator.Visibility = Visibility.Visible);
 
             await DispatcherQueue.EnqueueAsync(async () =>
             {
@@ -309,18 +321,18 @@ public sealed partial class ChatsView : Page
                     _chat = chat,
                     ChatId = chat.Id,
                 };
-                
+
                 await chatEntry.UpdateAsync();
-                
+
                 _chatsIds.Add(chat.Id);
                 _chats.Add(chatEntry);
 
                 if (_pinnedChats.Contains(chat.Id))
-                {
+                { 
                     PinnedChatsList.Items.Add(chatEntry);
                 }
                 else
-                {
+                { 
                     ChatsList.Items.Add(chatEntry);
                 }
             });
@@ -529,36 +541,89 @@ public sealed partial class ChatsView : Page
         }
     }
 
-    private async void GridStickers_OnLoaded(object sender, RoutedEventArgs e)
+    private async void PanelStickers_OnLoaded(object sender, RoutedEventArgs e)
     {
+        var favoriteStickers = await _client.ExecuteAsync(new TdApi.GetFavoriteStickers());
         var stickers = await _client.ExecuteAsync(new TdApi.GetRecentStickers { IsAttached = false });
 
-        int row = 0;
-        int col = 0;
-
-        foreach (var sticker in stickers.Stickers_)
+        if (favoriteStickers.Stickers_.Length > 0)
         {
-            var newSticker = new Sticker(sticker);
-
-            if (col == 5) // max 5 columns
+            int favoriteRow = 0;
+            int favoriteCol = 0;
+            
+            TextBlock textBlockPinnedStickers = new()
             {
-                col = 0;
-                row++;
-                if (row >= GridStickers.RowDefinitions.Count)
+                Text = "Favorite stickers",
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+            };
+            PanelStickers.Children.Add(textBlockPinnedStickers);
+            
+            Grid favoriteStickersGrid = new();
+            PanelStickers.Children.Add(favoriteStickersGrid);
+            
+            foreach (var sticker in favoriteStickers.Stickers_)
+            {
+                var newSticker = new Sticker(sticker);
+
+                if (favoriteCol == 5)
                 {
-                    GridStickers.RowDefinitions.Add(new RowDefinition { });
+                    favoriteCol = 0;
+                    favoriteRow++;
+                    if (favoriteRow >= favoriteStickersGrid.RowDefinitions.Count)
+                    {
+                        favoriteStickersGrid.RowDefinitions.Add(new RowDefinition());
+                    }
                 }
-            }
 
-            if (col >= GridStickers.ColumnDefinitions.Count)
+                favoriteStickersGrid.Children.Add(newSticker);
+                Grid.SetRow(newSticker, favoriteRow);
+                Grid.SetColumn(newSticker, favoriteCol);
+                favoriteCol++;
+            }
+        }
+
+        if (stickers.Stickers_.Length > 0)
+        {
+            int recentRow = 0;
+            int recentCol = 0;
+        
+            TextBlock textBlockRecentStickers = new()
             {
-                GridStickers.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64, GridUnitType.Auto) });
-            }
+                Text = "Recent stickers",
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+            };
+            PanelStickers.Children.Add(textBlockRecentStickers);
+        
+            Grid recentStickersGrid = new();
+            PanelStickers.Children.Add(recentStickersGrid);
+            
+            foreach (var sticker in stickers.Stickers_)
+            {
+                var newSticker = new Sticker(sticker);
 
-            GridStickers.Children.Add(newSticker);
-            Grid.SetRow(newSticker, row);
-            Grid.SetColumn(newSticker, col);
-            col++;
+                if (recentCol == 5)
+                {
+                    recentCol = 0;
+                    recentRow++;
+                    if (recentRow >= recentStickersGrid.RowDefinitions.Count)
+                    {
+                        recentStickersGrid.RowDefinitions.Add(new RowDefinition { });
+                    }
+                }
+
+                if (recentCol >= recentStickersGrid.ColumnDefinitions.Count)
+                {
+                    recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                        { Width = new GridLength(64, GridUnitType.Auto) });
+                }
+
+                recentStickersGrid.Children.Add(newSticker);
+                Grid.SetRow(newSticker, recentRow);
+                Grid.SetColumn(newSticker, recentCol);
+                recentCol++;
+            }
         }
     }
 }

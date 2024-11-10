@@ -29,7 +29,7 @@
                               x:Name="ColumnForumTopics" />
             <ColumnDefinition Width="*" 
                               x:Name="ColumnChat" />
-            <ColumnDefinition Width="200"
+            <ColumnDefinition Width="{x:Bind UpdateMediaLength(), Mode=OneWay}"
                               x:Name="ColumnMediaPanel" />
         </Grid.ColumnDefinitions>
             
@@ -238,8 +238,8 @@
                     Background="Black"
                     CornerRadius="4">
                 <ScrollViewer>
-                    <Grid x:Name="GridStickers"
-                                Loaded="GridStickers_OnLoaded"/>
+                    <StackPanel x:Name="PanelStickers"
+                                Loaded="PanelStickers_OnLoaded"/>
                 </ScrollViewer>
             </Border>
         </Grid>
