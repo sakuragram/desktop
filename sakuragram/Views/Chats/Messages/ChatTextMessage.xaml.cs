@@ -357,7 +357,7 @@ public sealed partial class ChatTextMessage : Page
         //     }
         // }
             
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+        //_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
 
     private void GenerateReaction(TdApi.AddedReaction reaction)
