@@ -44,6 +44,18 @@
                     </ComboBox>
                 </controls:SettingsCard>
                 
+                <controls:SettingsCard Description="This is a default card, with the Header, HeaderIcon, Description and Content set"
+                                       Header="Start media page"
+                                       HeaderIcon="{ui:FontIcon Glyph=&#xE716;}">
+                    <ComboBox x:Name="ComboBoxStartMediaPage"
+                              SelectedIndex="0"
+                              SelectionChanged="ComboBoxStartMediaPage_OnSelectionChanged">
+                        <ComboBoxItem Content="Emojis"/>
+                        <ComboBoxItem Content="Stickers"/>
+                        <ComboBoxItem Content="GIFs"/>
+                    </ComboBox>
+                </controls:SettingsCard>
+                
             </StackPanel>
         </Grid>
     </ScrollViewer>
