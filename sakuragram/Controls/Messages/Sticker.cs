@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Media.Core;
+using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -69,21 +70,27 @@ public class Sticker : Button
                 {
                     case TdApi.StickerFormat.StickerFormatWebp:
                         if (updateFile.File.Local.IsDownloadingCompleted)
-                            StickerImage.Source = updateFile.File.Local.IsDownloadingCompleted ?
-                                new BitmapImage(new Uri(updateFile.File.Local.Path)) : 
-                                new BitmapImage(new Uri(_sticker.Sticker_.Local.Path));
+                            DispatcherQueue.EnqueueAsync(() =>
+                            {
+                                StickerImage.Source = updateFile.File.Local.IsDownloadingCompleted
+                                    ? new BitmapImage(new Uri(updateFile.File.Local.Path))
+                                    : new BitmapImage(new Uri(_sticker.Sticker_.Local.Path));
+                            });
                         break;
                     case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
                         if (updateFile.File.Local.IsDownloadingCompleted)
                         {
-                            StickerVideo.Source = MediaSource.CreateFromUri(
-                                new Uri(updateFile.File.Local.IsDownloadingCompleted
-                                    ? updateFile.File.Local.Path
-                                    : _sticker.Sticker_.Local.Path));
-                            StickerVideo.MediaPlayer.IsLoopingEnabled = true;
-                            StickerVideo.MediaPlayer.Position = TimeSpan.Zero;
-                            StickerVideo.MediaPlayer.AutoPlay = true;
-                            StickerVideo.MediaPlayer.Play();
+                            DispatcherQueue.EnqueueAsync(() =>
+                            {
+                                StickerVideo.Source = MediaSource.CreateFromUri(
+                                    new Uri(updateFile.File.Local.IsDownloadingCompleted
+                                        ? updateFile.File.Local.Path
+                                        : _sticker.Sticker_.Local.Path));
+                                StickerVideo.MediaPlayer.IsLoopingEnabled = true;
+                                StickerVideo.MediaPlayer.Position = TimeSpan.Zero;
+                                StickerVideo.MediaPlayer.AutoPlay = true;
+                                StickerVideo.MediaPlayer.Play();
+                            });
                         }
                         break;
                 }
