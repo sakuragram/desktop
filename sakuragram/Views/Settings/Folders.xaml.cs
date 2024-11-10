@@ -60,7 +60,7 @@ public partial class Folders : Page
         if (hasInternetConnection)
         {
             var recommendedFolders = _client.ExecuteAsync(new TdApi.GetRecommendedChatFolders()).Result;
-
+            
             foreach (var folder in recommendedFolders.ChatFolders)
             {
                 SettingsCard card = new();
@@ -71,7 +71,7 @@ public partial class Folders : Page
                 button.Content = "Add";
                 button.Click += async (sender, args) =>
                 {
-                    await _client.CreateChatFolderAsync(folder.Folder).ConfigureAwait(false);
+                    await _client.CreateChatFolderAsync(folder.Folder);
                     GenerateFolders(_hasInternetConnection);
                 };
                 
