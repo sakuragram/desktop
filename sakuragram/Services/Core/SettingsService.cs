@@ -21,7 +21,8 @@ public class SettingsService
             AutoUpdate = true, 
             InstallBeta = false,
             Language = "en",
-            ChatBottomFastAction = "Join"
+            ChatBottomFastAction = "Discuss",
+            StartMediaPage = "Stickers"
         };
         string jsonSettings = File.ReadAllText(SettingsPath);
         return JsonConvert.DeserializeObject<Settings>(jsonSettings);
@@ -34,4 +35,5 @@ public class Settings
     public bool AutoUpdate { get; set; }
     public string Language { get; set; }
     public string ChatBottomFastAction { get; set; }
+    public string StartMediaPage { get; set; }
 }
