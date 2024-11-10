@@ -77,7 +77,7 @@ namespace sakuragram
             
             var chatsView = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.ChatsView");
             ContentFrame.Navigate(chatsView);
-
+            
             DispatcherQueue.EnqueueAsync(async () =>
             {
 	            try
@@ -104,6 +104,7 @@ namespace sakuragram
 		            {
 			            CurrentUserPicture.Initials = currentUser.FirstName + currentUser.LastName;
 		            }
+		            FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
 	            }
 	            catch (TdException e)
 	            {
@@ -242,6 +243,12 @@ namespace sakuragram
 				var chatsView = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.ChatsView");
 				ContentFrame.Navigate(chatsView);
 			};
+		}
+
+		private void FlyoutItemCurrentUser_OnClick(object sender, RoutedEventArgs e)
+		{
+			var settingsView = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.SettingsView");
+			ContentFrame.Navigate(settingsView);
 		}
 	}
 }

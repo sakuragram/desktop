@@ -40,6 +40,9 @@
 					               PointerPressed="CurrentUserPicture_OnPointerPressed">
 						<PersonPicture.ContextFlyout>
 							<MenuFlyout x:Name="FlyoutClientActions">
+								<MenuFlyoutItem x:Name="FlyoutItemCurrentUser"
+								                Click="FlyoutItemCurrentUser_OnClick"/>
+								<MenuFlyoutSeparator/>
 								<MenuFlyoutItem x:Name="FlyoutItemAddAccount"
 								                Text="Add account"
 								                Click="FlyoutItemAddAccount_OnClick"/>
