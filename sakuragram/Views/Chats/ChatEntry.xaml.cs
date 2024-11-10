@@ -112,104 +112,96 @@ namespace sakuragram.Views.Chats
 
         public async Task UpdateAsync()
         {
-            try
+            _chat = await _client.GetChatAsync(ChatId);
+            string senderName = await UserService.GetSenderName(_chat.LastMessage);
+
+            await DispatcherQueue.EnqueueAsync(async () => {
+                await MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
+                TextBlockChatName.Text = _chat.Title;
+                TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
+                TextBlockChatLastMessage.Text = await MessageService.GetLastMessageContent(_chat.LastMessage);
+                TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+                TextBlockSendTime.Text = MathService.CalculateDateTime(_chat.LastMessage.Date).ToShortTimeString();
+            });
+
+            if (_chat.UnreadCount > 0)
             {
-                _chat = await _client.GetChatAsync(ChatId);
-                string senderName = await UserService.GetSenderName(_chat.LastMessage);
-
-                await DispatcherQueue.EnqueueAsync(async () => {
-                    await MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
-                    TextBlockChatName.Text = _chat.Title;
-                    TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
-                    TextBlockChatLastMessage.Text = await MessageService.GetLastMessageContent(_chat.LastMessage);
-                    TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty
-                        ? Visibility.Collapsed
-                        : Visibility.Visible;
-                    TextBlockSendTime.Text = MathService.CalculateDateTime(_chat.LastMessage.Date).ToShortTimeString();
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    UnreadMessagesCount.Visibility = Visibility.Visible;
+                    UnreadMessagesCount.Value = _chat.UnreadCount;
                 });
+            }
+            else
+            {
+                await DispatcherQueue.EnqueueAsync(() => UnreadMessagesCount.Visibility = Visibility.Collapsed);
+            }
+            
+            if (_chat.NotificationSettings.MuteFor > 100000000)
+            {
+                await DispatcherQueue.EnqueueAsync(() =>
+                    UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray));
+            }
 
-                if (_chat.UnreadCount > 0)
+            switch (_chat.Type)
+            {
+                case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
                 {
-                    await DispatcherQueue.EnqueueAsync(() =>
+                    var supergroup = await _client.ExecuteAsync(new TdApi.GetSupergroup
                     {
-                        UnreadMessagesCount.Visibility = Visibility.Visible;
-                        UnreadMessagesCount.Value = _chat.UnreadCount;
+                        SupergroupId = typeSupergroup.SupergroupId
                     });
-                }
-                else
-                {
-                    await DispatcherQueue.EnqueueAsync(() => UnreadMessagesCount.Visibility = Visibility.Collapsed);
-                }
-                
-                if (_chat.NotificationSettings.MuteFor > 100000000)
-                {
-                    await DispatcherQueue.EnqueueAsync(() =>
-                        UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray));
-                }
-
-                switch (_chat.Type)
-                {
-                    case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
+            
+                    if (supergroup is { IsForum: true })
                     {
-                        var supergroup = await _client.ExecuteAsync(new TdApi.GetSupergroup
+                        var message = await _client.GetMessageAsync(ChatId, _chat.LastMessage.Id);
+            
+                        var topics = await _client.ExecuteAsync(new TdApi.GetForumTopics
                         {
-                            SupergroupId = typeSupergroup.SupergroupId
+                            ChatId = ChatId,
+                            Limit = 100,
+                            Query = "",
+                            OffsetMessageId = message.Id,
+                            OffsetMessageThreadId = message.MessageThreadId
                         });
-                
-                        if (supergroup is { IsForum: true })
+            
+                        if (message.IsTopicMessage)
                         {
-                            var message = await _client.GetMessageAsync(ChatId, _chat.LastMessage.Id);
-                
-                            var topics = await _client.ExecuteAsync(new TdApi.GetForumTopics
+                            var topic = await _client.ExecuteAsync(new TdApi.GetForumTopic
                             {
                                 ChatId = ChatId,
-                                Limit = 100,
-                                Query = "",
-                                OffsetMessageId = message.Id,
-                                OffsetMessageThreadId = message.MessageThreadId
+                                MessageThreadId = message.MessageThreadId
                             });
-                
-                            if (message.IsTopicMessage)
+            
+                            await DispatcherQueue.EnqueueAsync(() =>
                             {
-                                var topic = await _client.ExecuteAsync(new TdApi.GetForumTopic
-                                {
-                                    ChatId = ChatId,
-                                    MessageThreadId = message.MessageThreadId
-                                });
-                
-                                await DispatcherQueue.EnqueueAsync(() =>
-                                {
-                                    TextBlockForumName.Text = topic.Info.Name;
-                                    TextBlockForumName.Visibility = Visibility.Visible;
-                                });
-                            }
-                            else
-                            {
-                                await DispatcherQueue.EnqueueAsync(() =>
-                                {
-                                    TextBlockForumName.Text = topics.Topics[0].Info.Name;
-                                    TextBlockForumName.Visibility = Visibility.Visible;
-                                });
-                            }
+                                TextBlockForumName.Text = topic.Info.Name;
+                                TextBlockForumName.Visibility = Visibility.Visible;
+                            });
                         }
                         else
                         {
                             await DispatcherQueue.EnqueueAsync(() =>
-                                TextBlockForumName.Visibility = Visibility.Collapsed);
+                            {
+                                TextBlockForumName.Text = topics.Topics[0].Info.Name;
+                                TextBlockForumName.Visibility = Visibility.Visible;
+                            });
                         }
-                
-                        break;
                     }
+                    else
+                    {
+                        await DispatcherQueue.EnqueueAsync(() =>
+                            TextBlockForumName.Visibility = Visibility.Collapsed);
+                    }
+            
+                    break;
                 }
-                
-                // After some tests, I found out that for some reason, subscribing to Telegram updates slows down ChatEntry creation very much. Very interesting.
-                //_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
             }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-                throw;
-            }
+            
+            // After some tests, I found out that for some reason, subscribing to Telegram updates slows down ChatEntry creation very much. Very interesting.
+            //_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         }
         
         private void Button_OnClick(object sender, RoutedEventArgs e)
