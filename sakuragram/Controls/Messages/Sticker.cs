@@ -13,7 +13,7 @@ namespace sakuragram.Controls.Messages;
 public class Sticker : Button
 {
     private static readonly TdClient _client = App._client;
-    private static TdApi.Sticker _sticker;
+    private TdApi.Sticker _sticker;
     private static ChatService _chatService = App.ChatService;
     private Image StickerImage { get; }
     private MediaPlayerElement StickerVideo { get; }
@@ -30,7 +30,7 @@ public class Sticker : Button
         {
             case TdApi.StickerFormat.StickerFormatWebp:
                 StickerImage = new();
-                if (sticker.Sticker_.Local.Path != string.Empty)
+                if (sticker.Sticker_.Local.IsDownloadingCompleted)
                     StickerImage.Source = new BitmapImage(new Uri(sticker.Sticker_.Local.Path));
                 else
                     Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
@@ -38,7 +38,7 @@ public class Sticker : Button
                 break;
             case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
                 StickerVideo = new();
-                if (sticker.Sticker_.Local.Path != string.Empty)
+                if (sticker.Sticker_.Local.IsDownloadingCompleted)
                 {
                     StickerVideo.Source = MediaSource.CreateFromUri(new Uri(sticker.Sticker_.Local.Path));
                     StickerVideo.MediaPlayer.IsLoopingEnabled = true;
@@ -52,6 +52,10 @@ public class Sticker : Button
                 break;
         }
         
+        // TextBlock debug = new();
+        // debug.Text = sticker.Id.ToString();
+        // Content = debug;
+        
         Click += OnClick;
     }
 
@@ -64,16 +68,16 @@ public class Sticker : Button
                 switch (_sticker.Format)
                 {
                     case TdApi.StickerFormat.StickerFormatWebp:
-                        if (updateFile.File.Local.Path != string.Empty)
-                            StickerImage.Source = updateFile.File.Local.Path != string.Empty ?
+                        if (updateFile.File.Local.IsDownloadingCompleted)
+                            StickerImage.Source = updateFile.File.Local.IsDownloadingCompleted ?
                                 new BitmapImage(new Uri(updateFile.File.Local.Path)) : 
                                 new BitmapImage(new Uri(_sticker.Sticker_.Local.Path));
                         break;
                     case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
-                        if (updateFile.File.Local.Path != string.Empty)
+                        if (updateFile.File.Local.IsDownloadingCompleted)
                         {
                             StickerVideo.Source = MediaSource.CreateFromUri(
-                                new Uri(updateFile.File.Local.Path != string.Empty
+                                new Uri(updateFile.File.Local.IsDownloadingCompleted
                                     ? updateFile.File.Local.Path
                                     : _sticker.Sticker_.Local.Path));
                             StickerVideo.MediaPlayer.IsLoopingEnabled = true;
@@ -97,7 +101,7 @@ public class Sticker : Button
                 ChatId = _chatService._openedChatId,
                 InputMessageContent = new TdApi.InputMessageContent.InputMessageSticker
                 {
-                    Sticker = new TdApi.InputFile.InputFileId { Id = _sticker.Sticker_.Id },
+                    Sticker = new TdApi.InputFile.InputFileRemote { Id = _sticker.Sticker_.Remote.Id },
                     Emoji = _sticker.Emoji,
                     Height = _sticker.Height,
                     Width = _sticker.Width
