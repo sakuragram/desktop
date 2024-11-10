@@ -11,8 +11,14 @@
 	<Window.SystemBackdrop>
 		<DesktopAcrylicBackdrop />
 	</Window.SystemBackdrop>
-
+	
 	<Grid>
+		<Grid.Resources>
+			<ItemsPanelTemplate x:Key="HorizontalItemsPanel">
+				<StackPanel Orientation="Horizontal"/>
+			</ItemsPanelTemplate>
+		</Grid.Resources>
+		
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="*" />
@@ -21,17 +27,52 @@
 		<controls:TitleBar x:Name="TitleBar"
 		                   AutoConfigureCustomTitleBar="True"
 		                   DisplayMode="Tall"
-		                   IsBackButtonVisible="False"
+		                   IsBackButtonVisible="false"
 		                   IsPaneButtonVisible="False">
 			
 			<controls:TitleBar.Content>
-				<AutoSuggestBox PlaceholderText="Search" />
+				<StackPanel x:Name="PanelContent"
+				            Orientation="Horizontal">
+					<PersonPicture x:Name="CurrentUserPicture"
+					               Width="32"
+					               Height="32"
+					               Margin="0, 0, 4, 0"
+					               PointerPressed="CurrentUserPicture_OnPointerPressed">
+						<PersonPicture.ContextFlyout>
+							<MenuFlyout x:Name="FlyoutClientActions">
+								<MenuFlyoutItem x:Name="FlyoutItemAddAccount"
+								                Text="Add account"
+								                Click="FlyoutItemAddAccount_OnClick"/>
+								<MenuFlyoutItem x:Name="FlyoutItemLogOut"
+								                Text="Logout"
+								                Click="FlyoutItemLogOut_OnClick"/>
+								<MenuFlyoutSeparator/>
+								<MenuFlyoutItem x:Name="FlyoutItemSavedMessages"
+								                Text="Saved messages"
+								                Click="FlyoutItemSavedMessages_OnClick"/>
+								<MenuFlyoutSeparator/>
+								<MenuFlyoutItem x:Name="FlyoutItemSettings"
+								                Text="Settings"
+								                Click="FlyoutItemSettings_OnClick"/>
+							</MenuFlyout>
+						</PersonPicture.ContextFlyout>
+					</PersonPicture>
+					<AutoSuggestBox PlaceholderText="Search"
+					                Width="200"/>
+					<ScrollViewer Width="100"
+					              HorizontalScrollBarVisibility="Hidden"
+					              VerticalScrollBarVisibility="Disabled"
+					              HorizontalScrollMode="Enabled"
+					              VerticalScrollMode="Disabled"
+					              CanBeScrollAnchor="True">
+						<ItemsControl ItemsSource="{x:Bind Path=_stories, Mode=TwoWay}"
+						              ItemsPanel="{StaticResource HorizontalItemsPanel}"/>
+					</ScrollViewer>
+				</StackPanel>
 			</controls:TitleBar.Content>
 			
 			<controls:TitleBar.Footer>
-				<PersonPicture Width="32"
-				                    Height="32"
-				                    Initials="AB"/>
+				
 			</controls:TitleBar.Footer>
 			
 		</controls:TitleBar>

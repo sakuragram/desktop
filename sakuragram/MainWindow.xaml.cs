@@ -1,18 +1,18 @@
 using System;
-using System.IO;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Windows.Storage;
-using Windows.UI;
-using ABI.Microsoft.UI;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using Octokit;
 using sakuragram.Services.Core;
+using sakuragram.Views;
 using TdLib;
 using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 
@@ -28,6 +28,7 @@ namespace sakuragram
 		private int _totalUnreadCount;
 		private string _updateFilePath;
 		private bool _updateAvailable;
+		private List<PersonPicture> _stories = [];
 		
 		private UpdateManager _updateManager = App.UpdateManager;
 		private GitHubClient _gitHubClient = App._githubClient;
@@ -73,9 +74,43 @@ namespace sakuragram
 			
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
             NotificationService notificationService = new();
-
+            
             var chatsView = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.ChatsView");
             ContentFrame.Navigate(chatsView);
+
+            DispatcherQueue.EnqueueAsync(async () =>
+            {
+	            try
+	            {
+		            var currentUser = await _client.GetMeAsync();
+		            if (currentUser.ProfilePhoto != null)
+		            {
+			            if (currentUser.ProfilePhoto.Small.Local.IsDownloadingCompleted)
+			            {
+				            CurrentUserPicture.ProfilePicture = new BitmapImage(new Uri(currentUser.ProfilePhoto.Small.Local.Path));
+			            }
+			            else
+			            {
+				            var file = await _client.ExecuteAsync(new TdApi.DownloadFile
+				            {
+					            FileId = currentUser.ProfilePhoto.Small.Id,
+					            Priority = 1
+				            });
+
+				            if (file.Local.IsDownloadingCompleted) CurrentUserPicture.ProfilePicture = new BitmapImage(new Uri(file.Local.Path));
+			            }
+		            }
+		            else
+		            {
+			            CurrentUserPicture.Initials = currentUser.FirstName + currentUser.LastName;
+		            }
+	            }
+	            catch (TdException e)
+	            {
+		            Console.WriteLine(e);
+		            throw;
+	            }
+            });
 		}
 
 		private async void CheckForUpdates()
@@ -169,6 +204,44 @@ namespace sakuragram
 			//NavigationView.FooterMenuItems.Add(item);
 			
 			_updateAvailable = true;
+		}
+
+		private void CurrentUserPicture_OnPointerPressed(object sender, PointerRoutedEventArgs e)
+		{
+			FlyoutClientActions.ShowAt(CurrentUserPicture, new FlyoutShowOptions 
+				{ ShowMode = FlyoutShowMode.Transient, Placement = FlyoutPlacementMode.Bottom });
+		}
+
+		private void FlyoutItemAddAccount_OnClick(object sender, RoutedEventArgs e)
+		{
+		}
+
+		private async void FlyoutItemLogOut_OnClick(object sender, RoutedEventArgs e)
+		{
+			await _client.LogOutAsync();
+			await _client.CloseAsync();
+			var loginView = new LoginView();
+			loginView.Activate();
+			Close();
+		}
+
+		private void FlyoutItemSavedMessages_OnClick(object sender, RoutedEventArgs e)
+		{
+			throw new NotImplementedException();
+		}
+
+		private void FlyoutItemSettings_OnClick(object sender, RoutedEventArgs e)
+		{
+			var settingsView = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.SettingsView");
+			ContentFrame.Navigate(settingsView);
+			
+			TitleBar.IsBackButtonVisible = true;
+			TitleBar.BackButtonClick += (_, _) =>
+			{
+				TitleBar.IsBackButtonVisible = false;
+				var chatsView = Assembly.GetExecutingAssembly().GetType($"{Config.AppName}.Views.ChatsView");
+				ContentFrame.Navigate(chatsView);
+			};
 		}
 	}
 }
