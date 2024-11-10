@@ -49,7 +49,7 @@
                                 Content="Chat settings" 
                                 Tag="ChatSettings"
                                 Icon="People"
-                                IsEnabled="False"/>
+                                IsEnabled="True"/>
             <NavigationViewItem x:Name="NavViewFolders" 
                                 Content="Folders" 
                                 Tag="Folders"
