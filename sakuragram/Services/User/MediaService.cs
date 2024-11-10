@@ -21,7 +21,7 @@ public class MediaService
             return;
         }
 
-        if (chat.Photo.Small.Local.Path != null)
+        if (chat.Photo.Small.Local.IsDownloadingCompleted)
         {
             avatar.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path));
             return;
@@ -34,9 +34,12 @@ public class MediaService
         });
 
         if (file.Local.IsDownloadingCompleted)
+        { 
+            avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path));
+        }
+        else if (chat.Photo.Small.Local.IsDownloadingCompleted)
         {
-            var path = file.Local.Path ?? chat.Photo.Small.Local.Path;
-            avatar.ProfilePicture = new BitmapImage(new Uri(path));
+            avatar.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path));
         }
     }
     
@@ -48,7 +51,7 @@ public class MediaService
             return;
         }
 
-        if (user.ProfilePhoto.Small.Local.Path != null)
+        if (user.ProfilePhoto.Small.Local.IsDownloadingCompleted)
         {
             avatar.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path));
             return;
@@ -62,8 +65,11 @@ public class MediaService
 
         if (file.Local.IsDownloadingCompleted)
         {
-            var path = file.Local.Path ?? user.ProfilePhoto.Small.Local.Path;
-            avatar.ProfilePicture = new BitmapImage(new Uri(path));
+            avatar.ProfilePicture = new BitmapImage(new Uri(file.Local.Path));
+        }
+        else if (user.ProfilePhoto.Small.Local.IsDownloadingCompleted)
+        {
+            avatar.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path));
         }
     }
 }
