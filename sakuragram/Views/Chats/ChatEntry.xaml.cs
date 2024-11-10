@@ -114,14 +114,14 @@ namespace sakuragram.Views.Chats
         {
             try
             {
-                _chat = await _client.GetChatAsync(chatId: ChatId);
+                _chat = await _client.GetChatAsync(ChatId);
                 string senderName = await UserService.GetSenderName(_chat.LastMessage);
 
                 await DispatcherQueue.EnqueueAsync(async () => {
                     await MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
                     TextBlockChatName.Text = _chat.Title;
                     TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
-                    TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
+                    TextBlockChatLastMessage.Text = await MessageService.GetLastMessageContent(_chat.LastMessage);
                     TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty
                         ? Visibility.Collapsed
                         : Visibility.Visible;
