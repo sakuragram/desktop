@@ -3,8 +3,10 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Media.Core;
 using CommunityToolkit.WinUI;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Services;
 using TdLib;
@@ -18,14 +20,21 @@ public class Sticker : Button
     private static ChatService _chatService = App.ChatService;
     private Image StickerImage { get; }
     private MediaPlayerElement StickerVideo { get; }
+
+    private int ButtonWidthAndHeight = 64;
+    private int StickerWidthAndHeight = 58;
     
     public Sticker(TdApi.Sticker sticker)
     {
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         _sticker = sticker;
         
-        Width = 64;
-        Height = 64;
+        Background = new SolidColorBrush(Colors.Transparent);
+        Style = null;
+        Margin = new Thickness(3);
+        Padding = new Thickness(0);
+        Width = ButtonWidthAndHeight;
+        Height = ButtonWidthAndHeight;
 
         switch (sticker.Format)
         {
@@ -35,6 +44,10 @@ public class Sticker : Button
                     StickerImage.Source = new BitmapImage(new Uri(sticker.Sticker_.Local.Path));
                 else
                     Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
+                StickerImage.HorizontalAlignment = HorizontalAlignment.Stretch;
+                StickerImage.VerticalAlignment = VerticalAlignment.Stretch;
+                StickerImage.Width = StickerWidthAndHeight;
+                StickerImage.Height = StickerWidthAndHeight;
                 Content = StickerImage;
                 break;
             case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
@@ -49,6 +62,10 @@ public class Sticker : Button
                 }
                 else
                     Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
+                StickerVideo.HorizontalAlignment = HorizontalAlignment.Stretch;
+                StickerVideo.VerticalAlignment = VerticalAlignment.Stretch;
+                StickerVideo.Width = StickerWidthAndHeight;
+                StickerVideo.Height = StickerWidthAndHeight;
                 Content = StickerVideo;
                 break;
         }
