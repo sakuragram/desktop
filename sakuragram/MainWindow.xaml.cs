@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using Octokit;
+using sakuragram.Services;
 using sakuragram.Services.Core;
 using sakuragram.Views;
 using TdLib;
@@ -83,27 +84,7 @@ namespace sakuragram
 	            try
 	            {
 		            var currentUser = await _client.GetMeAsync();
-		            if (currentUser.ProfilePhoto != null)
-		            {
-			            if (currentUser.ProfilePhoto.Small.Local.IsDownloadingCompleted)
-			            {
-				            CurrentUserPicture.ProfilePicture = new BitmapImage(new Uri(currentUser.ProfilePhoto.Small.Local.Path));
-			            }
-			            else
-			            {
-				            var file = await _client.ExecuteAsync(new TdApi.DownloadFile
-				            {
-					            FileId = currentUser.ProfilePhoto.Small.Id,
-					            Priority = 1
-				            });
-
-				            if (file.Local.IsDownloadingCompleted) CurrentUserPicture.ProfilePicture = new BitmapImage(new Uri(file.Local.Path));
-			            }
-		            }
-		            else
-		            {
-			            CurrentUserPicture.Initials = currentUser.FirstName + currentUser.LastName;
-		            }
+		            await MediaService.GetUserPhoto(currentUser, CurrentUserPicture);
 		            FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
 	            }
 	            catch (TdException e)
