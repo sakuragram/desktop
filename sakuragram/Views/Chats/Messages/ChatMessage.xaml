@@ -49,7 +49,7 @@
                     </StackPanel>
                 </Border>
                 <StackPanel x:Name="PanelMessageContent" />
-                <Grid x:Name="GridReactions"/>
+                <StackPanel x:Name="GridReactions"/>
                 <StackPanel Orientation="Horizontal" 
                             HorizontalAlignment="Stretch">
                     <TextBlock x:Name="TextBlockReplies"
@@ -75,6 +75,13 @@
                                Foreground="{StaticResource TextFillColorTertiaryBrush}" 
                                HorizontalTextAlignment="Right" 
                                HorizontalAlignment="Right"/>
+                </StackPanel>
+                <StackPanel x:Name="PanelReply">
+                    <MenuFlyoutSeparator />
+                    <Button x:Name="ButtonReply"
+                            Content="Reply"
+                            HorizontalAlignment="Stretch"
+                            Click="ButtonReply_OnClick"/>
                 </StackPanel>
             </StackPanel>
         </Border>
