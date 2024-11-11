@@ -258,7 +258,7 @@ namespace sakuragram
 				
 				foreach (var message in messages.Messages)
 				{
-					var messageContent = await MessageService.GetLastMessageContent(message);
+					var messageContent = await MessageService.GetTextMessageContent(message);
 					var found = splitText.All(key => messageContent.ToLower().Contains(key));
 					if (found)
 					{

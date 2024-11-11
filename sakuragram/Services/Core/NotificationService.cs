@@ -43,7 +43,7 @@ public class NotificationService
             new ToastContentBuilder()
                 .AddArgument("conversationId", chat.Id)
                 .AddText($"{senderName} sent you new message!")
-                .AddText(MessageService.GetLastMessageContent(message).Result)
+                .AddText(MessageService.GetTextMessageContent(message).Result)
                 .AddButton(new ToastButton()
                     .SetContent("Reply"))
                 .AddArgument("action", "reply")

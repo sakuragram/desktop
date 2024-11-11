@@ -63,7 +63,7 @@ namespace sakuragram.Views.Chats
                         {
                             string senderName = UserService.GetSenderName(_chat.LastMessage).Result;
                             TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
-                            TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
+                            TextBlockChatLastMessage.Text = MessageService.GetTextMessageContent(_chat.LastMessage).Result;
                         }
                     });
                     break;
@@ -77,7 +77,7 @@ namespace sakuragram.Views.Chats
                         {
                             string senderName = UserService.GetSenderName(_chat.LastMessage).Result;
                             TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
-                            TextBlockChatLastMessage.Text = MessageService.GetLastMessageContent(_chat.LastMessage).Result;
+                            TextBlockChatLastMessage.Text = MessageService.GetTextMessageContent(_chat.LastMessage).Result;
                         }
                     });
                     break;
@@ -119,7 +119,7 @@ namespace sakuragram.Views.Chats
                 await MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
                 TextBlockChatName.Text = _chat.Title;
                 TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
-                TextBlockChatLastMessage.Text = await MessageService.GetLastMessageContent(_chat.LastMessage);
+                TextBlockChatLastMessage.Text = await MessageService.GetTextMessageContent(_chat.LastMessage);
                 TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty
                     ? Visibility.Collapsed
                     : Visibility.Visible;

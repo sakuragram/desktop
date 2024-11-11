@@ -245,7 +245,7 @@ public sealed partial class ChatsView : Page
                     
                 TextBlock topicLastMessageTextBlock = new();
                 topicLastMessageTextBlock.Text = UserService.GetSenderName(forumTopic.LastMessage).Result + ": " 
-                    + MessageService.GetLastMessageContent(forumTopic.LastMessage).Result;
+                    + MessageService.GetTextMessageContent(forumTopic.LastMessage).Result;
                 topicLastMessageTextBlock.FontSize = 10;
                 topicLastMessageTextBlock.Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"];
                 stackPanel.Children.Add(topicLastMessageTextBlock);

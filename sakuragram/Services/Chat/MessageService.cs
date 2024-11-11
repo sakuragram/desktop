@@ -36,7 +36,7 @@ public class MessageService
         _selectedMessages.Clear();
     }
     
-    public static async Task<string> GetLastMessageContent(TdApi.Message message)
+    public static async Task<string> GetTextMessageContent(TdApi.Message message)
     {
         var chat = await _client.GetChatAsync(message.ChatId);
         
