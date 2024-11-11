@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
 using Windows.System;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Input;
@@ -42,6 +41,12 @@ public sealed partial class Chat : Page
     private bool _isProfileOpened = false;
     private bool _hasInternetConnection = true;
     private bool _isForum = false;
+
+    #region LoadProperties
+
+    private bool _isNeedLoadFastActions = true;
+
+    #endregion
         
     private ReplyService _replyService;
     private MessageService _messageService;
@@ -56,8 +61,7 @@ public sealed partial class Chat : Page
         _replyService = new ReplyService();
         _messageService = new MessageService();
 
-        Task.Run(async () => await UpdateChat()).ConfigureAwait(false);
-        GetMessagesAsync(_chatId, _isForum);
+        Task.Run(async () => await UpdateChat());
         
         #if DEBUG
         {
@@ -68,11 +72,7 @@ public sealed partial class Chat : Page
             CreateVideoCall.IsEnabled = false;
         }
         #endif
-
-        //_chat = _client.ExecuteAsync(new TdApi.GetChat{ChatId = _chatId}).Result;
-            
-        UserMessageInput.Focus(FocusState.Keyboard);
-        //var pinnedMessage = _client.ExecuteAsync(new TdApi.GetChatPinnedMessage {ChatId = ChatId});
+        
     }
 
     private Task ProcessUpdates(TdApi.Update update)
@@ -83,15 +83,23 @@ public sealed partial class Chat : Page
             {
                 if (updateNewMessage.Message.ChatId == _chatId)
                 {
-                    MessagesList.DispatcherQueue.TryEnqueue(() =>
+                    DispatcherQueue.EnqueueAsync(async () =>
                     {
-                        GenerateMessageByType(updateNewMessage.Message);
+                        await GenerateMessageByType(updateNewMessage.Message);
 
                         // For debug
                         // var message = new ChatDebugMessage();
                         // MessagesList.Children.Add(message);
                         // message.UpdateMessage(updateNewMessage.Message);
                     });
+                }
+                break;
+            }
+            case TdApi.Update.UpdateChatAction updateChatAction:
+            {
+                if (updateChatAction.ChatId == _chatId)
+                {
+                    ChatTitle.DispatcherQueue.TryEnqueue(() => {});
                 }
                 break;
             }
@@ -286,6 +294,9 @@ public sealed partial class Chat : Page
                     });
                 }
             }
+
+            // var pinnedMessage = await _client.GetChatPinnedMessageAsync(_chat.Id);
+            // if ()
             
             switch (_chat.Type)
             {
@@ -358,6 +369,7 @@ public sealed partial class Chat : Page
             await _client.ExecuteAsync(new TdApi.OpenChat { ChatId = _chatService._openedChatId });
             if (_chat != null)
             {
+                GetMessagesAsync(_chatId, _isForum);
                 _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
             }
         }
@@ -393,7 +405,7 @@ public sealed partial class Chat : Page
     {
         try
         {
-            var chat = await _client.GetChatAsync(chatId).ConfigureAwait(false);
+            var chat = await _client.GetChatAsync(chatId);
             int totalMessagesLoaded = 0;
             const int maxMessagesToLoad = 50;
             int offset = 0;
@@ -409,34 +421,26 @@ public sealed partial class Chat : Page
                         ChatId = chatId,
                         FromMessageId = chat.LastMessage?.Id ?? 0,
                         Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100),
-                        Offset = offset,
+                        Offset = 0,
                         OnlyLocal = _hasInternetConnection
-                    }).ConfigureAwait(false);
+                    });
                 else
                     messages = await _client.ExecuteAsync(new TdApi.GetMessageThreadHistory
                     {
                         ChatId = chatId,
                         MessageId = _forumTopic.LastMessage.Id,
-                        Offset = offset,
+                        Offset = 0,
                         Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100)
-                    }).ConfigureAwait(false);
+                    });
 
                 if (messages.Messages_ == null || !messages.Messages_.Any())
                 {
                     break;
                 }
 
-                try
-                {
-                    allMessages.AddRange(messages.Messages_);
-                    totalMessagesLoaded += messages.Messages_.Length;
-                    offset += messages.Messages_.Length;
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                    throw;
-                }
+                allMessages.AddRange(messages.Messages_);
+                totalMessagesLoaded += messages.Messages_.Length;
+                offset += messages.Messages_.Length;
             }
 
             allMessages.Sort((m1, m2) => m1.Date.CompareTo(m2.Date));
@@ -445,13 +449,17 @@ public sealed partial class Chat : Page
             {
                 await GenerateMessageByType(message);
             }
-        } 
-        catch (Exception ex)
+        }
+        catch (Exception e)
         {
-            Debug.WriteLine(ex.Message);
+            Debug.WriteLine(e);
+            throw;
         }
     }
 
+    private long _mediaAlbumId;
+    private List<TdApi.Message> _mediaAlbum;
+    
     private async Task GenerateMessageByType(TdApi.Message message)
     {
         await DispatcherQueue.EnqueueAsync(() =>
@@ -462,14 +470,14 @@ public sealed partial class Chat : Page
                 {
                     var textMessage = new ChatMessage();
                     textMessage._messageService = _messageService;
-                    textMessage.UpdateMessage(message);
+                    textMessage.UpdateMessage(message, null);
                     MessagesList.Children.Add(textMessage);
                     break;
                 }
                 case TdApi.MessageContent.MessageChatChangeTitle or TdApi.MessageContent.MessagePinMessage 
                     or TdApi.MessageContent.MessageGiftedPremium
                     or TdApi.MessageContent.MessageGameScore or TdApi.MessageContent.MessageChatBoost 
-                    or TdApi.MessageContent.MessageUnsupported or TdApi.MessageContent.:
+                    or TdApi.MessageContent.MessageUnsupported:
                 {
                     var changeTitleMessage = new ChatServiceMessage();
                     changeTitleMessage.UpdateMessage(message);
@@ -479,7 +487,7 @@ public sealed partial class Chat : Page
                 case TdApi.MessageContent.MessageSticker or TdApi.MessageContent.MessageAnimation:
                 {
                     var stickerMessage = new ChatMessage();
-                    stickerMessage.UpdateMessage(message);
+                    stickerMessage.UpdateMessage(message, null);
                     MessagesList.Children.Add(stickerMessage);
                     break;
                 }
@@ -492,8 +500,14 @@ public sealed partial class Chat : Page
                 }
                 case TdApi.MessageContent.MessagePhoto:
                 {
-                    var photoMessage = new ChatPhotoMessage();
-                    photoMessage.UpdateMessage(message);
+                    // if (message.MediaAlbumId != 0)
+                    // {
+                    //     _mediaAlbumId = message.MediaAlbumId;
+                    //     _mediaAlbum.Add(message);
+                    // }
+                    
+                    var photoMessage = new ChatMessage();
+                    photoMessage.UpdateMessage(message, _mediaAlbum);
                     MessagesList.Children.Add(photoMessage);
                     break;
                 }
@@ -535,6 +549,9 @@ public sealed partial class Chat : Page
                 }
     #endif
             }
+            
+            MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
+            MessagesScrollViewer.ChangeView(0, 1, 1);
         });
     }
         
@@ -964,5 +981,12 @@ public sealed partial class Chat : Page
                 break;
             }
         }
+    }
+
+    private void Stickers_OnClick(object sender, RoutedEventArgs e)
+    {
+        _ChatsView._mediaMenuOpened = !_ChatsView._mediaMenuOpened;
+        _ChatsView.UpdateMediaLength();
+        _ChatsView.UpdateMediaVisibility();
     }
 }

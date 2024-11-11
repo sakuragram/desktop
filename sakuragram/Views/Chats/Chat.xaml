@@ -12,7 +12,6 @@
     VerticalAlignment="Stretch"
     HorizontalContentAlignment="Stretch"
     VerticalContentAlignment="Stretch"
-    Margin="4, 0, 0, 0"
     KeyDown="Chat_OnKeyDown">
 
     <Border CornerRadius="4">
@@ -27,12 +26,14 @@
                 <RowDefinition MinHeight="50" MaxHeight="70" />
             </Grid.RowDefinitions>
             
-            <Grid VerticalAlignment="Top" HorizontalAlignment="Stretch" MaxHeight="70" MinHeight="50"
-                        Grid.Row="0" 
-                        Padding="5">
-                <Border x:Name="TopBar" Background="#1a1a1a" VerticalAlignment="Center" HorizontalAlignment="Stretch" 
-                        CornerRadius="4" 
-                        Padding="5"
+            <StackPanel VerticalAlignment="Top" 
+                        HorizontalAlignment="Stretch" 
+                        MaxHeight="70" 
+                        MinHeight="50"
+                        Grid.Row="0">
+                <Border x:Name="TopBar" 
+                        Background="#1a1a1a" 
+                        VerticalAlignment="Center" HorizontalAlignment="Stretch"
                         PointerPressed="TopBar_OnPointerPressed">
                     <Grid x:Name="ChatInfo" HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center">
@@ -119,7 +120,18 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-            </Grid>
+                <Border x:Name="BorderPinnedMessage">
+                    <StackPanel>
+                        <TextBlock Text="Pinned message" 
+                                   FontSize="12"/>
+                        <TextBlock x:Name="TextBlockPinnedMessage"
+                                   FontSize="12"/>
+                    </StackPanel>
+                </Border>
+                <Button x:Name="BorderActionBar">
+                    
+                </Button>
+            </StackPanel>
             
             <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Grid.Row="1">
                     <ScrollViewer x:Name="MessagesScrollViewer" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" >
@@ -127,16 +139,17 @@
                     </ScrollViewer>
             </Grid>
             
-            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="50" 
+            <Grid HorizontalAlignment="Stretch" 
+                  VerticalAlignment="Bottom" 
+                  Height="50" 
                   MaxHeight="50" 
-                        MinHeight="50" 
-                        Grid.Row="2" Padding="5">
+                  MinHeight="50" 
+                  Grid.Row="2">
                 <RelativePanel>
                     <Border x:Name="UserActionsPanel" 
                             Background="#1a1a1a" 
                             HorizontalAlignment="Stretch" 
                             VerticalAlignment="Bottom" 
-                            CornerRadius="4" 
                             Padding="5"
                             RelativePanel.AlignRightWithPanel="True"
                             RelativePanel.AlignLeftWithPanel="True"
@@ -209,7 +222,8 @@
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Stretch"
                                             Grid.Column="2"
-                                            IsEnabled="False">
+                                            IsEnabled="True"
+                                            Click="Stickers_OnClick">
                                         <Button.Content>
                                             <FontIcon Glyph="&#xF4AA;"
                                                       FontSize="18"/>
@@ -233,6 +247,7 @@
                         </Grid>
                     </Border>
                     <Button x:Name="ButtonFastAction"
+                            x:Load="{x:Bind _isNeedLoadFastActions}"
                             Content="Fast action"
                             FontSize="16"
                             Background="#1a1a1a"
