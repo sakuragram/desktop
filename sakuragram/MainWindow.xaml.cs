@@ -34,7 +34,7 @@ namespace sakuragram
 		
 		private UpdateManager _updateManager = App.UpdateManager;
 		private GitHubClient _gitHubClient = App._githubClient;
-		public static ApplicationDataContainer _localSettings;
+		public static Settings _localSettings = SettingsService.LoadSettings();
 		
 		public MainWindow()
 		{
