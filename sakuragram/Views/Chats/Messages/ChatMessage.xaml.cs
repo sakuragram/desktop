@@ -289,6 +289,7 @@ public partial class ChatMessage : Page
                 GenerateTextMessage(messageText);
                 break;
             case TdApi.MessageContent.MessageSticker messageSticker:
+                CheckSticker(messageSticker);
                 GenerateStickerMessage(messageSticker);
                 break;
             case TdApi.MessageContent.MessagePhoto messagePhoto:
@@ -521,15 +522,22 @@ public partial class ChatMessage : Page
         textMessage.Inlines.Add(tempSpan);
         PanelMessageContent.Children.Add(textMessage);
     }
+
+    private async void CheckSticker(TdApi.MessageContent.MessageSticker messageSticker)
+    {
+        if (messageSticker.Sticker.Sticker_.Local.IsDownloadingCompleted)
+        {
+            return;
+        }
+        else
+        {
+            await _client.DownloadFileAsync(messageSticker.Sticker.Sticker_.Id, 3);
+            return;
+        }
+    }
     
     private async void GenerateStickerMessage(TdApi.MessageContent.MessageSticker messageSticker)
     {
-        var stickerPath = await _client.DownloadFileAsync(fileId: messageSticker.Sticker.Sticker_.Id, priority: 1);
-        
-        // TextBlock debug = new();
-        // debug.Text = messageSticker.Sticker.Id.ToString();
-        // PanelMessageContent.Children.Add(debug);
-        
         switch (messageSticker.Sticker.Format)
         {
             case TdApi.StickerFormat.StickerFormatWebp:
@@ -539,9 +547,7 @@ public partial class ChatMessage : Page
                     await DispatcherQueue.EnqueueAsync(() =>
                     {
                         _stickerStaticMessage = new();
-                        _stickerStaticMessage.Source = stickerPath.Local.IsDownloadingCompleted
-                            ? new BitmapImage(new Uri(stickerPath.Local.Path))
-                            : new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+                        _stickerStaticMessage.Source = new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
                         _stickerStaticMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
                         _stickerStaticMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
                         PanelMessageContent.Children.Add(_stickerStaticMessage);
@@ -561,9 +567,7 @@ public partial class ChatMessage : Page
                     await DispatcherQueue.EnqueueAsync(() =>
                     {
                         _stickerDynamicMessage = new();
-                        _stickerDynamicMessage.Source = stickerPath.Local.IsDownloadingCompleted
-                            ? MediaSource.CreateFromUri(new Uri(stickerPath.Local.Path))
-                            : MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
+                        _stickerDynamicMessage.Source = MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
                         _stickerDynamicMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
                         _stickerDynamicMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
                         _stickerDynamicMessage.MediaPlayer.IsLoopingEnabled = true;
