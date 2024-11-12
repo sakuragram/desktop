@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
+using TdLib;
 
 namespace sakuragram.Services.Core;
 
 public class SettingsService
 {
-    private static readonly string SettingsPath = Path.Combine(AppContext.BaseDirectory, "sakura_settings.json");
+    private static readonly string SettingsPath = Path.Combine(AppContext.BaseDirectory, "sakuragram.settings.json");
     
     public static void SaveSettings(Settings settings)
     {
@@ -22,7 +24,9 @@ public class SettingsService
             InstallBeta = false,
             Language = "en",
             ChatBottomFastAction = "Discuss",
-            StartMediaPage = "Stickers"
+            StartMediaPage = "Stickers",
+            ClientIDs = new List<long>(),
+            ClientIndex = 0
         };
         string jsonSettings = File.ReadAllText(SettingsPath);
         return JsonConvert.DeserializeObject<Settings>(jsonSettings);
@@ -36,4 +40,6 @@ public class Settings
     public string Language { get; set; }
     public string ChatBottomFastAction { get; set; }
     public string StartMediaPage { get; set; }
+    public List<long> ClientIDs { get; set; }
+    public int ClientIndex { get; set; }
 }
