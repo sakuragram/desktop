@@ -57,11 +57,20 @@ public partial class App : Application
 
 		ReadyToAuthenticate.Wait();
 	}
-		
-	private async Task ProcessUpdates(TdApi.Update update)
+
+	private static async Task ProcessUpdates(TdApi.Update update)
 	{
 		switch (update)
 		{
+			case TdApi.Update.UpdateOption updateOption:
+				if (updateOption.Name == "version")
+					Config.TdLibVersion = updateOption.Value switch
+					{
+						TdApi.OptionValue.OptionValueString optionValueString => optionValueString.Value,
+						_ => string.Empty
+					};
+				break;
+			
 			case TdApi.Update.UpdateAuthorizationState { AuthorizationState: TdApi.AuthorizationState.AuthorizationStateWaitTdlibParameters }:
 				var filesLocation = Path.Combine(AppContext.BaseDirectory, Config.BaseLocation);
 				await _client.ExecuteAsync(new TdApi.SetTdlibParameters
