@@ -1,5 +1,7 @@
+using System;
 using System.Threading.Tasks;
 using Windows.System;
+using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -8,60 +10,47 @@ using TdLib;
 
 namespace sakuragram.Views
 {
-	public sealed partial class LoginView : Window
+	public sealed partial class LoginView : Page
 	{
 		private static TdClient _client = App._client;
 		private int _loginState = 0;
-		private Window _mWindow;
+		public MainWindow _window;
+		private Frame _contentFrame;
 		private string _passwordHint;
 		private int _passwordLength;
 
 		public LoginView()
 		{
 			InitializeComponent();
-			Title = Config.AppName;
-			Window window = this;
-			window.ExtendsContentIntoTitleBar = true;
-			TrySetDesktopAcrylicBackdrop();
-			
+
+			TdException.Visibility = Visibility.Visible;
 			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
 			
 			TextBlockCurrentAuthState.Text = "Your phone";
 			TextBlockCurrentAuthStateDescription.Text = "Please confirm your country code and enter your phone number.";
 		}
 
-		private Task ProcessUpdates(TdApi.Update update)
+		private async Task ProcessUpdates(TdApi.Update update)
 		{
+			await DispatcherQueue.EnqueueAsync(() => TdException.Text = update.ToString());
+			
 			switch (update)
 			{
 				case TdApi.Update.UpdateAuthorizationState updateAuthorizationState:
 				{
-					switch (updateAuthorizationState.AuthorizationState)
+					_passwordHint = updateAuthorizationState.AuthorizationState switch
 					{
-						case TdApi.AuthorizationState.AuthorizationStateWaitPassword password:
-						{
-							_passwordHint = password.PasswordHint;
-							break;
-						}
-					}
+						TdApi.AuthorizationState.AuthorizationStateWaitPassword password => password.PasswordHint,
+						_ => string.Empty
+					};
+					break;
+				}
+				case TdApi.Update.UpdateChatFolders updateChatFolders:
+				{
+					App._folders = updateChatFolders.ChatFolders;
 					break;
 				}
 			}
-
-			return Task.CompletedTask;
-		}
-
-		private bool TrySetDesktopAcrylicBackdrop()
-		{
-			if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
-			{
-				Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop DesktopAcrylicBackdrop = new Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop();
-				SystemBackdrop = DesktopAcrylicBackdrop;
-
-				return true;
-			}
-
-			return false;
 		}
 		
 		private async void button_Next_Click(object sender, RoutedEventArgs e)
@@ -133,9 +122,16 @@ namespace sakuragram.Views
 					}
 					else
 					{
-						_mWindow = new MainWindow();
-						_mWindow.Activate();
-						Close();
+						if (_window != null)
+						{
+							_contentFrame = _window.RootFrame;
+							_window.TopBarContent.Visibility = Visibility.Visible;
+						}
+
+						if (_contentFrame != null)
+						{
+							_contentFrame.Navigate(typeof(ChatsView));
+						}
 					}
 					break;
 				case 2:
@@ -162,9 +158,16 @@ namespace sakuragram.Views
 					TdException.Visibility = Visibility.Collapsed;
 					_loginState = 0;
 					ButtonNext.IsEnabled = true;
-					_mWindow = new MainWindow();
-					_mWindow.Activate();
-					Close();
+					if (_window != null)
+					{
+						_contentFrame = _window.RootFrame;
+						_window.TopBarContent.Visibility = Visibility.Visible;
+					}
+
+					if (_contentFrame != null)
+					{
+						_contentFrame.Navigate(typeof(ChatsView));
+					}
 					break;
 			}
 		}
@@ -173,7 +176,6 @@ namespace sakuragram.Views
 		{
 			var window = new Auth_ForgotPassword();
 			window.Activate();
-			AppWindow.Destroy();
 		}
 
 		private void UIElement_OnKeyDown(object sender, KeyRoutedEventArgs e)

@@ -45,9 +45,6 @@ public partial class Auth_ForgotPassword : Window
             NewPassword = TextBoxPassword.Password,
             NewHint = NewHint.Text
         });
-        
-        var window = new LoginView();
-        window.Activate();
         Close();
     }
 
