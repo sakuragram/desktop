@@ -120,12 +120,16 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-                <Border x:Name="BorderPinnedMessage">
+                <Border x:Name="BorderPinnedMessage"
+                        Background="{StaticResource ControlFillColorSecondaryBrush}"
+                        CornerRadius="0, 0, 4, 4">
                     <StackPanel>
                         <TextBlock Text="Pinned message" 
-                                   FontSize="12"/>
+                                   FontSize="12"
+                                   Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
                         <TextBlock x:Name="TextBlockPinnedMessage"
-                                   FontSize="12"/>
+                                   FontSize="12"
+                                   Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </Border>
                 <Button x:Name="BorderActionBar">
