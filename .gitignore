@@ -369,3 +369,4 @@ sakuragram/build/*
 sakuragram/Assets/Dark.svg
 sakuragram/Assets/Light.svg
 scripts/*
+/.fleet
