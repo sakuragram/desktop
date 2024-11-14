@@ -2,6 +2,8 @@
 
 public class FeaturesManager
 {
-    public static bool isCallsEnabled = false;
-    public static bool isSearchMessagesEnabled = false;
+    public static bool _debugMode = false;
+    
+    public static bool _isCallsEnabled = false;
+    public static bool _isSearchMessagesEnabled = false;
 }

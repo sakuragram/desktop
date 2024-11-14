@@ -127,7 +127,6 @@ public sealed partial class MainWindow : Window
 				
 				await UpdateNotificationInfo();
 			});
-			
 			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
 			NotificationService notificationService = new();
 
