@@ -23,6 +23,7 @@
     <NavigationView x:Name="NavigationView"
                     IsSettingsVisible="False"
                     IsBackEnabled="False"
+                    IsPaneToggleButtonVisible="False"
                     IsBackButtonVisible="Collapsed"
                     PaneDisplayMode="Left"
                     ItemInvoked="NavigationView_OnItemInvoked"
