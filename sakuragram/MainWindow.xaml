@@ -13,12 +13,6 @@
 	</Window.SystemBackdrop>
 	
 	<Grid>
-		<Grid.Resources>
-			<ItemsPanelTemplate x:Key="HorizontalItemsPanel">
-				<StackPanel Orientation="Horizontal"/>
-			</ItemsPanelTemplate>
-		</Grid.Resources>
-		
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="*" />
@@ -33,42 +27,111 @@
 			<controls:TitleBar.Content>
 				<StackPanel x:Name="PanelContent"
 				            Orientation="Horizontal">
-					<PersonPicture x:Name="CurrentUserPicture"
-					               Width="32"
-					               Height="32"
-					               Margin="0, 0, 4, 0"
-					               PointerPressed="CurrentUserPicture_OnPointerPressed">
-						<PersonPicture.ContextFlyout>
-							<MenuFlyout x:Name="FlyoutClientActions"
-							            Opening="FlyoutClientActions_OnOpening"
-							            Closing="FlyoutClientActions_OnClosing">
-								<MenuFlyoutItem x:Name="FlyoutItemCurrentUser"
-								                Click="FlyoutItemCurrentUser_OnClick"/>
-								<MenuFlyoutSeparator/>
-								<MenuFlyoutItem x:Name="FlyoutItemAddAccount"
-								                Text="Add account"
-								                Click="FlyoutItemAddAccount_OnClick"/>
-								<MenuFlyoutItem x:Name="FlyoutItemLogOut"
-								                Text="Logout"
-								                Click="FlyoutItemLogOut_OnClick"/>
-								<MenuFlyoutSeparator/>
-								<MenuFlyoutItem x:Name="FlyoutItemSavedMessages"
-								                Text="Saved messages"
-								                Click="FlyoutItemSavedMessages_OnClick"/>
-								<MenuFlyoutSeparator/>
-								<MenuFlyoutItem x:Name="FlyoutItemSettings"
-								                Text="Settings"
-								                Click="FlyoutItemSettings_OnClick"/>
-								<MenuFlyoutSeparator x:Name="SeparatorUsers"/>
+					<Button x:Name="ButtonCreate"
+					        Width="32"
+					        Height="32"
+					        Padding="0"
+					        Margin="0, 0, 4, 0">
+						<Button.Content>
+							<FontIcon Glyph="&#xF742;"
+							          FontSize="18" />
+						</Button.Content>
+						
+						<Button.Flyout>
+							<MenuFlyout ShowMode="Transient"
+							            Placement="Bottom">
+								<MenuFlyoutItem x:Name="FlyoutItemCreatePc"
+								                Text="New private chat">
+									<MenuFlyoutItem.Icon>
+										<FontIcon Glyph="&#xE77B;" />
+									</MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+								<MenuFlyoutItem x:Name="FlyoutItemCreateGroup"
+								                Text="New group">
+									<MenuFlyoutItem.Icon>
+										<FontIcon Glyph="&#xE716;" />
+									</MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+								<MenuFlyoutItem x:Name="FlyoutItemCreateChannel"
+								                Text="New channel">
+									<MenuFlyoutItem.Icon>
+										<FontIcon Glyph="&#xEC24;" />
+									</MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+								<MenuFlyoutItem x:Name="FlyoutItemCreateSecretChat"
+								                Text="New secret chat">
+									<MenuFlyoutItem.Icon>
+										<FontIcon Glyph="&#xE72E;" />
+									</MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
 							</MenuFlyout>
-						</PersonPicture.ContextFlyout>
-					</PersonPicture>
+						</Button.Flyout>
+					</Button>
 					<AutoSuggestBox x:Name="SuggestBox"
-					                PlaceholderText="Search"
+					                PlaceholderText="Search messages, groups, people..."
 					                Width="350"
 					                QueryIcon="Find"
 					                TextChanged="SuggestBox_OnTextChanged"
 					                SuggestionChosen="SuggestBox_OnSuggestionChosen"/>
+					<Button x:Name="ButtonMute"
+					        Width="32"
+					        Height="32"
+					        Padding="0"
+					        Margin="4, 0, 0, 0">
+						<Button.Content>
+							<FontIcon x:Name="IconMute"
+							          Glyph="&#xE74F;"
+							          FontSize="18" />
+						</Button.Content>
+						
+						<Button.Flyout>
+							<MenuFlyout ShowMode="Transient"
+							            Placement="Bottom">
+								<MenuFlyoutSubItem x:Name="FlyoutItemMuteChats"
+								                Text="Mute chats">
+									<MenuFlyoutSubItem.Icon>
+										<FontIcon x:Name="SubIconMute" />
+									</MenuFlyoutSubItem.Icon>
+									<MenuFlyoutItem x:Name="FlyoutItemMuteAll"
+									                Text="Mute all"
+									                Click="FlyoutItemMuteAll_OnClick">
+									</MenuFlyoutItem>
+									<MenuFlyoutSeparator />
+									<MenuFlyoutItem x:Name="FlyoutItemMuteChannels"
+									                Text="Mute channels"
+									                Click="FlyoutItemMuteChannels_OnClick">
+									</MenuFlyoutItem>
+									<MenuFlyoutItem x:Name="FlyoutItemMuteGroups"
+									                Text="Mute groups"
+									                Click="FlyoutItemMuteGroups_OnClick">
+									</MenuFlyoutItem>
+									<MenuFlyoutItem x:Name="FlyoutItemMutePc"
+									                Text="Mute Private chats"
+									                Click="FlyoutItemMutePc_OnClick">
+									</MenuFlyoutItem>
+								</MenuFlyoutSubItem>
+								<MenuFlyoutSeparator />
+								<MenuFlyoutItem x:Name="FlyoutItemMuteFor0"
+								                Text="Mute chats for 2 hours">
+									<MenuFlyoutItem.Icon>
+										<FontIcon Glyph="&#xE74F;" />
+									</MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+								<MenuFlyoutItem x:Name="FlyoutItemMuteFor1"
+								                Text="Mute chats for 8 hours">
+									<MenuFlyoutItem.Icon>
+										<FontIcon Glyph="&#xE74F;" />
+									</MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+								<MenuFlyoutItem x:Name="FlyoutItemMuteFor2"
+								                Text="Mute chats for 24 hours">
+									<MenuFlyoutItem.Icon>
+										<FontIcon Glyph="&#xE74F;" />
+									</MenuFlyoutItem.Icon>
+								</MenuFlyoutItem>
+							</MenuFlyout>
+						</Button.Flyout>
+					</Button>
 					<ScrollViewer Width="100"
 					              Margin="4, 0, 0, 0"
 					              HorizontalScrollBarVisibility="Hidden"

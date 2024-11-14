@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Octokit;
 using sakuragram.Controls.User;
@@ -25,7 +23,6 @@ public sealed partial class MainWindow : Window
 		
 	private static TdClient _client = App._client;
 	private static TdApi.User _user;
-	private static TdApi.ChatFolderInfo[] _folders = App._folders;
 
 	private NavigationViewItem _lastItem;
 	private int _totalUnreadCount;
@@ -36,6 +33,13 @@ public sealed partial class MainWindow : Window
 	private UpdateManager _updateManager = App.UpdateManager;
 	private GitHubClient _gitHubClient = App._githubClient;
 	public static Settings _localSettings = SettingsService.LoadSettings();
+
+	private TdApi.ScopeNotificationSettings _mutedScopeNotificationSettings;
+	private TdApi.ScopeNotificationSettings _unmutedScopeNotificationSettings;
+	private bool _isAllMuted;
+	private bool _isChannelsMuted;
+	private bool _isGroupsMuted;
+	private bool _isPrivateChatsMuted;
 		
 	public MainWindow()
 	{
@@ -58,28 +62,27 @@ public sealed partial class MainWindow : Window
 		#endregion
 
 		#region App title
-
-#if DEBUG
-		{
-			Title = $"{Config.AppName} debug";
-			TitleBar.Subtitle = "debug";
-		}
-#elif BETA
-			{
-				Title = Config.AppName + " beta";
-				TitleBar.Subtitle = $"beta ({Config.AppVersion}, TdLib {Config.TdLibVersion})";
-			}
-#elif RELEASE
-			{
-				Title = Config.AppName;
-				TitleBar.Subtitle = Config.AppVersion;
-			}
-#else
-			{
-				Title = Config.AppName;
-				TitleBar.Subtitle = "UNTITLED CONFIGURATION";
-			}
-#endif
+// #if DEBUG
+// 		{
+// 			Title = $"{Config.AppName} debug";
+// 			TitleBar.Subtitle = "debug";
+// 		}
+// #elif BETA
+// 			{
+// 				Title = Config.AppName + " beta";
+// 				TitleBar.Subtitle = $"beta ({Config.AppVersion}, TdLib {Config.TdLibVersion})";
+// 			}
+// #elif RELEASE
+// 			{
+// 				Title = Config.AppName;
+// 				TitleBar.Subtitle = Config.AppVersion;
+// 			}
+// #else
+// 			{
+// 				Title = Config.AppName;
+// 				TitleBar.Subtitle = "UNTITLED CONFIGURATION";
+// 			}
+// #endif
 		#endregion
 			
 		TrySetDesktopAcrylicBackdrop();
@@ -93,40 +96,44 @@ public sealed partial class MainWindow : Window
 		else
 		{
 			ContentFrame.Navigate(typeof(ChatsView));
-	            
-			GenerateUsers();
-			GenerateStories();
+			
+			if (ContentFrame.Content is ChatsView chats)
+			{
+				chats.MainWindow = this;
+				chats.MainWindowFrame = ContentFrame;
+				chats.MainWindowTitleBar = TitleBar;
+				chats.MainWindowTitleBarContent = TopBarContent;
+			}
+			
 			CheckForUpdates();
 	            
 			DispatcherQueue.EnqueueAsync(async () =>
 			{
-				try
+				await _client.LoadActiveStoriesAsync(new TdApi.StoryList.StoryListMain());
+				var user = await _client.GetMeAsync();
+				
+				Title = user.FirstName + " " + user.LastName + " (" + _totalUnreadCount + ")";
+				
+				foreach (var story in _stories)
 				{
-					var currentUser = await _client.GetMeAsync();
-					await MediaService.GetUserPhoto(currentUser, CurrentUserPicture);
-					FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
-					foreach (var story in _stories)
-					{
-						if (story.Order == 0) continue;
-						var storyElement = new Story(story);
-						PanelStories.Children.Add(storyElement);
-					}
+					if (story.Order == 0) continue;
+					var storyElement = new Story(story);
+					PanelStories.Children.Add(storyElement);
 				}
-				catch (TdException e)
-				{
-					Console.WriteLine(e);
-					throw;
-				}
+				
+				FlyoutItemMuteFor0.Click += (_, _) => MuteChatsFor(2);
+				FlyoutItemMuteFor1.Click += (_, _) => MuteChatsFor(8);
+				FlyoutItemMuteFor2.Click += (_, _) => MuteChatsFor(24);
+				
+				await UpdateNotificationInfo();
 			});
 			
 			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
 			NotificationService notificationService = new();
-		}
-	}
 
-	private static async void GenerateStories()
-	{
-		await _client.LoadActiveStoriesAsync(new TdApi.StoryList.StoryListMain());
+			_mutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = int.MaxValue };
+			_unmutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = 0 };
+		}
 	}
 
 	private async void CheckForUpdates()
@@ -148,27 +155,9 @@ public sealed partial class MainWindow : Window
 	{
 		switch (update)
 		{
-			case TdApi.Update.UpdateNewMessage updateNewMessage:
+			case TdApi.Update.UpdateNewMessage:
 			{
 				_totalUnreadCount += 1;
-				//DispatcherQueue.EnqueueAsync(() => NavigationView.PaneTitle = $"{_user.FirstName} ({_totalUnreadCount})");
-				//DispatcherQueue.EnqueueAsync(() => UnreadMessagesCount.Value = _totalUnreadCount);
-				break;
-			}
-			case TdApi.Update.UpdateConnectionState updateConnectionState:
-			{
-				DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () =>
-				{
-					// NavigationView.PaneTitle = updateConnectionState.State switch
-					// {
-					// 	TdApi.ConnectionState.ConnectionStateReady => $"{_user.FirstName} ({_totalUnreadCount})",
-					// 	TdApi.ConnectionState.ConnectionStateUpdating => "Updating...",
-					// 	TdApi.ConnectionState.ConnectionStateConnecting => "Connecting...",
-					// 	TdApi.ConnectionState.ConnectionStateWaitingForNetwork => "Waiting for network...",
-					// 	TdApi.ConnectionState.ConnectionStateConnectingToProxy => "Connecting to proxy...",
-					// 	_ => Config.AppName
-					// };
-				});
 				break;
 			}
 			case TdApi.Update.UpdateChatActiveStories updateChatActiveStories:
@@ -225,57 +214,6 @@ public sealed partial class MainWindow : Window
 		//NavigationView.FooterMenuItems.Add(item);
 			
 		_updateAvailable = true;
-	}
-
-	private void CurrentUserPicture_OnPointerPressed(object sender, PointerRoutedEventArgs e)
-	{
-		FlyoutClientActions.ShowAt(CurrentUserPicture, new FlyoutShowOptions 
-			{ ShowMode = FlyoutShowMode.Transient, Placement = FlyoutPlacementMode.Bottom });
-	}
-
-	private async void FlyoutItemAddAccount_OnClick(object sender, RoutedEventArgs e)
-	{
-		PanelContent.Visibility = Visibility.Collapsed;
-		await App.AddNewAccount();
-		TitleBar.IsBackButtonVisible = true;
-		TitleBar.BackButtonClick += async (_, _) =>
-		{
-			await App.RemoveNewAccount();
-			TitleBar.IsBackButtonVisible = false;
-			ContentFrame.Navigate(typeof(ChatsView));
-			PanelContent.Visibility = Visibility.Visible;
-		};
-		ContentFrame.Navigate(typeof(LoginView));
-		if (ContentFrame.Content is LoginView login) login._window = this;
-	}
-
-	private async void FlyoutItemLogOut_OnClick(object sender, RoutedEventArgs e)
-	{
-		await _client.LogOutAsync();
-		await _client.CloseAsync();
-		await _client.DestroyAsync();
-		ContentFrame.Navigate(typeof(LoginView));
-	}
-
-	private void FlyoutItemSavedMessages_OnClick(object sender, RoutedEventArgs e)
-	{
-	}
-
-	private void FlyoutItemSettings_OnClick(object sender, RoutedEventArgs e)
-	{
-		ContentFrame.Navigate(typeof(SettingsView));
-			
-		TitleBar.IsBackButtonVisible = true;
-		TitleBar.BackButtonClick += (_, _) =>
-		{
-			TitleBar.IsBackButtonVisible = false;
-			ContentFrame.Navigate(typeof(ChatsView));
-		};
-	}
-
-	private void FlyoutItemCurrentUser_OnClick(object sender, RoutedEventArgs e)
-	{
-		ContentFrame.Navigate(typeof(SettingsView));
 	}
 		
 	private async void SuggestBox_OnTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
@@ -355,49 +293,159 @@ public sealed partial class MainWindow : Window
 		SuggestBox.Text = args.SelectedItem.ToString();
 	}
 
-	private void FlyoutClientActions_OnOpening(object sender, object e)
+	private async void FlyoutItemMuteAll_OnClick(object sender, RoutedEventArgs e)
 	{
-			
-	}
-
-	private void FlyoutClientActions_OnClosing(FlyoutBase sender, FlyoutBaseClosingEventArgs args)
-	{
-			
-	}
-
-	private void GenerateUsers()
-	{
-		_localSettings = SettingsService.LoadSettings();
-			
-		if (_localSettings.ClientIDs.Count > 1)
+		if (!_isAllMuted)
 		{
-			DispatcherQueue.EnqueueAsync(async () =>
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
 			{
-				var clientIds = _localSettings.ClientIDs;
-				var clientIndex = _localSettings.ClientIndex;
-				int index = 0;
-					
-				foreach (var clientId in _localSettings.ClientIDs)
-				{
-					var user = await _client.GetUserAsync(clientId);
-					var accountItem = new MenuFlyoutItem();
-					accountItem.Text = user.FirstName + " " + user.LastName;
-					accountItem.Tag = clientIds.IndexOf(clientId) == clientIndex
-						? clientIds.IndexOf(clientId)
-						: "error";
-					accountItem.Click += async (_, _) =>
-					{
-						await App.SwitchAccount(clientIds.IndexOf(index));
-						ContentFrame.Navigate(typeof(ChatsView));
-					};
-					index++;
-					FlyoutClientActions.Items.Add(accountItem);
-				}
+				NotificationSettings = _mutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeChannelChats()
+			});
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _mutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeGroupChats()
+			});
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _mutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopePrivateChats()
 			});
 		}
 		else
 		{
-			SeparatorUsers.Visibility = Visibility.Collapsed;
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _unmutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeChannelChats()
+			});
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _unmutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeGroupChats()
+			});
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _unmutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopePrivateChats()
+			});
 		}
+
+		await UpdateNotificationInfo();
+	}
+
+	private async void FlyoutItemMuteChannels_OnClick(object sender, RoutedEventArgs e)
+	{
+		if (!_isChannelsMuted)
+		{
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _mutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeChannelChats()
+			});
+		}
+		else
+		{
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _unmutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeChannelChats()
+			});
+		}
+
+		await UpdateNotificationInfo();
+	}
+
+	private async void FlyoutItemMuteGroups_OnClick(object sender, RoutedEventArgs e)
+	{
+		if (!_isGroupsMuted)
+		{
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _mutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeGroupChats()
+			});
+		}
+		else
+		{
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _unmutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeGroupChats()
+			});
+		}
+
+		await UpdateNotificationInfo();
+	}
+
+	private async void FlyoutItemMutePc_OnClick(object sender, RoutedEventArgs e)
+	{
+		if (!_isPrivateChatsMuted)
+		{
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _mutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopePrivateChats()
+			});
+		}
+		else
+		{
+			await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+			{
+				NotificationSettings = _unmutedScopeNotificationSettings,
+				Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopePrivateChats()
+			});
+		}
+
+		await UpdateNotificationInfo();
+	}
+
+	private async Task UpdateNotificationInfo()
+	{
+		var channelNotificationSettings = await _client.GetScopeNotificationSettingsAsync(
+			new TdApi.NotificationSettingsScope.NotificationSettingsScopeChannelChats());
+		var groupsNotificationSettings = await _client.GetScopeNotificationSettingsAsync(
+			new TdApi.NotificationSettingsScope.NotificationSettingsScopeGroupChats());
+		var privateNotificationSettings = await _client.GetScopeNotificationSettingsAsync(
+			new TdApi.NotificationSettingsScope.NotificationSettingsScopePrivateChats());
+		
+		_isChannelsMuted = channelNotificationSettings.MuteFor >= 4000000;
+		_isPrivateChatsMuted = privateNotificationSettings.MuteFor >= 4000000;
+		_isGroupsMuted = groupsNotificationSettings.MuteFor >= 4000000;
+		_isAllMuted = _isChannelsMuted && _isGroupsMuted && _isPrivateChatsMuted;
+
+		await DispatcherQueue.EnqueueAsync(() =>
+		{
+			FlyoutItemMuteChannels.Text = _isChannelsMuted ? "Unmute channels" : "Mute channels";
+			FlyoutItemMuteGroups.Text = _isGroupsMuted ? "Unmute groups" : "Mute groups";
+			FlyoutItemMutePc.Text = _isPrivateChatsMuted ? "Unmute private chats" : "Mute private chats";
+			FlyoutItemMuteAll.Text = _isAllMuted ? "Unmute all" : "Mute all";
+			FlyoutItemMuteChats.Text = _isAllMuted ? "Unmute chats" : "Mute chats";
+			
+			IconMute.Glyph = _isAllMuted ? "\uE74F" : "\uE767";
+			SubIconMute.Glyph = _isAllMuted ? "\uE74F" : "\uE767";
+		});
+	}
+
+	private async void MuteChatsFor(int muteFor)
+	{
+		var mutedForHours = new TdApi.ScopeNotificationSettings { MuteFor = muteFor * 60 * 60 };
+
+		await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+		{
+			NotificationSettings = mutedForHours,
+			Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeChannelChats()
+		});
+		await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+		{
+			NotificationSettings = mutedForHours,
+			Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopeGroupChats()
+		});
+		await _client.ExecuteAsync(new TdApi.SetScopeNotificationSettings
+		{
+			NotificationSettings = mutedForHours,
+			Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopePrivateChats()
+		});
 	}
 }
