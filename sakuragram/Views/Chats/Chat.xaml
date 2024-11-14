@@ -20,20 +20,28 @@
         </Border.Background>
         
         <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="ColumnMediaPanel" Width="450"/>
+            </Grid.ColumnDefinitions>
+            
+            <Grid Margin="4, 0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="60" />
                 <RowDefinition Height="*" MaxHeight="1000" />
-                <RowDefinition MinHeight="50" MaxHeight="70" />
+                <RowDefinition MinHeight="150" MaxHeight="150" />
             </Grid.RowDefinitions>
             
-            <StackPanel VerticalAlignment="Top" 
-                        HorizontalAlignment="Stretch" 
+            <StackPanel VerticalAlignment="Top"
+                        HorizontalAlignment="Stretch"
                         MaxHeight="70" 
                         MinHeight="50"
                         Grid.Row="0">
                 <Border x:Name="TopBar" 
                         Background="#1a1a1a" 
-                        VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center" 
+                        HorizontalAlignment="Stretch"
+                        CornerRadius="4"
                         PointerPressed="TopBar_OnPointerPressed">
                     <Grid x:Name="ChatInfo" HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center">
@@ -60,7 +68,7 @@
                                     HorizontalAlignment="Right" 
                                     VerticalAlignment="Center"
                                     IsEnabled="True"
-                                    Margin="0,0,5,0">
+                                    Margin="5,0">
                                 <Button.Content>
                                     <FontIcon Glyph="&#xE721;" />
                                 </Button.Content>
@@ -122,7 +130,8 @@
                 </Border>
                 <Border x:Name="BorderPinnedMessage"
                         Background="{StaticResource ControlFillColorSecondaryBrush}"
-                        CornerRadius="0, 0, 4, 4">
+                        CornerRadius="0, 0, 4, 4"
+                        Visibility="Collapsed">
                     <StackPanel>
                         <TextBlock Text="Pinned message" 
                                    FontSize="12"
@@ -137,133 +146,161 @@
                 </Button>
             </StackPanel>
             
-            <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Grid.Row="1">
-                    <ScrollViewer x:Name="MessagesScrollViewer" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" >
-                        <StackPanel x:Name="MessagesList" />
-                    </ScrollViewer>
+            <Grid VerticalAlignment="Bottom" 
+                  HorizontalAlignment="Stretch" 
+                  Grid.Row="1">
+                <ScrollViewer x:Name="MessagesScrollViewer" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" >
+                    <StackPanel x:Name="MessagesList" />
+                </ScrollViewer>
             </Grid>
             
             <Grid HorizontalAlignment="Stretch" 
                   VerticalAlignment="Bottom" 
-                  Height="50" 
+                  Height="150" 
                   MaxHeight="50" 
                   MinHeight="50" 
                   Grid.Row="2">
-                <RelativePanel>
-                    <Border x:Name="UserActionsPanel" 
-                            Background="#1a1a1a" 
-                            HorizontalAlignment="Stretch" 
-                            VerticalAlignment="Bottom" 
-                            Padding="5"
-                            RelativePanel.AlignRightWithPanel="True"
-                            RelativePanel.AlignLeftWithPanel="True"
-                            RelativePanel.AlignBottomWithPanel="True"
-                            RelativePanel.AlignTopWithPanel="True">
-                        <Grid>
-                            <RelativePanel HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch">
-                                <Grid RelativePanel.AlignRightWithPanel="True"
-                                      RelativePanel.AlignLeftWithPanel="True"
-                                      RelativePanel.AlignBottomWithPanel="True"
-                                      RelativePanel.AlignTopWithPanel="True">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="500*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button x:Name="ButtonAttachMedia" 
-                                        MaxHeight="36" 
-                                        MaxWidth="36"
-                                        Margin="0, 0, 5, 0"
-                                        Padding="5, 0, 5, 0"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Stretch"
-                                        Click="ButtonAttachMedia_OnClick">
-                                        <Button.Content>
-                                            <FontIcon Glyph="&#xE723;"
-                                                      FontSize="18"/>
-                                        </Button.Content>
-                                        <Button.Flyout>
-                                            <MenuFlyout x:Name="ContextMenuMedia" Placement="Top">
-                                                <MenuFlyoutItem x:Name="ContextMenuPhotoOrVideo"
-                                                                Text="Photo or Video"
-                                                                Click="ContextMenuPhotoOrVideo_OnClick"
-                                                                IsEnabled="False"/>
-                                                <MenuFlyoutItem x:Name="ContextMenuCamera"
-                                                                Text="Camera"
-                                                                IsEnabled="False"/>
-                                                <MenuFlyoutItem x:Name="ContextMenuFile"
-                                                                Text="File"
-                                                                Click="ContextMenuFile_OnClick"
-                                                                IsEnabled="False"/>
-                                                <MenuFlyoutItem x:Name="ContextMenuLocation"
-                                                                Text="Location"
-                                                                IsEnabled="False"/>
-                                                <MenuFlyoutItem x:Name="ContextMenuPoll"
-                                                                Text="Poll"
-                                                                Click="ContextMenuPoll_OnClick"/>
-                                                <MenuFlyoutItem x:Name="ContextMenuContact"
-                                                                Text="Contact"
-                                                                IsEnabled="False"/>
-                                                <MenuFlyoutSeparator />
-                                                <MenuFlyoutItem x:Name="ContextMenuWallet" 
-                                                                Text="Wallet"
-                                                                IsEnabled="False"/>
-                                            </MenuFlyout>
-                                        </Button.Flyout>
-                                    </Button>
-                                    <TextBox x:Name="UserMessageInput" 
-                                             PlaceholderText="Enter your message"
-                                             HorizontalAlignment="Stretch"
-                                             TextWrapping="Wrap"
-                                             Grid.Column="1"/>
-                                    <Button x:Name="Stickers" 
+                <StackPanel>
+                    <Border x:Name="BorderReply" 
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom"
+                            Height="50">
+                        <StackPanel Orientation="Horizontal">
+                            <Button></Button>
+                            <Border x:Name="BorderReplyMedia"
+                                    CornerRadius="8"
+                                    Width="50"
+                                    Height="50">
+                                <Border.Child>
+                                    <Image x:Name="ImageReplyMedia" />
+                                </Border.Child>
+                            </Border>
+                            <StackPanel>
+                                <TextBlock x:Name="TextBlockReplyName"
+                                           FontSize="12"/>
+                                <TextBlock x:Name="TextBlockReplyContent"
+                                           FontSize="10"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <RelativePanel>
+                        <Border x:Name="UserActionsPanel" 
+                                Background="#1a1a1a" 
+                                HorizontalAlignment="Stretch" 
+                                VerticalAlignment="Bottom" 
+                                Padding="5"
+                                CornerRadius="4, 4, 0, 0"
+                                RelativePanel.AlignRightWithPanel="True"
+                                RelativePanel.AlignLeftWithPanel="True"
+                                RelativePanel.AlignBottomWithPanel="True"
+                                RelativePanel.AlignTopWithPanel="True">
+                            <Grid>
+                                <RelativePanel HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch">
+                                    <Grid RelativePanel.AlignRightWithPanel="True"
+                                          RelativePanel.AlignLeftWithPanel="True"
+                                          RelativePanel.AlignBottomWithPanel="True"
+                                          RelativePanel.AlignTopWithPanel="True">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="500*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="ButtonAttachMedia" 
                                             MaxHeight="36" 
                                             MaxWidth="36"
-                                            Margin="5, 0, 5, 0"
+                                            Margin="0, 0, 5, 0"
                                             Padding="5, 0, 5, 0"
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Stretch"
-                                            Grid.Column="2"
-                                            IsEnabled="True"
-                                            Click="Stickers_OnClick">
-                                        <Button.Content>
-                                            <FontIcon Glyph="&#xF4AA;"
-                                                      FontSize="18"/>
-                                        </Button.Content>
-                                    </Button>
-                                    <Button x:Name="SendMessage" 
-                                            MaxHeight="36" 
-                                            MaxWidth="36"
-                                            Padding="5, 0, 5, 0"
-                                            Click="SendMessage_OnClick"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Stretch"
-                                            Grid.Column="3">
-                                        <Button.Content>
-                                            <FontIcon Glyph="&#xE724;" 
-                                                      FontSize="18"/>
-                                        </Button.Content>
-                                    </Button>
-                                </Grid>
-                            </RelativePanel>
-                        </Grid>
-                    </Border>
-                    <Button x:Name="ButtonFastAction"
-                            x:Load="{x:Bind _isNeedLoadFastActions}"
-                            Content="Fast action"
-                            FontSize="16"
-                            Background="#1a1a1a"
-                            HorizontalContentAlignment="Center"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Visibility="Collapsed"
-                            RelativePanel.AlignRightWithPanel="True"
-                            RelativePanel.AlignLeftWithPanel="True"
-                            RelativePanel.AlignBottomWithPanel="True"
-                            RelativePanel.AlignTopWithPanel="True"/>
-                </RelativePanel>
+                                            Click="ButtonAttachMedia_OnClick">
+                                            <Button.Content>
+                                                <FontIcon Glyph="&#xE723;"
+                                                          FontSize="18"/>
+                                            </Button.Content>
+                                            <Button.Flyout>
+                                                <MenuFlyout x:Name="ContextMenuMedia" Placement="Top">
+                                                    <MenuFlyoutItem x:Name="ContextMenuPhotoOrVideo"
+                                                                    Text="Photo or Video"
+                                                                    Click="ContextMenuPhotoOrVideo_OnClick"
+                                                                    IsEnabled="False"/>
+                                                    <MenuFlyoutItem x:Name="ContextMenuCamera"
+                                                                    Text="Camera"
+                                                                    IsEnabled="False"/>
+                                                    <MenuFlyoutItem x:Name="ContextMenuFile"
+                                                                    Text="File"
+                                                                    Click="ContextMenuFile_OnClick"
+                                                                    IsEnabled="False"/>
+                                                    <MenuFlyoutItem x:Name="ContextMenuLocation"
+                                                                    Text="Location"
+                                                                    IsEnabled="False"/>
+                                                    <MenuFlyoutItem x:Name="ContextMenuPoll"
+                                                                    Text="Poll"
+                                                                    Click="ContextMenuPoll_OnClick"/>
+                                                    <MenuFlyoutItem x:Name="ContextMenuContact"
+                                                                    Text="Contact"
+                                                                    IsEnabled="False"/>
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem x:Name="ContextMenuWallet" 
+                                                                    Text="Wallet"
+                                                                    IsEnabled="False"/>
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                        </Button>
+                                        <TextBox x:Name="UserMessageInput" 
+                                                 PlaceholderText="Enter your message"
+                                                 HorizontalAlignment="Stretch"
+                                                 TextWrapping="Wrap"
+                                                 Grid.Column="1"/>
+                                        <Button x:Name="Stickers" 
+                                                MaxHeight="36" 
+                                                MaxWidth="36"
+                                                Margin="5, 0, 5, 0"
+                                                Padding="5, 0, 5, 0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Stretch"
+                                                Grid.Column="2"
+                                                IsEnabled="True"
+                                                Click="Stickers_OnClick">
+                                            <Button.Content>
+                                                <FontIcon x:Name="IconMedia"
+                                                          Glyph="&#xF4AA;"
+                                                          FontSize="18"/>
+                                            </Button.Content>
+                                        </Button>
+                                        <Button x:Name="SendMessage" 
+                                                MaxHeight="36" 
+                                                MaxWidth="36"
+                                                Padding="5, 0, 5, 0"
+                                                Click="SendMessage_OnClick"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Stretch"
+                                                Grid.Column="3">
+                                            <Button.Content>
+                                                <FontIcon Glyph="&#xE724;" 
+                                                          FontSize="18"/>
+                                            </Button.Content>
+                                        </Button>
+                                    </Grid>
+                                </RelativePanel>
+                            </Grid>
+                        </Border>
+                        <Button x:Name="ButtonFastAction"
+                                x:Load="{x:Bind _isNeedLoadFastActions}"
+                                Content="Fast action"
+                                FontSize="16"
+                                Background="#1a1a1a"
+                                HorizontalContentAlignment="Center"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Visibility="Collapsed"
+                                RelativePanel.AlignRightWithPanel="True"
+                                RelativePanel.AlignLeftWithPanel="True"
+                                RelativePanel.AlignBottomWithPanel="True"
+                                RelativePanel.AlignTopWithPanel="True"/>
+                    </RelativePanel>
+                </StackPanel>
             </Grid>
             
             <ContentDialog x:Name="CreatePoll" CloseButtonText="Cancel" PrimaryButtonText="Create"
@@ -452,6 +489,50 @@
                     </StackPanel>
                 </ScrollViewer>
             </ContentDialog>
+        </Grid>
+        
+        <Grid x:Name="Media" 
+              Grid.Column="1"
+              Visibility="{x:Bind UpdateMediaVisibility(), Mode=OneWay}">
+            <Border HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Background="Black"
+                    CornerRadius="4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Grid >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <Button x:Name="ButtonEmoji"
+                                Content="Emoji"
+                                Margin="4, 0"
+                                Grid.Column="0"/>
+                        <Button x:Name="ButtonStickers"
+                                Content="Stickers"
+                                Margin="4, 0"
+                                Grid.Column="1"/>
+                        <Button x:Name="ButtonAnimations"
+                                Content="GIFs"
+                                Margin="4, 0"
+                                Grid.Column="2"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1"
+                                  ViewChanged="ScrollViewer_OnViewChanged">
+                        <StackPanel x:Name="PanelMedia"
+                                    Loaded="PanelMedia_OnLoaded"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+            
         </Grid>
         
     </Border>

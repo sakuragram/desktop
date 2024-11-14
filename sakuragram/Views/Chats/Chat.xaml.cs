@@ -11,7 +11,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
+using sakuragram.Controls.Messages;
 using sakuragram.Services;
+using sakuragram.Services.Core;
 using sakuragram.Views.Calls;
 using sakuragram.Views.Chats.Messages;
 using TdLib;
@@ -41,6 +43,7 @@ public sealed partial class Chat : Page
     private bool _isProfileOpened = false;
     private bool _hasInternetConnection = true;
     private bool _isForum = false;
+    public bool _mediaMenuOpened = false;
 
     #region LoadProperties
 
@@ -50,6 +53,10 @@ public sealed partial class Chat : Page
         
     private ReplyService _replyService;
     private MessageService _messageService;
+    
+    private List<TdApi.StickerSet> _stickerSets = [];
+    private List<TdApi.StickerSet> _alreadyAddedStickerSets = [];
+    private int _currentStickerSet = -1;
 
     public Chat(long id, bool isForum, TdApi.ForumTopic forumTopic)
     {
@@ -73,9 +80,14 @@ public sealed partial class Chat : Page
         }
         #endif
         
+        ColumnMediaPanel.Width = new GridLength(0);
+        
+        ButtonEmoji.Click += (_, _) => SelectMediaPage(0);
+        ButtonStickers.Click += (_, _) => SelectMediaPage(1);
+        ButtonAnimations.Click += (_, _) => SelectMediaPage(2);
     }
 
-    private Task ProcessUpdates(TdApi.Update update)
+    private async Task ProcessUpdates(TdApi.Update update)
     {
         switch (update)
         {
@@ -83,14 +95,17 @@ public sealed partial class Chat : Page
             {
                 if (updateNewMessage.Message.ChatId == _chatId)
                 {
-                    DispatcherQueue.EnqueueAsync(async () =>
+                    await DispatcherQueue.EnqueueAsync(async () =>
                     {
                         await GenerateMessageByType([updateNewMessage.Message]);
 
                         // For debug
-                        // var message = new ChatDebugMessage();
-                        // MessagesList.Children.Add(message);
-                        // message.UpdateMessage(updateNewMessage.Message);
+                        if (FeaturesManager._debugMode)
+                        {
+                            var message = new ChatDebugMessage();
+                            MessagesList.Children.Add(message);
+                            message.UpdateMessage(updateNewMessage.Message);
+                        }
                     });
                 }
                 break;
@@ -99,145 +114,175 @@ public sealed partial class Chat : Page
             {
                 if (updateChatAction.ChatId == _chatId)
                 {
-                    ChatTitle.DispatcherQueue.TryEnqueue(() => {});
+                    var sender = await UserService.GetSender(updateChatAction.SenderId);
+                    var senderName = sender.User != null ? sender.User.FirstName + " " + sender.User.LastName 
+                        : sender.Chat?.Title;
+                    
+                    await DispatcherQueue.EnqueueAsync(() => OnlineChatMembers.Text = updateChatAction.Action switch
+                    {
+                        TdApi.ChatAction.ChatActionCancel => _onlineMemberCount > 0 ? $"{_onlineMemberCount} online" : string.Empty,
+                        TdApi.ChatAction.ChatActionTyping => $"{senderName} typing...",
+                        TdApi.ChatAction.ChatActionRecordingVideo => $"{senderName} recording video...",
+                        TdApi.ChatAction.ChatActionUploadingVideo => $"{senderName} uploading video...",
+                        TdApi.ChatAction.ChatActionRecordingVoiceNote => $"{senderName} recording voice note...",
+                        TdApi.ChatAction.ChatActionUploadingVoiceNote => $"{senderName} uploading voice note...",
+                        TdApi.ChatAction.ChatActionUploadingPhoto => $"{senderName} uploading photo...",
+                        TdApi.ChatAction.ChatActionUploadingDocument => $"{senderName} uploading document...",
+                        TdApi.ChatAction.ChatActionUploadingVideoNote => $"{senderName} uploading video note...",
+                        TdApi.ChatAction.ChatActionChoosingContact => $"{senderName} choosing contact...",
+                        TdApi.ChatAction.ChatActionChoosingLocation => $"{senderName} choosing location...",
+                        TdApi.ChatAction.ChatActionChoosingSticker => $"{senderName} choosing sticker...",
+                        TdApi.ChatAction.ChatActionWatchingAnimations => $"{senderName} watching animations...",
+                        TdApi.ChatAction.ChatActionRecordingVideoNote => $"{senderName} recording video note...",
+                        TdApi.ChatAction.ChatActionStartPlayingGame => $"{senderName} playing game...",
+                        _ => "Unknown"
+                    });
                 }
                 break;
             }
-            //     case TdApi.Update.UpdateChatTitle updateChatTitle:
-            //     {
-            //         ChatTitle.DispatcherQueue.TryEnqueue(() => ChatTitle.Text = updateChatTitle.Title);
-            //         break;
-            //     }
-            //     case TdApi.Update.UpdateUserStatus updateUserStatus:
-            //     {
-            //         if (_chat.Type is TdApi.ChatType.ChatTypePrivate)
-            //         {
-            //             ChatMembers.DispatcherQueue.TryEnqueue(() =>
-            //             {
-            //                 var status = updateUserStatus.Status switch
-            //                 {
-            //                     TdApi.UserStatus.UserStatusOnline => "Online",
-            //                     TdApi.UserStatus.UserStatusOffline => "Offline",
-            //                     TdApi.UserStatus.UserStatusRecently => "Last seen recently",
-            //                     TdApi.UserStatus.UserStatusLastWeek => "Last week",
-            //                     TdApi.UserStatus.UserStatusLastMonth => "Last month",
-            //                     TdApi.UserStatus.UserStatusEmpty => "Last seen a long time ago",
-            //                     _ => "Unknown"
-            //                 };
-            //
-            //                 ChatMembers.Text = status;
-            //
-            //                 if (_isProfileOpened)
-            //                 {
-            //                     TextBlockMembersOrStatus.Text = status;
-            //                 }
-            //             });
-            //         }
-            //         break;
-            // }
-            //     case TdApi.Update.UpdateChatOnlineMemberCount updateChatOnlineMemberCount:
-            //     {
-            //         if (_chat.Type is TdApi.ChatType.ChatTypeSupergroup or TdApi.ChatType.ChatTypeBasicGroup &&
-            //             _chat.Permissions.CanSendBasicMessages)
-            //         {
-            //             _onlineMemberCount = updateChatOnlineMemberCount.OnlineMemberCount;
-            //             ChatMembers.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () =>
-            //             {
-            //                 if (_onlineMemberCount > 0)
-            //                 {
-            //                     OnlineChatMembers.Text = $", online: {_onlineMemberCount}";
-            //                     OnlineChatMembers.Visibility = Visibility.Visible;
-            //                 }
-            //                 else
-            //                 {
-            //                     OnlineChatMembers.Text = string.Empty;
-            //                     OnlineChatMembers.Visibility = Visibility.Collapsed;
-            //                 }
-            //             });   
-            //         }
-            //         break;
-            //     }
-            //     case TdApi.Update.UpdateBasicGroup updateBasicGroup:
-            //     {
-            //         if (updateBasicGroup.BasicGroup.Id == _chatId)
-            //         {
-            //             _memberCount = updateBasicGroup.BasicGroup.MemberCount;
-            //             ChatMembers.DispatcherQueue.TryEnqueue(UpdateChatMembersText);
-            //         }
-            //         break;
-            //     }
-            //     case TdApi.Update.UpdateSupergroup updateSupergroup:
-            //     {
-            //         if (updateSupergroup.Supergroup.Id == _chatId)
-            //         {
-            //             _memberCount = updateSupergroup.Supergroup.MemberCount;
-            //             ChatMembers.DispatcherQueue.TryEnqueue(UpdateChatMembersText);
-            //         }
-            //         break;
-            //     }
-            //     case TdApi.Update.UpdateDeleteMessages updateDeleteMessages:
-            //     {
-            //         // if (updateDeleteMessages.ChatId == _chatId)
-            //         // {
-            //         //     var messages = MessagesList.Children;
-            //         //     var messagesToRemove = messages.OfType<ChatMessage>();
-            //         //     
-            //         //     foreach (var messageId in updateDeleteMessages.MessageIds)
-            //         //     {
-            //         //         MessagesList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
-            //         //         {
-            //         //             foreach (var messageToRemove in messagesToRemove)
-            //         //             {
-            //         //                 if (messageToRemove._messageId == messageId)
-            //         //                 {
-            //         //                     MessagesList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low,
-            //         //                         () => MessagesList.Children.Remove(messageToRemove));
-            //         //                 }
-            //         //             }
-            //         //         });
-            //         //     }
-            //         // }
-            //         break;
-            //     }
-            //     case TdApi.Update.UpdateFile updateFile:
-            //     {
-            //         if (updateFile.File.Id == _backgroundId)
-            //         {
-            //             if (_background.Document.Document_.Local.Path != string.Empty)
-            //             {
-            //                 ThemeBackground.DispatcherQueue.TryEnqueue(() => 
-            //                     ThemeBackground.ImageSource = new BitmapImage(
-            //                         new Uri(_background.Document.Document_.Local.Path)
-            //                     ));
-            //             }
-            //             else if (updateFile.File.Local.Path != string.Empty)
-            //             {
-            //                 ThemeBackground.DispatcherQueue.TryEnqueue(() => 
-            //                     ThemeBackground.ImageSource = new BitmapImage(
-            //                         new Uri(updateFile.File.Local.Path)
-            //                     ));
-            //             }
-            //         }
-            //         break;
-            //     }
-            //     case TdApi.Update.UpdateConnectionState updateConnectionState:
-            //     {
-            //         _hasInternetConnection = updateConnectionState.State switch
-            //         {
-            //             TdApi.ConnectionState.ConnectionStateReady => true,
-            //             TdApi.ConnectionState.ConnectionStateConnecting => false,
-            //             TdApi.ConnectionState.ConnectionStateUpdating => false,
-            //             TdApi.ConnectionState.ConnectionStateConnectingToProxy => false,
-            //             TdApi.ConnectionState.ConnectionStateWaitingForNetwork => false,
-            //             _ => false
-            //         };
-            //         break;
-            //     }
+            case TdApi.Update.UpdateChatTitle updateChatTitle:
+            {
+                await DispatcherQueue.EnqueueAsync(() => ChatTitle.Text = updateChatTitle.Title);
+                break;
+            }
+            case TdApi.Update.UpdateUserStatus updateUserStatus:
+            {
+                if (_chat.Type is TdApi.ChatType.ChatTypePrivate)
+                {
+                    ChatMembers.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        var status = updateUserStatus.Status switch
+                        {
+                            TdApi.UserStatus.UserStatusOnline => "Online",
+                            TdApi.UserStatus.UserStatusOffline => "Offline",
+                            TdApi.UserStatus.UserStatusRecently => "Last seen recently",
+                            TdApi.UserStatus.UserStatusLastWeek => "Last week",
+                            TdApi.UserStatus.UserStatusLastMonth => "Last month",
+                            TdApi.UserStatus.UserStatusEmpty => "Last seen a long time ago",
+                            _ => "Unknown"
+                        };
+        
+                        ChatMembers.Text = status;
+        
+                        if (_isProfileOpened)
+                        {
+                            TextBlockMembersOrStatus.Text = status;
+                        }
+                    });
+                }
+                break;
+            }
+            case TdApi.Update.UpdateChatOnlineMemberCount updateChatOnlineMemberCount:
+            {
+                if (_chat.Type is TdApi.ChatType.ChatTypeSupergroup or TdApi.ChatType.ChatTypeBasicGroup &&
+                    _chat.Permissions.CanSendBasicMessages)
+                {
+                    _onlineMemberCount = updateChatOnlineMemberCount.OnlineMemberCount;
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        if (_onlineMemberCount > 0)
+                        {
+                            OnlineChatMembers.Text = $", online: {_onlineMemberCount}";
+                            OnlineChatMembers.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            OnlineChatMembers.Text = string.Empty;
+                            OnlineChatMembers.Visibility = Visibility.Collapsed;
+                        }
+                    });   
+                }
+                break;
+            }
+            case TdApi.Update.UpdateBasicGroup updateBasicGroup:
+            {
+                if (updateBasicGroup.BasicGroup.Id == _chatId)
+                {
+                    _memberCount = updateBasicGroup.BasicGroup.MemberCount;
+                    await DispatcherQueue.EnqueueAsync(() => ChatMembers.Text = $"{_memberCount} members");
+                }
+                break;
+            }
+            case TdApi.Update.UpdateSupergroup updateSupergroup:
+            {
+                if (updateSupergroup.Supergroup.Id == _chatId)
+                {
+                    _memberCount = updateSupergroup.Supergroup.MemberCount;
+                    await DispatcherQueue.EnqueueAsync(() => ChatMembers.Text = $"{_memberCount} members");
+                }
+                break;
+            }
+            case TdApi.Update.UpdateDeleteMessages updateDeleteMessages:
+            {
+                // if (updateDeleteMessages.ChatId == _chatId)
+                // {
+                //     var messages = MessagesList.Children;
+                //     var messagesToRemove = messages.OfType<ChatMessage>();
+                //     
+                //     foreach (var messageId in updateDeleteMessages.MessageIds)
+                //     {
+                //         MessagesList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+                //         {
+                //             foreach (var messageToRemove in messagesToRemove)
+                //             {
+                //                 if (messageToRemove._messageId == messageId)
+                //                 {
+                //                     MessagesList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low,
+                //                         () => MessagesList.Children.Remove(messageToRemove));
+                //                 }
+                //             }
+                //         });
+                //     }
+                // }
+                break;
+            }
+            case TdApi.Update.UpdateFile updateFile:
+            {
+                if (updateFile.File.Id == _backgroundId)
+                {
+                    if (_background.Document.Document_.Local.Path != string.Empty)
+                    {
+                        ThemeBackground.DispatcherQueue.TryEnqueue(() => 
+                            ThemeBackground.ImageSource = new BitmapImage(
+                                new Uri(_background.Document.Document_.Local.Path)
+                            ));
+                    }
+                    else if (updateFile.File.Local.Path != string.Empty)
+                    {
+                        ThemeBackground.DispatcherQueue.TryEnqueue(() => 
+                            ThemeBackground.ImageSource = new BitmapImage(
+                                new Uri(updateFile.File.Local.Path)
+                            ));
+                    }
+                }
+                break;
+            }
+            case TdApi.Update.UpdateConnectionState updateConnectionState:
+            {
+                _hasInternetConnection = updateConnectionState.State switch
+                {
+                    TdApi.ConnectionState.ConnectionStateReady => true,
+                    TdApi.ConnectionState.ConnectionStateConnecting => false,
+                    TdApi.ConnectionState.ConnectionStateUpdating => false,
+                    TdApi.ConnectionState.ConnectionStateConnectingToProxy => false,
+                    TdApi.ConnectionState.ConnectionStateWaitingForNetwork => false,
+                    _ => false
+                };
+                break;
+            }
         }
-
-        return Task.CompletedTask;
     }
 
+    public Visibility UpdateMediaVisibility()
+    {
+        return Media.Visibility = _mediaMenuOpened ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public GridLength UpdateMediaLength()
+    {
+        return ColumnMediaPanel.Width = _mediaMenuOpened ? new GridLength(350) : new GridLength(0);
+    }
+    
     private async Task UpdateChat()
     {
         try
@@ -294,18 +339,6 @@ public sealed partial class Chat : Page
                     });
                 }
             }
-
-            var pinnedMessage = await _client.ExecuteAsync(new TdApi.GetChatPinnedMessage { ChatId = _chat.Id });
-            if (pinnedMessage != null)
-            {
-                if (!pinnedMessage.IsPinned) return;
-                BorderPinnedMessage.Visibility = Visibility.Visible;
-                TextBlockPinnedMessage.Text = await MessageService.GetTextMessageContent(pinnedMessage);
-            }
-            else
-            {
-                BorderPinnedMessage.Visibility = Visibility.Collapsed;
-            }
             
             switch (_chat.Type)
             {
@@ -328,17 +361,16 @@ public sealed partial class Chat : Page
                     break;
                 case TdApi.ChatType.ChatTypeBasicGroup typeBasicGroup:
                     var basicGroupInfo = await _client.GetBasicGroupFullInfoAsync(
-                        basicGroupId: typeBasicGroup.BasicGroupId
-                    ).ConfigureAwait(false);
+                        basicGroupId: typeBasicGroup.BasicGroupId);
                     await DispatcherQueue.EnqueueAsync(() => ChatMembers.Text = basicGroupInfo.Members.Length + " members");
                     break;
                 case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
                     try
                     {
                         var supergroup = await _client.GetSupergroupAsync(
-                            supergroupId: typeSupergroup.SupergroupId).ConfigureAwait(false);
+                            supergroupId: typeSupergroup.SupergroupId);
                         var supergroupInfo = await _client.GetSupergroupFullInfoAsync(
-                            supergroupId: typeSupergroup.SupergroupId).ConfigureAwait(false);
+                            supergroupId: typeSupergroup.SupergroupId);
                         _linkedChatId = supergroupInfo.LinkedChatId;
 
                         if (supergroup.IsChannel)
@@ -381,11 +413,19 @@ public sealed partial class Chat : Page
                 await GenerateMessageByType(messages);
                 _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
             }
+
+            var settings = SettingsService.LoadSettings();
+            IconMedia.Glyph = settings.StartMediaPage switch
+            {
+                "Emojis" => "&#xE76E;",
+                "Stickers" => "&#xF4AA;",
+                "GIFs" => "&#xF4A9;",
+                _ => string.Empty
+            };
         }
         catch (Exception e)
         {
             Debug.WriteLine(e.Message);
-            throw;
         }
             
         // string channelBottomButtonValue = (string)_localSettings.Values["ChannelBottomButton"];
@@ -425,7 +465,6 @@ public sealed partial class Chat : Page
                 TdApi.Messages messages;
                 if (!isForum)
                 {
-                    // Если чат не форум, используем getChatHistory
                     messages = await _client.ExecuteAsync(new TdApi.GetChatHistory
                     {
                         ChatId = chatId,
@@ -437,7 +476,6 @@ public sealed partial class Chat : Page
                 }
                 else
                 {
-                    // Если чат форум, используем getMessageThreadHistory
                     messages = await _client.ExecuteAsync(new TdApi.GetMessageThreadHistory
                     {
                         ChatId = chatId,
@@ -1002,8 +1040,314 @@ public sealed partial class Chat : Page
 
     private void Stickers_OnClick(object sender, RoutedEventArgs e)
     {
-        _ChatsView._mediaMenuOpened = !_ChatsView._mediaMenuOpened;
-        _ChatsView.UpdateMediaLength();
-        _ChatsView.UpdateMediaVisibility();
+        _mediaMenuOpened = !_mediaMenuOpened;
+        UpdateMediaLength();
+        UpdateMediaVisibility();
+    }
+    
+    private void PanelMedia_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        var settings = SettingsService.LoadSettings();
+        int index = settings.StartMediaPage switch
+        {
+            "Emojis" => 0,
+            "Stickers" => 1,
+            "GIFs" => 2,
+            _ => 0,
+        };
+        
+        SelectMediaPage(index);
+    }
+
+    private void SelectMediaPage(int index)
+    {
+        switch (index)
+        {
+            case 0: // Emojis
+                ButtonEmoji.IsEnabled = false;
+                ButtonStickers.IsEnabled = true;
+                ButtonAnimations.IsEnabled = true;
+                break;
+            case 1: // Stickers
+                GenerateStickers();
+                ButtonEmoji.IsEnabled = true;
+                ButtonStickers.IsEnabled = false;
+                ButtonAnimations.IsEnabled = true;
+                break;
+            case 2: // GIFs
+                GenerateAnimations();
+                ButtonEmoji.IsEnabled = true;
+                ButtonStickers.IsEnabled = true;
+                ButtonAnimations.IsEnabled = false;
+                break;
+        }
+    }
+
+    private async void GenerateStickers()
+    {
+        PanelMedia.Children.Clear();
+        
+        var favoriteStickers = await _client.ExecuteAsync(new TdApi.GetFavoriteStickers());
+        var recentStickers = await _client.ExecuteAsync(new TdApi.GetRecentStickers { IsAttached = false });
+        var stickerSets = await _client.ExecuteAsync(new TdApi.GetInstalledStickerSets());
+        
+        if (stickerSets.Sets.Length > 0)
+        {
+            foreach (var set in stickerSets.Sets)
+            {
+                var foundedSet = await _client.ExecuteAsync(new TdApi.GetStickerSet { SetId = set.Id });
+                _stickerSets.Add(foundedSet);
+            }
+
+            _alreadyAddedStickerSets.Add(_stickerSets[0]);
+        }
+
+        if (favoriteStickers.Stickers_.Length > 0)
+        {
+            int favoriteRow = 0;
+            int favoriteCol = 0;
+            
+            TextBlock textBlockPinnedStickers = new()
+            {
+                Text = "Favorite stickers",
+                FontSize = 12,
+            };
+            PanelMedia.Children.Add(textBlockPinnedStickers);
+            
+            Grid favoriteStickersGrid = new();
+            PanelMedia.Children.Add(favoriteStickersGrid);
+            
+            foreach (var sticker in favoriteStickers.Stickers_)
+            {
+                var newSticker = new Sticker(sticker);
+
+                if (favoriteCol == 5)
+                {
+                    favoriteCol = 0;
+                    favoriteRow++;
+                    if (favoriteRow >= favoriteStickersGrid.RowDefinitions.Count)
+                    {
+                        await DispatcherQueue.EnqueueAsync(() =>
+                            favoriteStickersGrid.RowDefinitions.Add(new RowDefinition { }));
+                    }
+                }
+
+                if (favoriteCol >= favoriteStickersGrid.ColumnDefinitions.Count)
+                {
+                    await DispatcherQueue.EnqueueAsync(() => favoriteStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                        { Width = new GridLength(64, GridUnitType.Auto) }));
+                }
+
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    favoriteStickersGrid.Children.Add(newSticker);
+                    Grid.SetRow(newSticker, favoriteRow);
+                    Grid.SetColumn(newSticker, favoriteCol);
+                });
+                favoriteCol++;
+            }
+        }
+
+        if (recentStickers.Stickers_.Length > 0)
+        {
+            int recentRow = 0;
+            int recentCol = 0;
+        
+            TextBlock textBlockRecentStickers = new()
+            {
+                Text = "Recent stickers",
+                FontSize = 12,
+            };
+            PanelMedia.Children.Add(textBlockRecentStickers);
+        
+            Grid recentStickersGrid = new();
+            PanelMedia.Children.Add(recentStickersGrid);
+            
+            foreach (var sticker in recentStickers.Stickers_)
+            {
+                var newSticker = new Sticker(sticker);
+
+                if (recentCol == 5)
+                {
+                    recentCol = 0;
+                    recentRow++;
+                    if (recentRow >= recentStickersGrid.RowDefinitions.Count)
+                    {
+                        await DispatcherQueue.EnqueueAsync(() =>
+                            recentStickersGrid.RowDefinitions.Add(new RowDefinition { }));
+                    }
+                }
+
+                if (recentCol >= recentStickersGrid.ColumnDefinitions.Count)
+                {
+                    await DispatcherQueue.EnqueueAsync(() => recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                        { Width = new GridLength(64, GridUnitType.Auto) }));
+                }
+
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    recentStickersGrid.Children.Add(newSticker);
+                    Grid.SetRow(newSticker, recentRow);
+                    Grid.SetColumn(newSticker, recentCol);
+                });
+                recentCol++;
+            }
+        }
+
+        if (stickerSets.Sets.Length > 0)
+        {
+            int setRow = 0;
+            int setCol = 0;
+            TdApi.StickerSet stickerSet = await _client.GetStickerSetAsync(stickerSets.Sets[0].Id);
+            
+            TextBlock textBlockRecentStickers = new()
+            {
+                Text = stickerSets.Sets[0].Title,
+                FontSize = 12,
+            };
+            PanelMedia.Children.Add(textBlockRecentStickers);
+        
+            Grid recentStickersGrid = new();
+            PanelMedia.Children.Add(recentStickersGrid);
+            
+            foreach (var sticker in stickerSet.Stickers)
+            {
+                var newSticker = new Sticker(sticker);
+
+                if (setCol == 5)
+                {
+                    setCol = 0;
+                    setRow++;
+                    if (setRow >= recentStickersGrid.RowDefinitions.Count)
+                    {
+                        await DispatcherQueue.EnqueueAsync(() =>
+                            recentStickersGrid.RowDefinitions.Add(new RowDefinition { }));
+                    }
+                }
+
+                if (setCol >= recentStickersGrid.ColumnDefinitions.Count)
+                {
+                    await DispatcherQueue.EnqueueAsync(() => recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                        { Width = new GridLength(64, GridUnitType.Auto) }));
+                }
+
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    recentStickersGrid.Children.Add(newSticker);
+                    Grid.SetRow(newSticker, setRow);
+                    Grid.SetColumn(newSticker, setCol);
+                });
+                setCol++;
+            }
+
+            _currentStickerSet++;
+        }
+    }
+
+    private async void GenerateAnimations()
+    {
+        PanelMedia.Children.Clear();
+        
+        var animations = await _client.GetSavedAnimationsAsync();
+        int savedRow = 0;
+        int savedCol = 0;
+        
+        Grid savedAnimationsGrid = new();
+        PanelMedia.Children.Add(savedAnimationsGrid);
+        
+        foreach (var animation in animations.Animations_)
+        {
+            var newAnimation = new Animation(animation);
+
+            if (savedCol == 3)
+            {
+                savedCol = 0;
+                savedRow++;
+                if (savedRow >= savedAnimationsGrid.RowDefinitions.Count)
+                {
+                    await DispatcherQueue.EnqueueAsync(() => savedAnimationsGrid.RowDefinitions.Add(new RowDefinition()));
+                }
+            }
+            
+            if (savedCol >= savedAnimationsGrid.ColumnDefinitions.Count)
+            {
+                await DispatcherQueue.EnqueueAsync(() => savedAnimationsGrid.ColumnDefinitions.Add(new ColumnDefinition
+                    { Width = new GridLength(128, GridUnitType.Auto) }));
+            }
+
+            await DispatcherQueue.EnqueueAsync(() =>
+            {
+                savedAnimationsGrid.Children.Add(newAnimation);
+                Grid.SetRow(newAnimation, savedRow);
+                Grid.SetColumn(newAnimation, savedCol);
+            });
+            savedCol++;
+        }
+    }
+    
+    private async void ScrollViewer_OnViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (!e.IsIntermediate)
+        {
+            var scrollViewer = (ScrollViewer)sender;
+            
+            double verticalOffset = scrollViewer.VerticalOffset;
+            double maxVerticalOffset = scrollViewer.ExtentHeight - scrollViewer.ViewportHeight;
+
+            if (verticalOffset >= maxVerticalOffset)
+            {
+                int startIndex = _stickerSets.Count;
+                int endIndex = 0;
+                for (int i = _currentStickerSet; i <= _currentStickerSet + 1; i++)
+                {
+                    if (_alreadyAddedStickerSets.Contains(_stickerSets[i])) continue;
+                    _alreadyAddedStickerSets.Add(_stickerSets[i]);
+                    
+                    endIndex = i;
+                    int setRow = 0;
+                    int setCol = 0;
+                    
+                    TextBlock textBlockRecentStickers = new()
+                    {
+                        Text = _stickerSets[i].Title,
+                        FontSize = 12,
+                    };
+                    PanelMedia.Children.Add(textBlockRecentStickers);
+        
+                    Grid recentStickersGrid = new();
+                    PanelMedia.Children.Add(recentStickersGrid);
+                    
+                    foreach (var sticker in _stickerSets[i].Stickers)
+                    {
+                        await DispatcherQueue.EnqueueAsync(() =>
+                        {
+                            var newSticker = new Sticker(sticker);
+
+                            if (setCol == 5)
+                            {
+                                setCol = 0;
+                                setRow++;
+                                if (setRow >= recentStickersGrid.RowDefinitions.Count)
+                                {
+                                    recentStickersGrid.RowDefinitions.Add(new RowDefinition { });
+                                }
+                            }
+
+                            if (setCol >= recentStickersGrid.ColumnDefinitions.Count)
+                            {
+                                recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
+                                    { Width = new GridLength(64, GridUnitType.Auto) });
+                            }
+
+                            recentStickersGrid.Children.Add(newSticker);
+                            Grid.SetRow(newSticker, setRow);
+                            Grid.SetColumn(newSticker, setCol);
+                        });
+                        setCol++;
+                    }
+                }
+                _currentStickerSet = endIndex;
+            }
+        }
     }
 }
