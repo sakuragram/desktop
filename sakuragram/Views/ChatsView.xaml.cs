@@ -6,12 +6,13 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
 using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using sakuragram.Controls.Messages;
 using sakuragram.Services;
 using sakuragram.Services.Core;
 using sakuragram.Views.Chats;
@@ -31,7 +32,6 @@ public sealed partial class ChatsView : Page
     private bool _firstGenerate = true;
     private bool _createChannelOpened = false;
     private bool _createGroupOpened = false;
-    public bool _mediaMenuOpened = false;
     private bool _isForumOpened = false;
     private bool _isForumTopicOpened = false;
     private bool _isChatOpened = false;
@@ -41,9 +41,11 @@ public sealed partial class ChatsView : Page
     private List<long> _pinnedChats = [];
     private List<Button> _foldersButtons = [];
     private List<ChatEntry> _chats = [];
-    private List<TdApi.StickerSet> _stickerSets = [];
-    private List<TdApi.StickerSet> _alreadyAddedStickerSets = [];
-    private int _currentStickerSet = -1;
+
+    public MainWindow MainWindow;
+    public Frame MainWindowFrame;
+    public TitleBar MainWindowTitleBar;
+    public StackPanel MainWindowTitleBarContent;
         
     public ChatsView()
     {
@@ -79,14 +81,46 @@ public sealed partial class ChatsView : Page
             App._folderId = -1;
         }
             
-        ColumnMediaPanel.Width = new GridLength(0);
         ColumnForumTopics.Width = new GridLength(0);
-            
-        ButtonEmoji.Click += (_, _) => SelectMediaPage(0);
-        ButtonStickers.Click += (_, _) => SelectMediaPage(1);
-        ButtonAnimations.Click += (_, _) => SelectMediaPage(2);
         
-        //_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
+        FlyoutItemTelegramFeatures.Click += (_, _) =>
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo("https://t.me/TelegramTips");
+            startInfo.UseShellExecute = true;
+            Process.Start(startInfo);
+        };
+        FlyoutItemSakuragramNews.Click += (_, _) =>
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo("https://t.me/sakuragram");
+            startInfo.UseShellExecute = true;
+            Process.Start(startInfo);
+        };
+        
+        GenerateUsers();
+
+        DispatcherQueue.EnqueueAsync(async () =>
+        {
+            try
+            {
+                var currentUser = await _client.GetMeAsync();
+                await MediaService.GetUserPhoto(currentUser, CurrentUserPicture);
+                FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
+                FlyoutItemCurrentUser.Icon = new BitmapIcon
+                {
+                    ShowAsMonochrome = false,
+                    UriSource = new Uri(currentUser.ProfilePhoto.Small.Local.Path),
+                    Width = 32,
+                    Height = 32
+                };
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        });
+        
+        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
     }
 
     private Task ProcessUpdates(TdApi.Update update)
@@ -110,45 +144,14 @@ public sealed partial class ChatsView : Page
                 }
                 break;
             }
-            case TdApi.Update.UpdateNewChat updateNewChat:
-            {
-                if (!_firstGenerate)
-                {
-                    if (_chatsIds.Contains(updateNewChat.Chat.Id))
-                    {
-                        ChatsList.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            var chatEntry = new ChatEntry
-                            {
-                                ChatPage = Chat,
-                                _chat = updateNewChat.Chat,
-                                ChatId = updateNewChat.Chat.Id
-                            };
-                            ChatsList.Items.Insert(0, chatEntry);
-                            _chatsIds.Add(updateNewChat.Chat.Id);
-                        });
-                    }
-                }
-                break;
-            }
             case TdApi.Update.UpdateChatDraftMessage updateChatDraftMessage:
             {
                 DispatcherQueue.TryEnqueue(() => UpdateChatPosition(updateChatDraftMessage.ChatId, ChatsList, ChatsList));
                 break;
             }
         }
-
+        
         return Task.CompletedTask;
-    }
-
-    public Visibility UpdateMediaVisibility()
-    {
-        return Media.Visibility = _mediaMenuOpened ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    public GridLength UpdateMediaLength()
-    {
-        return ColumnMediaPanel.Width = _mediaMenuOpened ? new GridLength(350) : new GridLength(0);
     }
 
     private void UpdateChatPosition(long chatId, ItemsControl chatsListToRemove, ItemsControl chatsListToInsert)
@@ -186,7 +189,7 @@ public sealed partial class ChatsView : Page
                 }
 
                 _currentChat._ChatsView = this;
-                Chat.Children.Add(_currentChat);
+                ContentFrame.Children.Add(_currentChat);
             });
         }
         catch (Exception e)
@@ -266,7 +269,7 @@ public sealed partial class ChatsView : Page
             _isForumOpened = true;
             ColumnForumTopics.Width = new GridLength(200);
         }
-        Chat.Children.Remove(_currentChat);
+        ContentFrame.Children.Remove(_currentChat);
     }
         
     private async Task GenerateChatEntries(TdApi.ChatList chatList)
@@ -316,18 +319,16 @@ public sealed partial class ChatsView : Page
                 await DispatcherQueue.EnqueueAsync(() => Separator.Visibility = Visibility.Collapsed);
             else await DispatcherQueue.EnqueueAsync(() => Separator.Visibility = Visibility.Visible);
 
-            await DispatcherQueue.EnqueueAsync(async () =>
+            await DispatcherQueue.EnqueueAsync(() =>
             {
                 ChatEntry chatEntry = new()
                 {
                     _ChatsView = this,
-                    ChatPage = Chat,
+                    ChatPage = ContentFrame,
                     _chat = chat,
                     ChatId = chat.Id,
                 };
-
-                await chatEntry.UpdateAsync();
-
+                
                 _chatsIds.Add(chat.Id);
                 _chats.Add(chatEntry);
 
@@ -343,53 +344,6 @@ public sealed partial class ChatsView : Page
         }   
         
         _firstGenerate = false;
-    }
-
-    private async void TextBoxSearch_OnTextChanged(object sender, TextChangedEventArgs e)
-    {
-        // if (TextBoxSearch.Text == "")
-        // {
-        //     if (_bInArchive)
-        //     {
-        //         ArchiveStatus.Text = "Archive";
-        //         ArchiveUnreadChats.Visibility = Visibility.Visible;
-        //         _bInArchive = false;
-        //     }
-        //     GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-        //     return;
-        // }
-            
-        ChatsList.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High, () => ChatsList.Items.Clear());
-            
-        // var foundedChats = await _client.ExecuteAsync(new TdApi.SearchChats
-        // {
-        //     Query = TextBoxSearch.Text,
-        //     Limit = 100
-        // });
-
-        var foundedMessages = await _client.ExecuteAsync(new TdApi.SearchMessages
-        {
-            ChatList = new TdApi.ChatList.ChatListMain(),
-            Limit = 100,
-            OnlyInChannels = true
-        });
-            
-            
-        // foreach (var chatId in foundedChats.ChatIds)
-        // {
-        //     var chat = _client.GetChatAsync(chatId).Result;
-        //     
-        //     var chatEntry = new ChatEntry
-        //     {
-        //         _ChatsView = this,
-        //         ChatPage = Chat,
-        //         _chat = chat,
-        //         ChatId = chat.Id
-        //     };
-        //         
-        //     chatEntry.UpdateChatInfo();
-        //     await DispatcherQueue.GetForCurrentThread().EnqueueAsync(() => ChatsList.Items.Add(chatEntry));
-        // }
     }
 
     private void ButtonSavedMessages_OnClick(object sender, RoutedEventArgs e)
@@ -544,310 +498,101 @@ public sealed partial class ChatsView : Page
             for (int i = 0; i < 10; i++) ;
         }
     }
-
-    private void PanelMedia_OnLoaded(object sender, RoutedEventArgs e)
+    
+    private void FlyoutClientActions_OnOpening(object sender, object e)
     {
-        var settings = SettingsService.LoadSettings();
-        int index = settings.StartMediaPage switch
+			
+    }
+
+    private void FlyoutClientActions_OnClosing(FlyoutBase sender, FlyoutBaseClosingEventArgs args)
+    {
+			
+    }
+    
+    private async void FlyoutItemAddAccount_OnClick(object sender, RoutedEventArgs e)
+    {
+        MainWindowTitleBarContent.Visibility = Visibility.Collapsed;
+        await App.AddNewAccount();
+        MainWindowTitleBar.IsBackButtonVisible = true;
+        MainWindowTitleBar.BackButtonClick += async (_, _) =>
         {
-            "Emojis" => 0,
-            "Stickers" => 1,
-            "GIFs" => 2,
-            _ => 0,
+            await App.RemoveNewAccount();
+            MainWindowTitleBar.IsBackButtonVisible = false;
+            MainWindowFrame.Navigate(typeof(ChatsView));
+            MainWindowTitleBarContent.Visibility = Visibility.Visible;
         };
-        
-        SelectMediaPage(index);
+        MainWindowFrame.Navigate(typeof(LoginView));
+        if (MainWindowFrame.Content is LoginView login) login._window = MainWindow;
     }
 
-    private void SelectMediaPage(int index)
+    private async void FlyoutItemLogOut_OnClick(object sender, RoutedEventArgs e)
     {
-        switch (index)
-        {
-            case 0: // Emojis
-                ButtonEmoji.IsEnabled = false;
-                ButtonStickers.IsEnabled = true;
-                ButtonAnimations.IsEnabled = true;
-                break;
-            case 1: // Stickers
-                GenerateStickers();
-                ButtonEmoji.IsEnabled = true;
-                ButtonStickers.IsEnabled = false;
-                ButtonAnimations.IsEnabled = true;
-                break;
-            case 2: // GIFs
-                GenerateAnimations();
-                ButtonEmoji.IsEnabled = true;
-                ButtonStickers.IsEnabled = true;
-                ButtonAnimations.IsEnabled = false;
-                break;
-        }
+        await _client.LogOutAsync();
+        await _client.CloseAsync();
+        await _client.DestroyAsync();
+        MainWindowFrame.Navigate(typeof(LoginView));
     }
 
-    private async void GenerateStickers()
+    private void FlyoutItemSavedMessages_OnClick(object sender, RoutedEventArgs e)
     {
-        PanelMedia.Children.Clear();
-        
-        var favoriteStickers = await _client.ExecuteAsync(new TdApi.GetFavoriteStickers());
-        var recentStickers = await _client.ExecuteAsync(new TdApi.GetRecentStickers { IsAttached = false });
-        var stickerSets = await _client.ExecuteAsync(new TdApi.GetInstalledStickerSets());
-        
-        if (stickerSets.Sets.Length > 0)
-        {
-            foreach (var set in stickerSets.Sets)
-            {
-                var foundedSet = await _client.ExecuteAsync(new TdApi.GetStickerSet { SetId = set.Id });
-                _stickerSets.Add(foundedSet);
-            }
-
-            _alreadyAddedStickerSets.Add(_stickerSets[0]);
-        }
-
-        if (favoriteStickers.Stickers_.Length > 0)
-        {
-            int favoriteRow = 0;
-            int favoriteCol = 0;
-            
-            TextBlock textBlockPinnedStickers = new()
-            {
-                Text = "Favorite stickers",
-                FontSize = 12,
-            };
-            PanelMedia.Children.Add(textBlockPinnedStickers);
-            
-            Grid favoriteStickersGrid = new();
-            PanelMedia.Children.Add(favoriteStickersGrid);
-            
-            foreach (var sticker in favoriteStickers.Stickers_)
-            {
-                var newSticker = new Sticker(sticker);
-
-                if (favoriteCol == 5)
-                {
-                    favoriteCol = 0;
-                    favoriteRow++;
-                    if (favoriteRow >= favoriteStickersGrid.RowDefinitions.Count)
-                    {
-                        await DispatcherQueue.EnqueueAsync(() =>
-                            favoriteStickersGrid.RowDefinitions.Add(new RowDefinition { }));
-                    }
-                }
-
-                if (favoriteCol >= favoriteStickersGrid.ColumnDefinitions.Count)
-                {
-                    await DispatcherQueue.EnqueueAsync(() => favoriteStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
-                        { Width = new GridLength(64, GridUnitType.Auto) }));
-                }
-
-                await DispatcherQueue.EnqueueAsync(() =>
-                {
-                    favoriteStickersGrid.Children.Add(newSticker);
-                    Grid.SetRow(newSticker, favoriteRow);
-                    Grid.SetColumn(newSticker, favoriteCol);
-                });
-                favoriteCol++;
-            }
-        }
-
-        if (recentStickers.Stickers_.Length > 0)
-        {
-            int recentRow = 0;
-            int recentCol = 0;
-        
-            TextBlock textBlockRecentStickers = new()
-            {
-                Text = "Recent stickers",
-                FontSize = 12,
-            };
-            PanelMedia.Children.Add(textBlockRecentStickers);
-        
-            Grid recentStickersGrid = new();
-            PanelMedia.Children.Add(recentStickersGrid);
-            
-            foreach (var sticker in recentStickers.Stickers_)
-            {
-                var newSticker = new Sticker(sticker);
-
-                if (recentCol == 5)
-                {
-                    recentCol = 0;
-                    recentRow++;
-                    if (recentRow >= recentStickersGrid.RowDefinitions.Count)
-                    {
-                        await DispatcherQueue.EnqueueAsync(() =>
-                            recentStickersGrid.RowDefinitions.Add(new RowDefinition { }));
-                    }
-                }
-
-                if (recentCol >= recentStickersGrid.ColumnDefinitions.Count)
-                {
-                    await DispatcherQueue.EnqueueAsync(() => recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
-                        { Width = new GridLength(64, GridUnitType.Auto) }));
-                }
-
-                await DispatcherQueue.EnqueueAsync(() =>
-                {
-                    recentStickersGrid.Children.Add(newSticker);
-                    Grid.SetRow(newSticker, recentRow);
-                    Grid.SetColumn(newSticker, recentCol);
-                });
-                recentCol++;
-            }
-        }
-
-        if (stickerSets.Sets.Length > 0)
-        {
-            int setRow = 0;
-            int setCol = 0;
-            TdApi.StickerSet stickerSet = await _client.GetStickerSetAsync(stickerSets.Sets[0].Id);
-            
-            TextBlock textBlockRecentStickers = new()
-            {
-                Text = stickerSets.Sets[0].Title,
-                FontSize = 12,
-            };
-            PanelMedia.Children.Add(textBlockRecentStickers);
-        
-            Grid recentStickersGrid = new();
-            PanelMedia.Children.Add(recentStickersGrid);
-            
-            foreach (var sticker in stickerSet.Stickers)
-            {
-                var newSticker = new Sticker(sticker);
-
-                if (setCol == 5)
-                {
-                    setCol = 0;
-                    setRow++;
-                    if (setRow >= recentStickersGrid.RowDefinitions.Count)
-                    {
-                        await DispatcherQueue.EnqueueAsync(() =>
-                            recentStickersGrid.RowDefinitions.Add(new RowDefinition { }));
-                    }
-                }
-
-                if (setCol >= recentStickersGrid.ColumnDefinitions.Count)
-                {
-                    await DispatcherQueue.EnqueueAsync(() => recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
-                        { Width = new GridLength(64, GridUnitType.Auto) }));
-                }
-
-                await DispatcherQueue.EnqueueAsync(() =>
-                {
-                    recentStickersGrid.Children.Add(newSticker);
-                    Grid.SetRow(newSticker, setRow);
-                    Grid.SetColumn(newSticker, setCol);
-                });
-                setCol++;
-            }
-
-            _currentStickerSet++;
-        }
     }
 
-    private async void GenerateAnimations()
+    private void FlyoutItemSettings_OnClick(object sender, RoutedEventArgs e)
     {
-        PanelMedia.Children.Clear();
-        
-        var animations = await _client.GetSavedAnimationsAsync();
-        int savedRow = 0;
-        int savedCol = 0;
-        
-        Grid savedAnimationsGrid = new();
-        PanelMedia.Children.Add(savedAnimationsGrid);
-        
-        foreach (var animation in animations.Animations_)
+        MainWindowFrame.Navigate(typeof(SettingsView));
+			     
+        MainWindowTitleBar.IsBackButtonVisible = true;
+        MainWindowTitleBar.BackButtonClick += (_, _) =>
         {
-            var newAnimation = new Animation(animation);
-
-            if (savedCol == 3)
-            {
-                savedCol = 0;
-                savedRow++;
-                if (savedRow >= savedAnimationsGrid.RowDefinitions.Count)
-                {
-                    await DispatcherQueue.EnqueueAsync(() => savedAnimationsGrid.RowDefinitions.Add(new RowDefinition()));
-                }
-            }
-            
-            if (savedCol >= savedAnimationsGrid.ColumnDefinitions.Count)
-            {
-                await DispatcherQueue.EnqueueAsync(() => savedAnimationsGrid.ColumnDefinitions.Add(new ColumnDefinition
-                    { Width = new GridLength(128, GridUnitType.Auto) }));
-            }
-
-            await DispatcherQueue.EnqueueAsync(() =>
-            {
-                savedAnimationsGrid.Children.Add(newAnimation);
-                Grid.SetRow(newAnimation, savedRow);
-                Grid.SetColumn(newAnimation, savedCol);
-            });
-            savedCol++;
-        }
+            MainWindowTitleBar.IsBackButtonVisible = false;
+            MainWindowFrame.Navigate(typeof(ChatsView));
+        };
     }
 
-    private async void ScrollViewer_OnViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    private void FlyoutItemCurrentUser_OnClick(object sender, RoutedEventArgs e)
     {
-        if (!e.IsIntermediate)
+        MainWindowFrame.Navigate(typeof(SettingsView));
+    }
+    
+    private void CurrentUserPicture_OnPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        FlyoutClientActions.ShowAt(CurrentUserPicture, new FlyoutShowOptions 
+            { ShowMode = FlyoutShowMode.Transient, Placement = FlyoutPlacementMode.Top });
+    }
+    
+    private void GenerateUsers()
+    {
+        var localSettings = SettingsService.LoadSettings();
+			
+        if (localSettings.ClientIDs.Count > 1)
         {
-            var scrollViewer = (ScrollViewer)sender;
-            
-            double verticalOffset = scrollViewer.VerticalOffset;
-            double maxVerticalOffset = scrollViewer.ExtentHeight - scrollViewer.ViewportHeight;
-
-            if (verticalOffset >= maxVerticalOffset)
+            DispatcherQueue.EnqueueAsync(async () =>
             {
-                int startIndex = _stickerSets.Count;
-                int endIndex = 0;
-                for (int i = _currentStickerSet; i <= _currentStickerSet + 1; i++)
+                var clientIds = localSettings.ClientIDs;
+                var clientIndex = localSettings.ClientIndex;
+                int index = 0;
+					
+                foreach (var clientId in localSettings.ClientIDs)
                 {
-                    if (_alreadyAddedStickerSets.Contains(_stickerSets[i])) continue;
-                    _alreadyAddedStickerSets.Add(_stickerSets[i]);
-                    
-                    endIndex = i;
-                    int setRow = 0;
-                    int setCol = 0;
-                    
-                    TextBlock textBlockRecentStickers = new()
+                    var user = await _client.GetUserAsync(clientId);
+                    var accountItem = new MenuFlyoutItem();
+                    accountItem.Text = user.FirstName + " " + user.LastName;
+                    accountItem.Tag = clientIds.IndexOf(clientId) == clientIndex
+                        ? clientIds.IndexOf(clientId)
+                        : "error";
+                    accountItem.Click += async (_, _) =>
                     {
-                        Text = _stickerSets[i].Title,
-                        FontSize = 12,
+                        await App.SwitchAccount(clientIds.IndexOf(index));
+                        MainWindowFrame.Navigate(typeof(ChatsView));
                     };
-                    PanelMedia.Children.Add(textBlockRecentStickers);
-        
-                    Grid recentStickersGrid = new();
-                    PanelMedia.Children.Add(recentStickersGrid);
-                    
-                    foreach (var sticker in _stickerSets[i].Stickers)
-                    {
-                        await DispatcherQueue.EnqueueAsync(() =>
-                        {
-                            var newSticker = new Sticker(sticker);
-
-                            if (setCol == 5)
-                            {
-                                setCol = 0;
-                                setRow++;
-                                if (setRow >= recentStickersGrid.RowDefinitions.Count)
-                                {
-                                    recentStickersGrid.RowDefinitions.Add(new RowDefinition { });
-                                }
-                            }
-
-                            if (setCol >= recentStickersGrid.ColumnDefinitions.Count)
-                            {
-                                recentStickersGrid.ColumnDefinitions.Add(new ColumnDefinition
-                                    { Width = new GridLength(64, GridUnitType.Auto) });
-                            }
-
-                            recentStickersGrid.Children.Add(newSticker);
-                            Grid.SetRow(newSticker, setRow);
-                            Grid.SetColumn(newSticker, setCol);
-                        });
-                        setCol++;
-                    }
+                    index++;
+                    FlyoutClientActions.Items.Add(accountItem);
                 }
-                _currentStickerSet = endIndex;
-            }
+            });
+        }
+        else
+        {
+            SeparatorUsers.Visibility = Visibility.Collapsed;
         }
     }
 }
