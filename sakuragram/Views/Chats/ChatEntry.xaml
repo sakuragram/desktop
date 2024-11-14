@@ -8,7 +8,6 @@
     xmlns:user="using:sakuragram.Controls.User"
     mc:Ignorable="d"
     Click="Button_OnClick"
-    RightTapped="ChatEntry_OnRightTapped"
     HorizontalContentAlignment="Stretch"
     VerticalContentAlignment="Center"
     HorizontalAlignment="Stretch"
@@ -18,64 +17,113 @@
     CornerRadius="4"
     MaxHeight="80">
     
-    <Grid x:Name="ChatEntryInfo" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280*" />
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+    <Grid HorizontalAlignment="Stretch" 
+          VerticalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
             
-            <StackPanel Grid.Column="0"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Left" 
-                        VerticalAlignment="Center">
-                <user:ProfilePhoto x:Name="ChatEntryProfilePicture" 
-                                 Width="46"
-                                 Height="46"
-                                 HorizontalAlignment="Left"
-                                 VerticalAlignment="Top"
-                                 Margin="10"/>
-                <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                    <TextBlock x:Name="TextBlockChatName" 
-                               FontSize="14" 
-                               MaxLines="1" 
-                               TextTrimming="Clip"/>
-                    <TextBlock x:Name="TextBlockForumName" 
-                               FontSize="10" 
-                               MaxLines="1" 
-                               TextTrimming="Clip" 
-                               Visibility="Collapsed"
-                               Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock x:Name="TextBlockChatUsername"
-                                   FontSize="10" 
-                                   MaxLines="1" 
-                                   Margin="0, 0, 3, 0"
-                                   TextTrimming="Clip"
-                                   Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock x:Name="TextBlockChatLastMessage" 
-                                   FontSize="10" 
-                                   MaxLines="1" 
-                                   TextTrimming="Clip"
-                                   Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
+        <user:ProfilePhoto x:Name="ChatEntryProfilePicture" 
+                             Width="46"
+                             Height="46"
+                             HorizontalAlignment="Left"
+                             VerticalAlignment="Top"
+                             Margin="10"
+                             Grid.Column="0"/>
+        
+        <Grid VerticalAlignment="Center" 
+              HorizontalAlignment="Stretch"
+              Grid.Column="1">
             
-            <StackPanel Grid.Column="1" 
-                        HorizontalAlignment="Right" 
-                        VerticalAlignment="Center"
-                        Margin="5, 0, 0, 0">
-                <StackPanel Orientation="Vertical">
-                    <TextBlock x:Name="TextBlockSendTime" 
-                               FontSize="14"
-                               Foreground="{StaticResource TextFillColorTertiaryBrush}"/>
-                    <InfoBadge x:Name="UnreadMessagesCount" 
-                               HorizontalAlignment="Right"/>
-                </StackPanel>
-            </StackPanel>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <FontIcon x:Name="IconChatType"
+                          Margin="0, 0, 3, 0"
+                          FontSize="14"
+                          Grid.Column="0"/>
+                <TextBlock x:Name="TextBlockChatName" 
+                           FontSize="14" 
+                           MaxLines="1" 
+                           TextTrimming="Clip"
+                           Grid.Column="1"/>
+                <TextBlock x:Name="TextBlockSendTime" 
+                           FontSize="14"
+                           Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                           Grid.Column="3"/>
+            </Grid>
+            
+            <TextBlock x:Name="TextBlockForumName" 
+                       FontSize="10" 
+                       MaxLines="1" 
+                       TextTrimming="Clip" 
+                       Visibility="Collapsed"
+                       Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                       Grid.Row="1"/>
+            
+            <Grid HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Grid.Row="2">
+                
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock x:Name="TextBlockChatUsername"
+                           FontSize="10" 
+                           MaxLines="1" 
+                           Margin="0, 0, 3, 0"
+                           TextTrimming="Clip"
+                           Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
+                <TextBlock x:Name="TextBlockChatLastMessage" 
+                           FontSize="10" 
+                           MaxLines="1" 
+                           TextTrimming="Clip"
+                           Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                           Grid.Column="1"/>
+                <Border x:Name="BorderReaction"
+                        CornerRadius="8"
+                        Margin="0, 0, 3, 0"
+                        Background="{StaticResource AccentAcrylicBackgroundFillColorDefaultBrush}"
+                        Grid.Column="2">
+                    <Border.Child>
+                        <FontIcon Glyph="&#xEB51;"
+                                  FontSize="8"
+                                  Margin="4"/>
+                    </Border.Child>
+                </Border>
+                <Border x:Name="BorderMention"
+                        CornerRadius="8"
+                        Margin="0, 0, 3, 0"
+                        Background="{StaticResource AccentAcrylicBackgroundFillColorDefaultBrush}"
+                        Grid.Column="3">
+                    <Border.Child>
+                        <FontIcon Glyph="&#xE910;"
+                                  FontSize="8"
+                                  Margin="4"/>
+                    </Border.Child>
+                </Border>
+                <InfoBadge x:Name="UnreadMessagesCount" 
+                           HorizontalAlignment="Right"
+                           Grid.Column="4"/>
+            </Grid>
         </Grid>
-            
+        
         <ContentDialog x:Name="LeaveChatConfirmation"
                        PrimaryButtonText="Leave"
                        PrimaryButtonClick="LeaveChatConfirmation_OnPrimaryButtonClick"
@@ -91,23 +139,23 @@
         
     </Grid>
     
-    <!-- <Button.Flyout> -->
-    <!--     <MenuFlyout x:Name="ContextMenu" Placement="Bottom"> -->
-    <!--         <MenuFlyoutItem x:Name="ContextMenuArchive"  -->
-    <!--                         Text="Archive"  -->
-    <!--                         Click="ContextMenuArchive_OnClick"/> -->
-    <!--         <MenuFlyoutItem x:Name="ContextMenuPin"  -->
-    <!--                         Text="Pin"  -->
-    <!--                         Click="ContextMenuPin_OnClick"/> -->
-    <!--         <MenuFlyoutItem x:Name="ContextMenuNotifications"  -->
-    <!--                         Text="Mute"  -->
-    <!--                         Click="ContextMenuNotifications_OnClick"/> -->
-    <!--         <MenuFlyoutItem x:Name="ContextMenuMarkAs"  -->
-    <!--                         Text="Mark as"  -->
-    <!--                         Click="ContextMenuMarkAs_OnClick"/> -->
-    <!--         <MenuFlyoutItem x:Name="ContextMenuLeave"  -->
-    <!--                         Text="Leave"  -->
-    <!--                         Click="ContextMenuLeave_OnClick"/> -->
-    <!--     </MenuFlyout> -->
-    <!-- </Button.Flyout> -->
+    <Button.ContextFlyout>
+        <MenuFlyout x:Name="ContextMenu" Placement="Bottom">
+            <MenuFlyoutItem x:Name="ContextMenuArchive"
+                            Text="Archive"
+                            Click="ContextMenuArchive_OnClick"/>
+            <MenuFlyoutItem x:Name="ContextMenuPin"
+                            Text="Pin"
+                            Click="ContextMenuPin_OnClick"/>
+            <MenuFlyoutItem x:Name="ContextMenuNotifications"
+                            Text="Mute"
+                            Click="ContextMenuNotifications_OnClick"/>
+            <MenuFlyoutItem x:Name="ContextMenuMarkAs"
+                            Text="Mark as"
+                            Click="ContextMenuMarkAs_OnClick"/>
+            <MenuFlyoutItem x:Name="ContextMenuLeave"
+                            Text="Leave"
+                            Click="ContextMenuLeave_OnClick"/>
+        </MenuFlyout>
+    </Button.ContextFlyout>
 </Button>
