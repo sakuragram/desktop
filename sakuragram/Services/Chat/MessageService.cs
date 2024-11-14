@@ -38,6 +38,7 @@ public class MessageService
     
     public static async Task<string> GetTextMessageContent(TdApi.Message message)
     {
+        if (message == null ) return null;
         var chat = await _client.GetChatAsync(message.ChatId);
         
         if (chat.DraftMessage != null)
