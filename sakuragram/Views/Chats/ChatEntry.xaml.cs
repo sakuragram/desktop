@@ -27,6 +27,7 @@ public sealed partial class ChatEntry
     private int _profilePhotoFileId;
     private bool _inArchive;
     private string _lastMessageText = string.Empty;
+    private int _unreadCount = 0;
 
     public ChatEntry()
     {
@@ -82,26 +83,20 @@ public sealed partial class ChatEntry
                 {
                     if (updateNewMessage.Message.ChatId == _chat.Id)
                     {
-                        await DispatcherQueue.EnqueueAsync(async () =>
+                        await DispatcherQueue.EnqueueAsync(() =>
                         {
-                            string senderName = await UserService.GetSenderName(_chat.LastMessage);
-                            TextBlockChatUsername.Text =
-                                senderName != string.Empty ? senderName + ": " : string.Empty;
-                            TextBlockChatLastMessage.Text =
-                                await MessageService.GetTextMessageContent(_chat.LastMessage); 
+                            string time = MathService.CalculateDateTime(updateNewMessage.Message.Date).ToShortTimeString();
+                            TextBlockSendTime.Text = time;
+                            _unreadCount++;
+                            UnreadMessagesCount.Visibility = _unreadCount >= 1 ? Visibility.Visible : Visibility.Collapsed;
+                            UnreadMessagesCount.Value = _unreadCount;
                         });
                     }
                     break;
                 }
-                case TdApi.Update.UpdateUnreadChatCount updateUnreadChatCount:
-                {
-                    await DispatcherQueue.EnqueueAsync(() =>
-                        UnreadMessagesCount.Value = updateUnreadChatCount.UnreadCount);
-                    break;
-                }
                 case TdApi.Update.UpdateChatDraftMessage updateChatDraftMessage:
                 {
-                    if (updateChatDraftMessage.ChatId == ChatId)
+                    if (updateChatDraftMessage.ChatId == _chat.Id)
                     {
                         await DispatcherQueue.EnqueueAsync(() =>
                         {
@@ -204,12 +199,13 @@ public sealed partial class ChatEntry
         catch (Exception e)
         {
             Debug.WriteLine(e);
-            throw;
         }
     }
 
     private async Task UpdateAsync()
     {
+        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+        
         _chat = await _client.GetChatAsync(ChatId);
         var currentUser = await _client.GetMeAsync();
         string senderName = await UserService.GetSenderName(_chat.LastMessage);
@@ -224,36 +220,92 @@ public sealed partial class ChatEntry
             TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty
                 ? Visibility.Collapsed
                 : Visibility.Visible;
-            TextBlockSendTime.Text = MathService.CalculateDateTime(_chat.LastMessage.Date).ToShortTimeString();
         });
+        
+        if (_chat.NotificationSettings.MuteFor > 0)
+        {
+            await DispatcherQueue.EnqueueAsync(() => 
+                UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray));
+        }
 
+        #region Unread
+
+        await DispatcherQueue.EnqueueAsync(() => BorderMention.Visibility =  _chat.UnreadMentionCount > 0 ? Visibility.Visible : Visibility.Collapsed);
+        await DispatcherQueue.EnqueueAsync(() => BorderReaction.Visibility =  _chat.UnreadReactionCount > 0 ? Visibility.Visible : Visibility.Collapsed);
+        
         if (_chat.UnreadCount > 0)
         {
             await DispatcherQueue.EnqueueAsync(() =>
             {
                 UnreadMessagesCount.Visibility = Visibility.Visible;
-                UnreadMessagesCount.Value = _chat.UnreadCount;
+                _unreadCount = _chat.UnreadCount;
+                UnreadMessagesCount.Value = _unreadCount;
             });
         }
         else
         {
             await DispatcherQueue.EnqueueAsync(() => UnreadMessagesCount.Visibility = Visibility.Collapsed);
         }
-        
-        if (_chat.NotificationSettings.MuteFor > 4000000)
-        {
-            await DispatcherQueue.EnqueueAsync(() => 
-                UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray));
-        }
-
-        await DispatcherQueue.EnqueueAsync(() => BorderMention.Visibility =  _chat.UnreadMentionCount > 0 ? Visibility.Visible : Visibility.Collapsed);
-        await DispatcherQueue.EnqueueAsync(() => BorderReaction.Visibility =  _chat.UnreadReactionCount > 0 ? Visibility.Visible : Visibility.Collapsed);
-
-
-                    : Visibility.Visible;
 
         #endregion
-            
+
+        #region SendTime
+
+        try
+        {
+            var today = DateTime.UtcNow.Date;
+            var lastMessageDate = MathService.CalculateDateTime(_chat.LastMessage.Date);
+
+            var timeDiff = (today - lastMessageDate.Date).TotalHours;
+
+            if (timeDiff < 24)
+            {
+                await DispatcherQueue.EnqueueAsync(() => TextBlockSendTime.Text = lastMessageDate.ToString("HH:mm"));
+            }
+            else if (timeDiff < 168) 
+            {
+                await DispatcherQueue.EnqueueAsync(() => TextBlockSendTime.Text = lastMessageDate.ToString("ddd"));
+            }
+            else
+            {
+                await DispatcherQueue.EnqueueAsync(() => TextBlockSendTime.Text = lastMessageDate.ToString("M.d.yy"));
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+        }
+
+        #endregion
+
+        #region ReadStatus
+
+        var sender = await UserService.GetSender(_chat.LastMessage.SenderId);
+        if (sender.User != null)
+        {
+            if (sender.User.Id == currentUser.Id)
+            {
+                if (_chat.LastMessage.Id >= _chat.LastReadInboxMessageId)
+                {
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        IconReadStatus.Glyph = "\uE9D5";
+                        IconReadStatus.Visibility = Visibility.Visible;
+                    });
+                }
+                else
+                {
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        IconReadStatus.Glyph = "\uE73E";
+                        IconReadStatus.Visibility = Visibility.Visible;
+                    });
+                }
+            }
+        }
+
+        #endregion
+        
         switch (_chat.Type)
         {
             case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
@@ -370,8 +422,6 @@ public sealed partial class ChatEntry
                 break;
             }
         }
-            
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
         
     private void Button_OnClick(object sender, RoutedEventArgs e)

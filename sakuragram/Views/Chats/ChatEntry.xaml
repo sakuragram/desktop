@@ -47,6 +47,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 
                 <FontIcon x:Name="IconChatType"
@@ -58,6 +59,12 @@
                            MaxLines="1" 
                            TextTrimming="Clip"
                            Grid.Column="1"/>
+                <FontIcon x:Name="IconReadStatus"
+                          Glyph="&#xE73E;"
+                          Margin="0, 0, 3, 0"
+                          FontSize="14"
+                          Visibility="Collapsed"
+                          Grid.Column="2"/>
                 <TextBlock x:Name="TextBlockSendTime" 
                            FontSize="14"
                            Foreground="{StaticResource TextFillColorTertiaryBrush}"
@@ -100,6 +107,7 @@
                         CornerRadius="8"
                         Margin="0, 0, 3, 0"
                         Background="{StaticResource AccentAcrylicBackgroundFillColorDefaultBrush}"
+                        Visibility="Collapsed"
                         Grid.Column="2">
                     <Border.Child>
                         <FontIcon Glyph="&#xEB51;"
@@ -111,6 +119,7 @@
                         CornerRadius="8"
                         Margin="0, 0, 3, 0"
                         Background="{StaticResource AccentAcrylicBackgroundFillColorDefaultBrush}"
+                        Visibility="Collapsed"
                         Grid.Column="3">
                     <Border.Child>
                         <FontIcon Glyph="&#xE910;"
