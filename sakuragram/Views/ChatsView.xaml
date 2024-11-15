@@ -13,9 +13,6 @@
     KeyDown="ChatsView_OnKeyDown">
     
     <Page.Resources>
-        <ItemsPanelTemplate x:Key="HorizontalItemsPanel">
-            <StackPanel Orientation="Horizontal"/>
-        </ItemsPanelTemplate>
         <ItemsPanelTemplate x:Key="VerticalItemsPanel">
             <StackPanel Orientation="Vertical"/>
         </ItemsPanelTemplate>
@@ -45,8 +42,7 @@
                           HorizontalScrollMode="Enabled"
                           VerticalScrollMode="Disabled"
                           CanBeScrollAnchor="True">
-                <ItemsControl ItemsSource="{x:Bind Path=_foldersButtons, Mode=TwoWay}"
-                              ItemsPanel="{StaticResource HorizontalItemsPanel}"/>
+                <SelectorBar x:Name="SelectorBarFolders" />
             </ScrollViewer>
             <Grid Grid.Row="1"
                   VerticalAlignment="Stretch" 

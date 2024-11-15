@@ -40,7 +40,6 @@ public sealed partial class ChatsView : Page
     private StorageFile _newProfilePicture;
     private List<long> _chatsIds = [];
     private List<long> _pinnedChats = [];
-    private List<Button> _foldersButtons = [];
     private List<ChatEntry> _chats = [];
 
     public MainWindow MainWindow;
@@ -52,24 +51,25 @@ public sealed partial class ChatsView : Page
     {
         InitializeComponent();
             
-        Button buttonAllChats = new();
-        buttonAllChats.Margin = new Thickness(0, 0, 5, 0);
-        buttonAllChats.Content = "All chats";
-        buttonAllChats.Click += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-        _foldersButtons.Add(buttonAllChats);
+        SelectorBarItem selectorBarItemAllChats = new();
+        selectorBarItemAllChats.Margin = new Thickness(0, 0, 5, 0);
+        selectorBarItemAllChats.Text = "All chats";
+        selectorBarItemAllChats.PointerPressed += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+        SelectorBarFolders.Items.Add(selectorBarItemAllChats);
         
         foreach (var folder in App._folders)
         {
-            Button button = new();
-            button.Margin = new Thickness(0, 0, 5, 0);
-            button.Content = folder.Title;
-            button.Tag = $"{folder.Title}_{folder.Id}";
-            button.Click += (_, _) =>
+            SelectorBarItem selectorBarItem = new();
+            selectorBarItem.Margin = new Thickness(0, 0, 5, 0);
+            selectorBarItem.Text = folder.Title;
+            selectorBarItem.Tag = $"{folder.Title}_{folder.Id}";
+            selectorBarItem.PointerPressed += (_, _) =>
             {
                 App._folderId = folder.Id;
                 GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
+                selectorBarItem.IsSelected = true;
             };
-            _foldersButtons.Add(button);
+            SelectorBarFolders.Items.Add(selectorBarItem);
         }
         
         if (App._folderId != -1)
@@ -97,7 +97,7 @@ public sealed partial class ChatsView : Page
             Process.Start(startInfo);
         };
         
-        GenerateUsers();
+        // GenerateUsers();
 
         DispatcherQueue.EnqueueAsync(async () =>
         {
