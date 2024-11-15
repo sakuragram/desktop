@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -123,49 +124,46 @@ public sealed partial class ChatsView : Page
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
     }
 
-    private Task ProcessUpdates(TdApi.Update update)
+    private async Task ProcessUpdates(TdApi.Update update)
     {
         switch (update)
         {
             case TdApi.Update.UpdateNewMessage updateNewMessage:
             {
-                UpdateChatPosition(updateNewMessage.Message.ChatId, ChatsList, ChatsList);
+                await DispatcherQueue.EnqueueAsync(() => UpdateChatPosition(updateNewMessage.Message.ChatId, ChatsList, ChatsList));
                 break;
             }
             case TdApi.Update.UpdateChatPosition updateChatPosition:
             {
                 if (updateChatPosition.Position.IsPinned)
                 {
-                    UpdateChatPosition(updateChatPosition.ChatId, ChatsList, PinnedChatsList);
+                    await DispatcherQueue.EnqueueAsync(() => UpdateChatPosition(updateChatPosition.ChatId, ChatsList, PinnedChatsList));
                 }
                 else
                 {
-                    UpdateChatPosition(updateChatPosition.ChatId, PinnedChatsList, ChatsList);
+                    await DispatcherQueue.EnqueueAsync(() => UpdateChatPosition(updateChatPosition.ChatId, PinnedChatsList, ChatsList));
                 }
                 break;
             }
             case TdApi.Update.UpdateChatDraftMessage updateChatDraftMessage:
             {
-                DispatcherQueue.TryEnqueue(() => UpdateChatPosition(updateChatDraftMessage.ChatId, ChatsList, ChatsList));
+                await DispatcherQueue.EnqueueAsync(() => UpdateChatPosition(updateChatDraftMessage.ChatId, ChatsList, ChatsList));
                 break;
             }
         }
-        
-        return Task.CompletedTask;
     }
 
     private void UpdateChatPosition(long chatId, ItemsControl chatsListToRemove, ItemsControl chatsListToInsert)
     {
-        // DispatcherQueue.EnqueueAsync(async () =>
-        // {
-        //     var chatToMove = ChatsList.Items
-        //         .OfType<ChatEntry>()
-        //         .FirstOrDefault(chat => chat.ChatId == chatId);
-        //     if (chatToMove == null || chatToMove.ChatId != chatId) return;
-        //     chatsListToRemove.Items.Remove(chatToMove);
-        //     await chatToMove.UpdateAsync();
-        //     chatsListToInsert.Items.Insert(0, chatToMove);
-        // });
+        DispatcherQueue.EnqueueAsync(() =>
+        {
+            var chatToMove = ChatsList.Items
+                .OfType<ChatEntry>()
+                .FirstOrDefault(chat => chat.ChatId == chatId);
+            if (chatToMove == null || chatToMove.ChatId != chatId) return;
+            chatsListToRemove.Items.Remove(chatToMove);
+            chatsListToInsert.Items.Insert(0, chatToMove);
+        });
     }
         
     private async void OpenChat(long chatId, bool isForum, TdApi.ForumTopic forumTopic)
