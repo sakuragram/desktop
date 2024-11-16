@@ -49,7 +49,7 @@ public partial class App : Application
 
 	public static int _folderId = -1;
 
-	private static Task PrepareApplication()
+	public static Task PrepareApplication()
 	{
 		#region Variables prepairing
 
@@ -130,6 +130,7 @@ public partial class App : Application
 				{
 					ApiId = Config.ApiId,
 					ApiHash = Config.ApiHash,
+					UseTestDc = Config.IsTestDc,
 					UseFileDatabase = true,
 					UseChatInfoDatabase = true,
 					UseMessageDatabase = true,

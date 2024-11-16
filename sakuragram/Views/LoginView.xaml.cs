@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.System;
 using CommunityToolkit.WinUI;
@@ -7,6 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using sakuragram.Views.Auth;
 using TdLib;
+using TdLib.Bindings;
 
 namespace sakuragram.Views
 {
@@ -18,12 +21,13 @@ namespace sakuragram.Views
 		private Frame _contentFrame;
 		private string _passwordHint;
 		private int _passwordLength;
+		private bool _isTestDc;
 
 		public LoginView()
 		{
 			InitializeComponent();
 
-			TdException.Visibility = Visibility.Visible;
+			// TdException.Visibility = Visibility.Visible;
 			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
 			
 			TextBlockCurrentAuthState.Text = "Your phone";
@@ -33,16 +37,39 @@ namespace sakuragram.Views
 		private async Task ProcessUpdates(TdApi.Update update)
 		{
 			await DispatcherQueue.EnqueueAsync(() => TdException.Text = update.ToString());
+			await DispatcherQueue.EnqueueAsync(() => _isTestDc = SwitchTestBackend.IsOn);
 			
 			switch (update)
 			{
 				case TdApi.Update.UpdateAuthorizationState updateAuthorizationState:
 				{
-					_passwordHint = updateAuthorizationState.AuthorizationState switch
+					switch (updateAuthorizationState.AuthorizationState)
 					{
-						TdApi.AuthorizationState.AuthorizationStateWaitPassword password => password.PasswordHint,
-						_ => string.Empty
-					};
+						case TdApi.AuthorizationState.AuthorizationStateWaitTdlibParameters:
+						{
+							await _client.ExecuteAsync(new TdApi.SetTdlibParameters
+							{
+								ApiId = Config.ApiId,
+								ApiHash = Config.ApiHash,
+								UseTestDc = _isTestDc,
+								UseFileDatabase = true,
+								UseChatInfoDatabase = true,
+								UseMessageDatabase = true,
+								UseSecretChats = true,
+								DeviceModel = "Desktop",
+								SystemLanguageCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName,
+								ApplicationVersion = Config.AppVersion,
+								DatabaseDirectory = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\u_test_0"),
+								FilesDirectory = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\files\"),
+							});
+							break;
+						}
+						case TdApi.AuthorizationState.AuthorizationStateWaitPassword password:
+						{
+							_passwordHint = password.PasswordHint;
+							break;
+						}
+					}
 					break;
 				}
 				case TdApi.Update.UpdateChatFolders updateChatFolders:
@@ -74,9 +101,11 @@ namespace sakuragram.Views
 						LoginProgress.Visibility = Visibility.Collapsed;
 						ButtonNext.IsEnabled = true;
 						TextBoxPhoneNumber.IsEnabled = true;
+						SwitchTestBackend.Visibility = Visibility.Visible;
 						TdException.Visibility = Visibility.Visible;
 						return;
 					}
+					SwitchTestBackend.Visibility = Visibility.Collapsed;
 					TdException.Visibility = Visibility.Collapsed;
 					LoginProgress.Visibility = Visibility.Collapsed;
 					_loginState++;
@@ -126,11 +155,7 @@ namespace sakuragram.Views
 						{
 							_contentFrame = _window.RootFrame;
 							_window.TopBarContent.Visibility = Visibility.Visible;
-						}
-
-						if (_contentFrame != null)
-						{
-							_contentFrame.Navigate(typeof(ChatsView));
+							_window.OpenChatsView();
 						}
 					}
 					break;
@@ -162,11 +187,7 @@ namespace sakuragram.Views
 					{
 						_contentFrame = _window.RootFrame;
 						_window.TopBarContent.Visibility = Visibility.Visible;
-					}
-
-					if (_contentFrame != null)
-					{
-						_contentFrame.Navigate(typeof(ChatsView));
+						_window.OpenChatsView();
 					}
 					break;
 			}
@@ -195,6 +216,26 @@ namespace sakuragram.Views
 			if (TextBoxCode.Text.Length == 5)
 			{
 				button_Next_Click(null, null);
+			}
+		}
+
+		private async void SwitchTestBackend_OnToggled(object sender, RoutedEventArgs e)
+		{
+			if (SwitchTestBackend.IsOn)
+			{
+				await _client.DestroyAsync();
+				_client.UpdateReceived -= async (_, update) => { await ProcessUpdates(update); };
+				App._client = null;
+				_client = new TdClient();
+				_client.Bindings.SetLogVerbosityLevel(Config.LogLevel);
+				_client.Bindings.SetLogFilePath(Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\log.txt"));
+				_client.Bindings.SetLogFileMaxSize(Config.LogFileMaxSize);
+				_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+				App._client = _client;
+			}
+			else
+			{
+				await App.PrepareApplication();
 			}
 		}
 	}

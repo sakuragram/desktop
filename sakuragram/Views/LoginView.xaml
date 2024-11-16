@@ -25,10 +25,13 @@
 		             Visibility="Collapsed" 
 		             PasswordChar="*"
 		             Margin="0, 0, 0, 4" />
-		<TextBlock x:Name="TdException"
-		           TextAlignment="Center"
-		           Margin="0, 0, 0, 4"
-		           Visibility="Collapsed"/>
+		<ToggleSwitch x:Name="SwitchTestBackend"
+		              IsOn="False"
+		              OnContent="Test backend"
+		              OffContent="Test backend"
+		              HorizontalAlignment="Center"
+		              VerticalAlignment="Center"
+		              Toggled="SwitchTestBackend_OnToggled"/>
 		<ProgressBar x:Name="LoginProgress" IsIndeterminate="True" ShowPaused="False" ShowError="False" 
 		             Width="200"
 		             Visibility="Collapsed"
@@ -44,6 +47,10 @@
 	                 Visibility="Collapsed"
 	                 HorizontalAlignment="Center"
 	                 VerticalAlignment="Center"/>
+		<TextBlock x:Name="TdException"
+		           TextAlignment="Center"
+		           Margin="0, 0, 0, 4"
+		           Visibility="Collapsed"/>
 	</StackPanel>
 	
 </Page>
