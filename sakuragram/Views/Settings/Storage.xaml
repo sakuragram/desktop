@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="sakuragram.Views.Settings.Storage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:win="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    mc:Ignorable="d">
+    <Page.Resources>
+
+        <x:Double x:Key="SettingsCardSpacing">4</x:Double>
+
+        <Style x:Key="SettingsSectionHeaderTextBlockStyle"
+               BasedOn="{StaticResource BodyStrongTextBlockStyle}"
+               TargetType="TextBlock">
+            <Style.Setters>
+                <Setter Property="Margin" Value="1,30,0,6" />
+            </Style.Setters>
+        </Style>
+    </Page.Resources>
+    
+    <ScrollViewer>
+        <Grid>
+            <StackPanel MaxWidth="1000"
+                        HorizontalAlignment="Stretch"
+                        Spacing="{StaticResource SettingsCardSpacing}">
+                <win:StackPanel.ChildrenTransitions>
+                    <win:EntranceThemeTransition FromVerticalOffset="50" />
+                    <win:RepositionThemeTransition IsStaggeringEnabled="False" />
+                </win:StackPanel.ChildrenTransitions>
+                
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
+                           Text="Storage (Fast check)" />
+                
+                <controls:SettingsCard Header="Database Size"
+                                       Description="In this card you can find out the ping of Telegram Data Centers"
+                                       x:Name="CardDatabaseSize"/>
+                
+                <controls:SettingsCard Header="Log Size"
+                                       Description="In this card you can find out the ping of Telegram Data Centers"
+                                       x:Name="CardLogSize"/>
+                
+                <controls:SettingsCard Header="Files Size"
+                                       Description="In this card you can find out the ping of Telegram Data Centers"
+                                       x:Name="CardFilesSize"/>
+                
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
+                           Text="Storage (by chat)" />
+                
+                <controls:SettingsExpander Header="Database Size"
+                                       Description="In this card you can find out the ping of Telegram Data Centers"
+                                       x:Name="ExpanderStorageByChat"/>
+                
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
+                           Text="Storage (Fast check)" />
+                
+                <controls:SettingsCard Header="Optimize Storage"
+                                       Description="In this card you can find out the ping of Telegram Data Centers"
+                                       x:Name="CardOptimizeStorage">
+                    <controls:SettingsCard.Content>
+                        <Button x:Name="ButtonOptimizeStorage"
+                                Content="Optimize"
+                                Click="ButtonOptimizeStorage_OnClick"/>
+                    </controls:SettingsCard.Content>
+                </controls:SettingsCard>
+                
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+    
+</Page>
