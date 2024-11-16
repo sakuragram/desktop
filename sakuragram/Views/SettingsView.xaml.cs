@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using sakuragram.Views.Settings;
 using TdLib;
 
 namespace sakuragram.Views
@@ -68,6 +69,7 @@ namespace sakuragram.Views
                 return false;
 
             ContentFrame.Navigate(view, null, new EntranceNavigationTransitionInfo());
+            if (ContentFrame.Content is Storage storage) storage.Frame = ContentFrame;
             return true;
         }
     }

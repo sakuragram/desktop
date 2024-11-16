@@ -72,6 +72,11 @@
                     <FontIcon Glyph="&#xE850;"/>
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
+            <NavigationViewItem x:Name="NavViewStorage" 
+                                Content="Storage" 
+                                Tag="Storage"
+                                IsEnabled="True">
+            </NavigationViewItem>
             <NavigationViewItem x:Name="NavViewUpdateSettings" 
                                 Content="Update settings" 
                                 Tag="UpdateSettings"
