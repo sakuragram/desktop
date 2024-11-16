@@ -115,27 +115,41 @@ public sealed partial class Chat : Page
                 if (updateChatAction.ChatId == _chatId)
                 {
                     var sender = await UserService.GetSender(updateChatAction.SenderId);
-                    var senderName = sender.User != null ? sender.User.FirstName + " " + sender.User.LastName 
+                    var senderName = sender.User != null 
+                        ? string.IsNullOrEmpty(sender.User.LastName) 
+                            ? sender.User.FirstName 
+                            : $"{sender.User.FirstName} {sender.User.LastName}"
                         : sender.Chat?.Title;
                     
-                    await DispatcherQueue.EnqueueAsync(() => OnlineChatMembers.Text = updateChatAction.Action switch
+                    await DispatcherQueue.EnqueueAsync(() =>
                     {
-                        TdApi.ChatAction.ChatActionCancel => _onlineMemberCount > 0 ? $"{_onlineMemberCount} online" : string.Empty,
-                        TdApi.ChatAction.ChatActionTyping => $"{senderName} typing...",
-                        TdApi.ChatAction.ChatActionRecordingVideo => $"{senderName} recording video...",
-                        TdApi.ChatAction.ChatActionUploadingVideo => $"{senderName} uploading video...",
-                        TdApi.ChatAction.ChatActionRecordingVoiceNote => $"{senderName} recording voice note...",
-                        TdApi.ChatAction.ChatActionUploadingVoiceNote => $"{senderName} uploading voice note...",
-                        TdApi.ChatAction.ChatActionUploadingPhoto => $"{senderName} uploading photo...",
-                        TdApi.ChatAction.ChatActionUploadingDocument => $"{senderName} uploading document...",
-                        TdApi.ChatAction.ChatActionUploadingVideoNote => $"{senderName} uploading video note...",
-                        TdApi.ChatAction.ChatActionChoosingContact => $"{senderName} choosing contact...",
-                        TdApi.ChatAction.ChatActionChoosingLocation => $"{senderName} choosing location...",
-                        TdApi.ChatAction.ChatActionChoosingSticker => $"{senderName} choosing sticker...",
-                        TdApi.ChatAction.ChatActionWatchingAnimations => $"{senderName} watching animations...",
-                        TdApi.ChatAction.ChatActionRecordingVideoNote => $"{senderName} recording video note...",
-                        TdApi.ChatAction.ChatActionStartPlayingGame => $"{senderName} playing game...",
-                        _ => "Unknown"
+                        OnlineChatMembers.Text = updateChatAction.Action switch
+                        {
+                            TdApi.ChatAction.ChatActionCancel => _onlineMemberCount > 0
+                                ? $", online {_onlineMemberCount}"
+                                : string.Empty,
+                            TdApi.ChatAction.ChatActionTyping => $"{senderName} typing...",
+                            TdApi.ChatAction.ChatActionRecordingVideo => $"{senderName} recording video...",
+                            TdApi.ChatAction.ChatActionUploadingVideo => $"{senderName} uploading video...",
+                            TdApi.ChatAction.ChatActionRecordingVoiceNote => $"{senderName} recording voice note...",
+                            TdApi.ChatAction.ChatActionUploadingVoiceNote => $"{senderName} uploading voice note...",
+                            TdApi.ChatAction.ChatActionUploadingPhoto => $"{senderName} uploading photo...",
+                            TdApi.ChatAction.ChatActionUploadingDocument => $"{senderName} uploading document...",
+                            TdApi.ChatAction.ChatActionUploadingVideoNote => $"{senderName} uploading video note...",
+                            TdApi.ChatAction.ChatActionChoosingContact => $"{senderName} choosing contact...",
+                            TdApi.ChatAction.ChatActionChoosingLocation => $"{senderName} choosing location...",
+                            TdApi.ChatAction.ChatActionChoosingSticker => $"{senderName} choosing sticker...",
+                            TdApi.ChatAction.ChatActionWatchingAnimations => $"{senderName} watching animations...",
+                            TdApi.ChatAction.ChatActionRecordingVideoNote => $"{senderName} recording video note...",
+                            TdApi.ChatAction.ChatActionStartPlayingGame => $"{senderName} playing game...",
+                            _ => "Unknown"
+                        };
+
+                        ChatMembers.Visibility = updateChatAction.Action switch
+                        {
+                            TdApi.ChatAction.ChatActionCancel => Visibility.Visible,
+                            _ => Visibility.Collapsed
+                        };
                     });
                 }
                 break;
@@ -182,7 +196,7 @@ public sealed partial class Chat : Page
                     {
                         if (_onlineMemberCount > 0)
                         {
-                            OnlineChatMembers.Text = $", online: {_onlineMemberCount}";
+                            OnlineChatMembers.Text = $", {_onlineMemberCount} online";
                             OnlineChatMembers.Visibility = Visibility.Visible;
                         }
                         else
