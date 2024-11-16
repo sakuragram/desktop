@@ -76,7 +76,8 @@
                                HorizontalTextAlignment="Right" 
                                HorizontalAlignment="Right"/>
                 </StackPanel>
-                <StackPanel x:Name="PanelReply">
+                <StackPanel x:Name="PanelReply"
+                            Visibility="Collapsed">
                     <MenuFlyoutSeparator />
                     <Button x:Name="ButtonReply"
                             Content="Reply"
