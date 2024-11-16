@@ -23,6 +23,7 @@ public sealed partial class ChatEntry
     private ChatService _chatService = App.ChatService;
         
     public TdApi.Chat _chat;
+    private TdApi.User _user;
     public long ChatId;
     private int _profilePhotoFileId;
     private bool _inArchive;
@@ -83,13 +84,22 @@ public sealed partial class ChatEntry
                 {
                     if (updateNewMessage.Message.ChatId == _chat.Id)
                     {
-                        await DispatcherQueue.EnqueueAsync(() =>
+                        await DispatcherQueue.EnqueueAsync(async () =>
                         {
                             string time = MathService.CalculateDateTime(updateNewMessage.Message.Date).ToShortTimeString();
                             TextBlockSendTime.Text = time;
-                            _unreadCount++;
-                            UnreadMessagesCount.Visibility = _unreadCount >= 1 ? Visibility.Visible : Visibility.Collapsed;
-                            UnreadMessagesCount.Value = _unreadCount;
+                            var sender = await UserService.GetSender(updateNewMessage.Message.SenderId);
+                            if (sender.User != null && sender.User.Id == _user.Id)
+                            {
+                                _unreadCount = 0;
+                                UnreadMessagesCount.Visibility = Visibility.Collapsed;
+                            }
+                            else
+                            {
+                                _unreadCount++;
+                                UnreadMessagesCount.Visibility = _unreadCount >= 1 ? Visibility.Visible : Visibility.Collapsed;
+                                UnreadMessagesCount.Value = _unreadCount;
+                            }
                         });
                     }
                     break;
@@ -207,7 +217,7 @@ public sealed partial class ChatEntry
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         
         _chat = await _client.GetChatAsync(ChatId);
-        var currentUser = await _client.GetMeAsync();
+        _user = await _client.GetMeAsync();
         string senderName = await UserService.GetSenderName(_chat.LastMessage);
 
         await DispatcherQueue.EnqueueAsync(async () => {
@@ -283,7 +293,7 @@ public sealed partial class ChatEntry
         var sender = await UserService.GetSender(_chat.LastMessage.SenderId);
         if (sender.User != null)
         {
-            if (sender.User.Id == currentUser.Id)
+            if (sender.User.Id == _user.Id)
             {
                 if (_chat.LastMessage.Id >= _chat.LastReadInboxMessageId)
                 {
