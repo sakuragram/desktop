@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using Octokit;
 using sakuragram.Controls.User;
@@ -95,15 +96,7 @@ public sealed partial class MainWindow : Window
 		}
 		else
 		{
-			ContentFrame.Navigate(typeof(ChatsView));
-			
-			if (ContentFrame.Content is ChatsView chats)
-			{
-				chats.MainWindow = this;
-				chats.MainWindowFrame = ContentFrame;
-				chats.MainWindowTitleBar = TitleBar;
-				chats.MainWindowTitleBarContent = TopBarContent;
-			}
+			OpenChatsView();
 			
 			CheckForUpdates();
 	            
@@ -446,5 +439,19 @@ public sealed partial class MainWindow : Window
 			NotificationSettings = mutedForHours,
 			Scope = new TdApi.NotificationSettingsScope.NotificationSettingsScopePrivateChats()
 		});
+	}
+
+	public void OpenChatsView()
+	{
+		ContentFrame.Navigate(typeof(ChatsView), null, 
+			new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromLeft });
+		
+		if (ContentFrame.Content is ChatsView chatsView)
+		{
+			chatsView.MainWindow = this;
+			chatsView.MainWindowFrame = ContentFrame;
+			chatsView.MainWindowTitleBar = TitleBar;
+			chatsView.MainWindowTitleBarContent = TopBarContent;
+		}
 	}
 }

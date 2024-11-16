@@ -152,7 +152,14 @@
 		</controls:TitleBar>
 		
 		<Grid Grid.Row="1">
-			<Frame x:Name="ContentFrame" NavigationFailed="ContentFrame_NavigationFailed"/>
+			<Frame x:Name="ContentFrame" 
+			       NavigationFailed="ContentFrame_NavigationFailed">
+				<Frame.ContentTransitions>
+					<TransitionCollection>
+						<NavigationThemeTransition  />
+					</TransitionCollection>
+				</Frame.ContentTransitions>
+			</Frame>
 			
 			<ContentDialog x:Name="ContentDialogNewVersion"
 			               PrimaryButtonText="Update"
