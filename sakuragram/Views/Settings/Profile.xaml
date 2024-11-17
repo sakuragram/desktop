@@ -9,6 +9,7 @@
     xmlns:win="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:winUi="using:CommunityToolkit.Labs.WinUI"
     xmlns:local="using:sakuragram.Views.Settings"
+    xmlns:user="using:sakuragram.Controls.User"
     mc:Ignorable="d">
     <Page.Resources>
 
@@ -53,7 +54,7 @@
                         <Grid HorizontalAlignment="Left"
                               Grid.Column="0" 
                               Grid.Row="0">
-                            <PersonPicture x:Name="PersonPicture"
+                            <user:ProfilePhoto x:Name="PersonPicture"
                                            Visibility="Collapsed"/>
                             <winUi:Shimmer Width="100"
                                            Height="100"

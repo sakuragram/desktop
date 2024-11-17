@@ -104,7 +104,7 @@ public sealed partial class ChatsView : Page
             try
             {
                 var currentUser = await _client.GetMeAsync();
-                await MediaService.GetUserPhoto(currentUser, CurrentUserPicture);
+                await CurrentUserPicture.InitializeProfilePhoto(currentUser, null, 42, 42);
                 FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
                 FlyoutItemCurrentUser.Icon = new BitmapIcon
                 {
@@ -209,7 +209,7 @@ public sealed partial class ChatsView : Page
             
         await DispatcherQueue.EnqueueAsync(async () =>
         {
-            await MediaService.GetChatPhoto(chat, ChatPhoto);
+            await ChatPhoto.InitializeProfilePhoto(null, chat);
             ChatTitle.Text = chat.Title;
             ChatMembers.Text = $"{supergroup.MemberCount} members";
                 

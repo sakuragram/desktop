@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:user="using:sakuragram.Controls.User"
     mc:Ignorable="d"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Stretch"
@@ -125,14 +126,12 @@
                                       FontSize="18"/>
                         </Button.Content>
                     </Button>
-                    <PersonPicture x:Name="CurrentUserPicture"
+                    <user:ProfilePhoto x:Name="CurrentUserPicture"
                                    Grid.Column="4"
-                                   Width="42"
-                                   Height="42"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Right"
                                    PointerPressed="CurrentUserPicture_OnPointerPressed">
-                        <PersonPicture.ContextFlyout>
+                        <user:ProfilePhoto.ContextFlyout>
                             <MenuFlyout x:Name="FlyoutClientActions"
                                         Opening="FlyoutClientActions_OnOpening"
                                         Closing="FlyoutClientActions_OnClosing">
@@ -179,8 +178,8 @@
                                 </MenuFlyoutItem>
                                 <MenuFlyoutSeparator x:Name="SeparatorUsers"/>
                             </MenuFlyout>
-                        </PersonPicture.ContextFlyout>
-                    </PersonPicture>
+                        </user:ProfilePhoto.ContextFlyout>
+                    </user:ProfilePhoto>
                 </Grid>
             </Grid>
             
@@ -307,7 +306,7 @@
                                         HorizontalAlignment="Left"
                                         Margin="5"
                                         MinWidth="200">
-                                <PersonPicture x:Name="ChatPhoto"
+                                <user:ProfilePhoto x:Name="ChatPhoto"
                                                Width="30" 
                                                Height="30"
                                                Margin="0,0,4,0"/>

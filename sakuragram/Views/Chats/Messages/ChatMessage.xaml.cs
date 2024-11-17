@@ -116,11 +116,11 @@ public partial class ChatMessage : Page
 
         if (sender.User != null)
         {
-            await MediaService.GetUserPhoto(sender.User, ProfilePicture);
+            await ProfilePicture.InitializeProfilePhoto(sender.User, null);
         }
         else if (sender.Chat != null)
         {
-            await MediaService.GetChatPhoto(sender.Chat, ProfilePicture);
+            await ProfilePicture.InitializeProfilePhoto(null, sender.Chat);
         }
 
         DisplayName.Text = DisplayName.Text = sender.User == null 

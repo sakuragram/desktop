@@ -7,6 +7,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
+using sakuragram.Controls.User;
 using sakuragram.Services;
 using TdLib;
 
@@ -48,7 +49,7 @@ public partial class Profile : Page
         }
         _personalChats = await _client.GetSuitablePersonalChatsAsync();
         
-        PersonPicture.DisplayName = _currentUser.FirstName + " " + _currentUser.LastName;
+        await PersonPicture.InitializeProfilePhoto(_currentUser, null);
         
         TextBlockId.Text = $"ID: {_currentUser.Id}";
         TextBoxFirstName.Text = _currentUser.FirstName;
@@ -236,9 +237,9 @@ public partial class Profile : Page
         StackPanelChats.Children.Clear();
     }
     
-    private void CreatePersonalChatEntry(long chatId)
+    private async void CreatePersonalChatEntry(long chatId)
     {
-        var chat = _client.GetChatAsync(chatId).Result;
+        var chat = await _client.GetChatAsync(chatId);
         
         var button = new Button();
         button.Click += (sender, args) => ButtonPersonalChatEntry_OnClick(sender, args, chat);
@@ -251,11 +252,10 @@ public partial class Profile : Page
         stackPanel.HorizontalAlignment = HorizontalAlignment.Left;
         stackPanel.VerticalAlignment = VerticalAlignment.Center;
         
-        var chatPhoto = new PersonPicture();
+        var chatPhoto = new ProfilePhoto();
+        await chatPhoto.InitializeProfilePhoto(null, chat);
         chatPhoto.Width = 40;
         chatPhoto.Height = 40;
-
-        MediaService.GetChatPhoto(chat, chatPhoto);
         
         stackPanel.Children.Add(chatPhoto);
         

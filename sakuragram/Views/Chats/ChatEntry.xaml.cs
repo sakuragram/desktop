@@ -220,8 +220,17 @@ public sealed partial class ChatEntry
         _user = await _client.GetMeAsync();
         string senderName = await UserService.GetSenderName(_chat.LastMessage);
 
-        await DispatcherQueue.EnqueueAsync(async () => {
-            await MediaService.GetChatPhoto(_chat, ChatEntryProfilePicture);
+        await DispatcherQueue.EnqueueAsync(async () =>
+        {
+            try
+            {
+                await ChatEntryProfilePicture.InitializeProfilePhoto(null, _chat, 46, 46);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                throw;
+            }
             TextBlockChatName.Text = TextService.Truncate(_chat.Title, 38);
             TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
             var text = await MessageService.GetTextMessageContent(_chat.LastMessage);

@@ -308,7 +308,7 @@ public sealed partial class Chat : Page
                 : _chat.Title);
             
             if (_isForum) ChatPhoto.Visibility = Visibility.Collapsed;
-            else await ChatPhoto.SetPhoto(null, _chat);
+            else await ChatPhoto.InitializeProfilePhoto(null, _chat);
 
             if (_isForum)
             {
@@ -561,13 +561,6 @@ public sealed partial class Chat : Page
                         MessagesList.Children.Add(stickerMessage);
                         break;
                     }
-                    case TdApi.MessageContent.MessageVideo:
-                    {
-                        var videoMessage = new ChatVideoMessage();
-                        videoMessage.UpdateMessage(message);
-                        MessagesList.Children.Add(videoMessage);
-                        break;
-                    }
                     case TdApi.MessageContent.MessagePhoto:
                     {
                         // if (message.MediaAlbumId != 0)
@@ -581,43 +574,6 @@ public sealed partial class Chat : Page
                         MessagesList.Children.Add(photoMessage);
                         break;
                     }
-                    case TdApi.MessageContent.MessageDocument:
-                    {
-                        var documentMessage = new ChatDocumentMessage();
-                        documentMessage.UpdateMessage(message);
-                        MessagesList.Children.Add(documentMessage);
-                        break;
-                    }
-                    case TdApi.MessageContent.MessageVideoNote:
-                    {
-                        var videoNoteMessage = new ChatVideoNoteMessage();
-                        videoNoteMessage.UpdateMessage(message);
-                        MessagesList.Children.Add(videoNoteMessage);
-                        break;
-                    }
-                    case TdApi.MessageContent.MessageVoiceNote:
-                    {
-                        var voiceNoteMessage = new ChatVoiceNoteMessage();
-                        voiceNoteMessage.UpdateMessage(message);
-                        MessagesList.Children.Add(voiceNoteMessage);
-                        break;
-                    }
-                    case TdApi.MessageContent.MessagePoll:
-                    {
-                        var pollMessage = new ChatPollMessage();
-                        pollMessage.UpdateMessage(message);
-                        MessagesList.Children.Add(pollMessage);
-                        break;
-                    }
-#if DEBUG
-                    case TdApi.MessageContent.MessagePaidMedia:
-                    {
-                        var paidMediaMessage = new ChatPaidMediaMessage();
-                        paidMediaMessage.UpdateMessage(message);
-                        MessagesList.Children.Add(paidMediaMessage);
-                        break;
-                    }
-#endif
                 }
                 addedMessages.Add(message);
             }

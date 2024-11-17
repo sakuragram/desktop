@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using sakuragram.Services;
+using sakuragram.Views.MediaPlayer;
 using TdLib;
 
 namespace sakuragram.Controls.User;
@@ -23,19 +24,19 @@ public class Story : Button
             HorizontalContentAlignment = HorizontalAlignment.Center;
             VerticalContentAlignment = VerticalAlignment.Center;
             
-            ProfilePhoto avatar = new ProfilePhoto();
-            avatar.Width = 30;
-            avatar.Height = 30;
+            ProfilePhoto avatar = null;
             
             if (stories.ChatId > 0)
             {
                 var user = await _client.GetUserAsync(stories.ChatId);
-                await avatar.SetPhoto(user, null);
+                avatar = new ProfilePhoto();
+                await avatar.InitializeProfilePhoto(user, null, 30, 30);
             }
             else if (stories.ChatId < 0)
             {
                 var chat = await _client.GetChatAsync(stories.ChatId);
-                await avatar.SetPhoto(null, chat);
+                avatar = new ProfilePhoto();
+                await avatar.InitializeProfilePhoto(null, chat, 30, 30);
             }
 
             Padding = new Thickness(0);
@@ -44,6 +45,11 @@ public class Story : Button
             Background = new SolidColorBrush(Color.FromArgb(255,13,194,0));
             Style = null;
             Content = avatar;
+            Click += (_, _) =>
+            {
+                var mediaPlayer = new MediaPlayer(stories);
+                mediaPlayer.Activate();
+            };
         });
     }
 }
