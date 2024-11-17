@@ -29,7 +29,7 @@ public sealed partial class MainWindow : Window
 	private int _totalUnreadCount;
 	private string _updateFilePath;
 	private bool _updateAvailable;
-	private List<TdApi.ChatActiveStories> _stories = [];
+	private readonly List<TdApi.ChatActiveStories> _stories = App._stories;
 		
 	private UpdateManager _updateManager = App.UpdateManager;
 	private GitHubClient _gitHubClient = App._githubClient;
@@ -97,12 +97,10 @@ public sealed partial class MainWindow : Window
 		else
 		{
 			OpenChatsView();
-			
 			CheckForUpdates();
 	            
 			DispatcherQueue.EnqueueAsync(async () =>
 			{
-				await _client.LoadActiveStoriesAsync(new TdApi.StoryList.StoryListMain());
 				var user = await _client.GetMeAsync();
 				
 				Title = user.FirstName + " " + user.LastName + " (" + _totalUnreadCount + ")";
@@ -150,11 +148,6 @@ public sealed partial class MainWindow : Window
 			case TdApi.Update.UpdateNewMessage:
 			{
 				_totalUnreadCount += 1;
-				break;
-			}
-			case TdApi.Update.UpdateChatActiveStories updateChatActiveStories:
-			{
-				_stories.Add(updateChatActiveStories.ActiveStories);
 				break;
 			}
 		}

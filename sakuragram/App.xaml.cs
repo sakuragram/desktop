@@ -26,23 +26,26 @@ public partial class App : Application
 	private static EventHandler<TdApi.Update> _updateHandler;
 	
 	public MainWindow _mWindow;
-	
+
 	public static TdClient _client;
+	public static GitHubClient _githubClient;
+	
 	private static List<long> _clientIDs = [];
 	private static long _userToLogin = -1;
-	public static GitHubClient _githubClient;
-
-	private static TdLogLevel _logLevel = TdLogLevel.Fatal;
-	public static TdApi.ChatFolderInfo[] _folders = [];
+	
 	private static readonly ManualResetEventSlim ReadyToAuthenticate = new();
 
 	public static UpdateManager UpdateManager = new();
 	public static ChatService ChatService = new();
 
+	public static TdApi.ChatFolderInfo[] _folders = [];
+	public static List<TdApi.ChatActiveStories> _stories = [];
+	
 	public static bool _authNeeded;
 	public static bool _passwordNeeded;
 	public static bool _hasInternetConnection = true;
 	
+	private static TdLogLevel _logLevel = TdLogLevel.Fatal;
 	private static readonly int _logFileMaxSize = 4096;
 	private static readonly string _logFilePath = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\log.txt");
 	private static readonly string _filesDirectory = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\files\");
@@ -112,7 +115,6 @@ public partial class App : Application
 						_ => string.Empty
 					};
 				break;
-			
 			case TdApi.Update.UpdateAuthorizationState { AuthorizationState: TdApi.AuthorizationState.AuthorizationStateWaitTdlibParameters }:
 				// int userIndex = 0;
 				// if (_userToLogin > -1)
@@ -142,7 +144,6 @@ public partial class App : Application
 					FilesDirectory = _filesDirectory,
 				});
 				break;
-
 			case TdApi.Update.UpdateAuthorizationState { AuthorizationState: TdApi.AuthorizationState.AuthorizationStateWaitPhoneNumber }:
 				_authNeeded = true;
 				ReadyToAuthenticate.Set();
@@ -171,9 +172,13 @@ public partial class App : Application
 					ClientIDs = _clientIDs,
 					ClientIndex = readySettings.ClientIndex
 				});
+				await _client.LoadActiveStoriesAsync(new TdApi.StoryList.StoryListMain());
 				break;
 			case TdApi.Update.UpdateUser:
 				ReadyToAuthenticate.Set();
+				break;
+			case TdApi.Update.UpdateChatActiveStories updateChatActiveStories:
+				_stories.Add(updateChatActiveStories.ActiveStories);
 				break;
 			case TdApi.Update.UpdateConnectionState { State: TdApi.ConnectionState.ConnectionStateReady }:
 				_authNeeded = false;
