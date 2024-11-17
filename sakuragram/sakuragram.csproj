@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <Content Include="Assets\**" >
+	  <Content Include="Assets\**">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
           <CopyToPublishDirectory>Always</CopyToPublishDirectory>
       </Content>
@@ -39,11 +39,11 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Labs.WinUI.Shimmer" Version="0.1.241015-build.1760" />
     <PackageReference Include="CommunityToolkit.Labs.WinUI.TitleBar" Version="0.0.1-build.1760" />
-    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.1.240916" />
-    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.1.240916" />
-    <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.1.240916" />
-    <PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.1.240916" />
-    <PackageReference Include="GitInfo" Version="3.3.5">
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.241112-preview1" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.241112-preview1" />
+    <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.241112-preview1" />
+    <PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.2.241112-preview1" />
+    <PackageReference Include="GitInfo" Version="3.5.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
