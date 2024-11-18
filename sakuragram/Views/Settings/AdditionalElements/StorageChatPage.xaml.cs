@@ -15,7 +15,12 @@ public partial class StorageChatPage : Page
     {
         InitializeComponent();
         
-        ButtonReturn.Click += (_, _) => Frame.Navigate(typeof(Storage));
+        ButtonReturn.Click += (_, _) =>
+        {
+            Frame.Navigate(typeof(Storage));
+            var storagePage = (Storage)Frame.Content;
+            storagePage.Frame = Frame;
+        };
     }
 
     public async Task InitializePage(TdApi.StorageStatisticsByChat statisticsByChat)
