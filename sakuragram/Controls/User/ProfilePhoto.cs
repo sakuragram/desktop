@@ -21,16 +21,41 @@ public class ProfilePhoto : RelativePanel
     
     private TdClient _client = App._client;
     private TdApi.User _user;
+    private long _userId;
     private TdApi.Chat _chat;
     private TdApi.ChatActiveStories _stories;
     
     public async Task InitializeProfilePhoto(TdApi.User user, TdApi.Chat chat, int width = 32, int height = 32)
     {
-        if (user != null) _user = user;
+        if (user != null)
+        {
+            _user = user;
+            _userId = user.Id;
+        }
+        
         if (chat != null) _chat = chat;
-
-        await DispatcherQueue.EnqueueAsync(() => _personPicture = new PersonPicture());
-        _personPicture.BorderThickness = new Thickness(10);
+        
+        await DispatcherQueue.EnqueueAsync(() =>
+        {
+            _personPicture = new PersonPicture();
+            _personPicture.BorderThickness = new Thickness(10);
+            _personPicture.Width = width;
+            _personPicture.Height = height;
+            
+            _statusBorder = new Border();
+            _statusBorder.Background = new SolidColorBrush(Colors.Cyan);
+            _statusBorder.Width = 10;
+            _statusBorder.Height = 10;
+            _statusBorder.CornerRadius = new CornerRadius(5);
+            _statusBorder.HorizontalAlignment = HorizontalAlignment.Right;
+            _statusBorder.VerticalAlignment = VerticalAlignment.Bottom;
+            SetAlignBottomWithPanel(_statusBorder, true);
+            SetAlignRightWithPanel(_statusBorder, true);
+            _statusBorder.Visibility = Visibility.Collapsed;
+            
+            Children.Add(_personPicture); 
+            Children.Add(_statusBorder);
+        });
         
         var stories = App._stories;
         if (stories != null)
@@ -68,15 +93,10 @@ public class ProfilePhoto : RelativePanel
             }
         }
         
-        if (user != null) await MediaService.GetUserPhoto(user, this);
-        else if (chat != null) await MediaService.GetChatPhoto(chat, this);
-        
-        await DispatcherQueue.EnqueueAsync(() =>
-        {
-            _personPicture.Width = width;
-            _personPicture.Height = height;
-            Children.Add(_personPicture); 
-        });
+        if (user != null) 
+            await DispatcherQueue.EnqueueAsync(async () => await MediaService.GetUserPhoto(user, this));
+        else if (chat != null)
+            await DispatcherQueue.EnqueueAsync(async () => await MediaService.GetChatPhoto(chat, this));
 
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
@@ -87,36 +107,16 @@ public class ProfilePhoto : RelativePanel
         {
             case TdApi.Update.UpdateUserStatus updateUserStatus:
             {
-                if (_user != null && updateUserStatus.UserId == _user.Id)
+                if (updateUserStatus.UserId == _userId)
                 {
                     switch (updateUserStatus.Status)
                     {
                         case TdApi.UserStatus.UserStatusOnline:
-                            await DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                _statusBorder = new Border();
-                                _statusBorder.Background = new SolidColorBrush(Colors.Cyan);
-                                _statusBorder.Width = 10;
-                                _statusBorder.Height = 10;
-                                _statusBorder.CornerRadius = new CornerRadius(5);
-                                _statusBorder.HorizontalAlignment = HorizontalAlignment.Right;
-                                _statusBorder.VerticalAlignment = VerticalAlignment.Bottom;
-                                Children.Add(_statusBorder);
-                            });
+                            await DispatcherQueue.EnqueueAsync(() => _statusBorder.Visibility = Visibility.Visible);
                             break;
-                        case TdApi.UserStatus.UserStatusOffline:
-                            await DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                Children.Remove(_statusBorder);
-                                _statusBorder = null;
-                            });
-                            break;
-                        case TdApi.UserStatus.UserStatusRecently:
-                            await DispatcherQueue.EnqueueAsync(() => 
-                            {
-                                Children.Remove(_statusBorder);
-                                _statusBorder = null;
-                            });
+                        case TdApi.UserStatus.UserStatusOffline or TdApi.UserStatus.UserStatusRecently 
+                            or TdApi.UserStatus.UserStatusEmpty:
+                            await DispatcherQueue.EnqueueAsync(() => _statusBorder.Visibility = Visibility.Collapsed);
                             break;
                     }
                 }
