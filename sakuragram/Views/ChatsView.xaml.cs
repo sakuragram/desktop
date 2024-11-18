@@ -166,7 +166,7 @@ public sealed partial class ChatsView : Page
         });
     }
         
-    private async void OpenChat(long chatId, bool isForum, TdApi.ForumTopic forumTopic)
+    public async void OpenChat(long chatId, bool isForum, TdApi.ForumTopic forumTopic)
     {
         try
         {
