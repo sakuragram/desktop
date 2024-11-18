@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using Octokit;
+using sakuragram.Controls.Messages;
 using sakuragram.Controls.User;
 using sakuragram.Services;
 using sakuragram.Services.Core;
@@ -211,7 +212,7 @@ public sealed partial class MainWindow : Window
 				false, SuggestBox.Text, limit: 100, 
 				filter: new TdApi.SearchMessagesFilter.SearchMessagesFilterEmpty());
 				
-			var suitableItems = new List<string>();
+			var suitableItems = new List<SearchEntry>();
 			var splitText = sender.Text.ToLower().Split(" ");
 				
 			foreach (var chatId in chats.ChatIds)
@@ -220,7 +221,8 @@ public sealed partial class MainWindow : Window
 				var found = splitText.All(key=> chat.Title.ToLower().Contains(key));
 				if (found)
 				{
-					suitableItems.Add(TextService.Truncate(chat.Title, maxLength));
+					await DispatcherQueue.EnqueueAsync(() => 
+						suitableItems.Add(new SearchEntry(chat, null, null)));
 				}
 			}
 				
@@ -235,39 +237,20 @@ public sealed partial class MainWindow : Window
 						
 					if (messageSender.User != null)
 					{
-						suitableItems.Add(TextService.Truncate($"{messageSenderName}: {messageContent}",
-							maxLength));
+						await DispatcherQueue.EnqueueAsync(() =>
+							suitableItems.Add(new SearchEntry(null, messageSender.User, message)));
 					}
 					else if (messageSender.Chat != null)
 					{
-						switch (messageSender.Chat.Type)
-						{
-							case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
-							{
-								if (typeSupergroup.IsChannel)
-								{
-									suitableItems.Add(TextService.Truncate($"{messageSender.Chat.Title}: {messageContent}",
-										maxLength));
-								}
-								else
-								{
-									suitableItems.Add(TextService.Truncate($"{messageSenderName}: {messageContent}",
-										maxLength));
-								}
-								break;
-							}
-							case TdApi.ChatType.ChatTypeBasicGroup:
-								suitableItems.Add(TextService.Truncate($"{messageSenderName}: {messageContent}",
-									maxLength));
-								break;
-						}
+						await DispatcherQueue.EnqueueAsync(() =>
+							suitableItems.Add(new SearchEntry(messageSender.Chat, null, message)));
 					}
 				}
 			}
 				
-			if(suitableItems.Count == 0)
+			if (suitableItems.Count == 0)
 			{
-				suitableItems.Add("No results found");
+				suitableItems.Add(null);
 			}
 			sender.ItemsSource = suitableItems;
 		}
@@ -275,9 +258,18 @@ public sealed partial class MainWindow : Window
 
 	private void SuggestBox_OnSuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
 	{
-		SuggestBox.Text = args.SelectedItem.ToString();
-	}
+		if (ContentFrame.Content is SettingsView)
+		{
+			OpenChatsView();
+		}
 
+		if (ContentFrame.Content is ChatsView chatsView)
+		{
+			var item = (SearchEntry)args.SelectedItem; 
+			chatsView.OpenChat(item.ChatId, false, null);
+		}
+	}
+	
 	private async void FlyoutItemMuteAll_OnClick(object sender, RoutedEventArgs e)
 	{
 		if (!_isAllMuted)
