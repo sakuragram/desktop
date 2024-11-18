@@ -34,11 +34,11 @@ public class MediaService
             Priority = 1
         });
 
-        if (file.Local.IsDownloadingCompleted)
+        if (file.Local.IsDownloadingCompleted && file.Local.Path != string.Empty)
         { 
             avatar._personPicture.ProfilePicture = new BitmapImage(new Uri(file.Local.Path));
         }
-        else if (chat.Photo.Small.Local.IsDownloadingCompleted)
+        else if (chat.Photo.Small.Local.IsDownloadingCompleted && chat.Photo.Small.Local.Path != string.Empty)
         {
             avatar._personPicture.ProfilePicture = new BitmapImage(new Uri(chat.Photo.Small.Local.Path));
         }
