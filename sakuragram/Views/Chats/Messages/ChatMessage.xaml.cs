@@ -61,6 +61,9 @@ public partial class ChatMessage : Page
 
     private bool _bIsSelected = false;
 
+    private int _reactionGridRows = 0;
+    private int _reactionGridColumns = 0;
+    
     public ChatMessage()
     {
         InitializeComponent();
@@ -84,6 +87,10 @@ public partial class ChatMessage : Page
                         }
                     }
                 }
+                break;
+            }
+            case TdApi.Update.UpdateMessageInteractionInfo updateMessageInteractionInfo:
+            {
                 break;
             }
             // case TdApi.Update.UpdateMessageEdited:
@@ -111,12 +118,15 @@ public partial class ChatMessage : Page
         _chatId = message.ChatId;
         _messageId = message.Id;
         var chat = await _client.GetChatAsync(_chatId);
+        var currentUser = await _client.GetMeAsync();
 
         var sender = await UserService.GetSender(message.SenderId);
 
         if (sender.User != null)
         {
             await ProfilePicture.InitializeProfilePhoto(sender.User, null);
+            if (sender.User.Id == currentUser.Id) 
+                MessageBackground.Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseAltBrush"];
         }
         else if (sender.Chat != null)
         {
@@ -243,7 +253,7 @@ public partial class ChatMessage : Page
                 if (chat.Type is TdApi.ChatType.ChatTypeSupergroup { IsChannel: true })
                 {
                     PanelReply.Visibility = Visibility.Visible;
-                    ButtonReply.Content = "Reply";
+                    ButtonReply.Content = "Leave a comment";
                 }
                 else if (chat.Type is TdApi.ChatType.ChatTypeSupergroup { IsChannel: false })
                 {
@@ -582,9 +592,34 @@ public partial class ChatMessage : Page
     {
         await DispatcherQueue.EnqueueAsync(() =>
         {
-            Reaction reactionControl = new Reaction(reaction);
+            Reaction reactionControl = new(reaction, _chatId, _messageId);
+
+            if (_reactionGridColumns == 5)
+            {
+                _reactionGridColumns = 0;
+                _reactionGridRows++;
+                if (_reactionGridRows >= GridReactions.RowDefinitions.Count)
+                {
+                    GridReactions.RowDefinitions.Add(new RowDefinition { });
+                }
+            }
+
+            while (_reactionGridRows >= GridReactions.RowDefinitions.Count)
+            {
+                GridReactions.RowDefinitions.Add(new RowDefinition { });
+            }
+
+            if (_reactionGridColumns >= GridReactions.ColumnDefinitions.Count)
+            {
+                GridReactions.ColumnDefinitions.Add(new ColumnDefinition
+                    { Width = new GridLength(57, GridUnitType.Auto) });
+            }
+
             GridReactions.Children.Add(reactionControl);
+            Grid.SetRow(reactionControl, _reactionGridRows);
+            Grid.SetColumn(reactionControl, _reactionGridColumns);
         });
+        _reactionGridColumns++;
     }
 
     private void ShowMenu(bool isTransient)
@@ -715,7 +750,7 @@ public partial class ChatMessage : Page
 
     private void ChatMessage_OnTapped(object sender, TappedRoutedEventArgs e)
     {
-        if (_messageService._isMessageSelected) Select_OnClick(null, null);
+        // if (_messageService._isMessageSelected) Select_OnClick(null, null);
     }
 
     private void ButtonReply_OnClick(object sender, RoutedEventArgs e)

@@ -10,8 +10,10 @@
     mc:Ignorable="d"
     DoubleTapped="ChatMessage_OnDoubleTapped"
     Tapped="ChatMessage_OnTapped">
-
-    <StackPanel x:Name="Message" Orientation="Horizontal" Margin="0, 5, 0, 5">
+    
+    <StackPanel x:Name="Message" 
+                Orientation="Horizontal" 
+                Margin="0, 5, 0, 5">
         <user:ProfilePhoto x:Name="ProfilePicture"
                            Width="32"
                            Height="32"
@@ -19,7 +21,7 @@
                            HorizontalAlignment="Left"
                            VerticalAlignment="Bottom"/>
         <Border x:Name="MessageBackground" MinWidth="150" MaxWidth="300" Width="Auto"
-                Background="{StaticResource CardBackgroundFillColorDefaultBrush}" 
+                Background="{StaticResource SolidBackgroundFillColorBaseBrush}" 
                 CornerRadius="10">
             <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Orientation="Vertical" Padding="5">
                 <StackPanel Orientation="Horizontal"
@@ -36,7 +38,7 @@
                 </StackPanel>
                 <Border x:Name="Reply" 
                         Visibility="Collapsed" 
-                        Background="{StaticResource CardBackgroundFillColorSecondaryBrush}" 
+                        Background="{StaticResource SolidBackgroundFillColorSecondaryBrush}" 
                         CornerRadius="4"
                         Margin="0,0,0,4">
                     <StackPanel Padding="4">
@@ -49,7 +51,8 @@
                     </StackPanel>
                 </Border>
                 <StackPanel x:Name="PanelMessageContent" />
-                <StackPanel x:Name="GridReactions"/>
+                <Grid x:Name="GridReactions"
+                      Margin="0, 3"/>
                 <StackPanel Orientation="Horizontal" 
                             HorizontalAlignment="Stretch">
                     <TextBlock x:Name="TextBlockReplies"
@@ -80,7 +83,7 @@
                             Visibility="Collapsed">
                     <MenuFlyoutSeparator />
                     <Button x:Name="ButtonReply"
-                            Content="Reply"
+                            Content="Leave a comment"
                             HorizontalAlignment="Stretch"
                             Click="ButtonReply_OnClick"/>
                 </StackPanel>
