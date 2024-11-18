@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommunityToolkit.WinUI;
 using Microsoft.UI;
@@ -63,6 +64,7 @@ public sealed partial class ChatEntry
                 // }
                 case TdApi.Update.UpdateChatLastMessage updateChatLastMessage:
                 {
+                    if (updateChatLastMessage.LastMessage == null) return;
                     if (updateChatLastMessage.LastMessage.ChatId == _chat.Id)
                     {
                         await DispatcherQueue.EnqueueAsync(async () =>
@@ -233,8 +235,10 @@ public sealed partial class ChatEntry
             }
             TextBlockChatName.Text = TextService.Truncate(_chat.Title, 38);
             TextBlockChatUsername.Text = senderName != string.Empty ? senderName + ": " : string.Empty;
-            var text = await MessageService.GetTextMessageContent(_chat.LastMessage);
-            _lastMessageText = TextService.Truncate(text.Normalize(NormalizationForm.FormKC), 38);
+            var lastMessageText = await MessageService.GetTextMessageContent(_chat.LastMessage);
+            lastMessageText = Regex.Replace(lastMessageText, @"\s+", " ");
+            lastMessageText = lastMessageText.Trim();
+            _lastMessageText = TextService.Truncate(lastMessageText, 38);
             TextBlockChatLastMessage.Text = _lastMessageText;
             TextBlockChatUsername.Visibility = TextBlockChatUsername.Text == string.Empty
                 ? Visibility.Collapsed
@@ -417,6 +421,7 @@ public sealed partial class ChatEntry
                             IconChatType.Visibility = Visibility.Visible;
                             break;
                         case TdApi.UserType.UserTypeRegular:
+                            if (_chat.Id == _user.Id) TextBlockChatName.Text = "Saved messages";
                             IconChatType.Visibility = Visibility.Collapsed;
                             break;
                         case TdApi.UserType.UserTypeDeleted:
