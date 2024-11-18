@@ -448,7 +448,7 @@ public sealed partial class ChatEntry
         }
     }
         
-    private void Button_OnClick(object sender, RoutedEventArgs e)
+    private async void Button_OnClick(object sender, RoutedEventArgs e)
     {
         _ChatsView.CloseChat();
         switch (_chat.Type)
@@ -456,7 +456,7 @@ public sealed partial class ChatEntry
             case TdApi.ChatType.ChatTypePrivate 
                 or TdApi.ChatType.ChatTypeSecret 
                 or TdApi.ChatType.ChatTypeBasicGroup:
-                DispatcherQueue.EnqueueAsync(async () =>
+                await DispatcherQueue.EnqueueAsync(async () =>
                 {
                     _chatWidget = await _chatService.OpenChat(_chat.Id);
                     _chatWidget._ChatsView = _ChatsView;
@@ -472,7 +472,7 @@ public sealed partial class ChatEntry
                 }
                 else
                 {
-                    DispatcherQueue.EnqueueAsync(async () =>
+                    await DispatcherQueue.EnqueueAsync(async () =>
                     {
                         _chatWidget = await _chatService.OpenChat(_chat.Id);
                         _chatWidget._ChatsView = _ChatsView;
