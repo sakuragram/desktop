@@ -49,7 +49,7 @@ public partial class Profile : Page
         }
         _personalChats = await _client.GetSuitablePersonalChatsAsync();
         
-        await PersonPicture.InitializeProfilePhoto(_currentUser, null);
+        await PersonPicture.InitializeProfilePhoto(_currentUser, null, 100, 100);
         
         TextBlockId.Text = $"ID: {_currentUser.Id}";
         TextBoxFirstName.Text = _currentUser.FirstName;
