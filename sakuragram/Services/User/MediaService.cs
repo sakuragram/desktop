@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Storage.Streams;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
@@ -72,5 +74,20 @@ public class MediaService
         {
             avatar._personPicture.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path));
         }
+    }
+    
+    public static async Task<BitmapImage> GetImageFromByteArray(byte[] imageData)
+    {
+        BitmapImage bitmapImage = new BitmapImage();
+    
+        using (InMemoryRandomAccessStream stream = new InMemoryRandomAccessStream())
+        {
+            await stream.WriteAsync(imageData.AsBuffer());
+            stream.Seek(0);
+
+            await bitmapImage.SetSourceAsync(stream);
+        }
+
+        return bitmapImage;
     }
 }

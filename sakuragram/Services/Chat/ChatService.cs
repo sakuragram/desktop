@@ -9,20 +9,21 @@ namespace sakuragram.Services;
 public class ChatService
 {
     private static readonly TdClient _client = App._client;
-    public Chat CurrentChat { get; set; }
+    
+    public Views.Chats.Chat CurrentChat { get; set; }
     
     public long _openedChatId;
     
     public bool _isChatOpen;
     public bool _isMediaOpen;
     
-    public async Task<Chat> OpenChat(long chatId)
+    public async Task<Views.Chats.Chat> OpenChat(long chatId)
     {
         try
         {
             _openedChatId = chatId;
             _isChatOpen = true;
-            CurrentChat = new Chat(_openedChatId, false, null);
+            CurrentChat = new Views.Chats.Chat(_openedChatId, false, null);
             return CurrentChat;
         }
         catch (TdException e)
@@ -32,13 +33,13 @@ public class ChatService
         }
     }
 
-    public async Task<Chat> OpenForum(long chatId, TdApi.ForumTopic forumTopic)
+    public async Task<Views.Chats.Chat> OpenForum(long chatId, TdApi.ForumTopic forumTopic)
     {
         try
         {
             _openedChatId = chatId;
             _isChatOpen = true;
-            CurrentChat = new Chat(_openedChatId, true, forumTopic);
+            CurrentChat = new Views.Chats.Chat(_openedChatId, true, forumTopic);
             return CurrentChat;
         }
         catch (TdException e)

@@ -1,6 +1,6 @@
 ﻿using TdLib;
 
-namespace sakuragram.Services;
+namespace sakuragram.Services.Chat;
 
 public class ReplyService
 {
@@ -8,10 +8,9 @@ public class ReplyService
     private long _messageId;
     private TdClient _client = App._client;
     
-    public void ReplyOnMessage(long chatId, long messageId, string messageText)
+    public void ReplyOnMessage(long chatId, string messageText)
     {
         _chatId = chatId;
-        _messageId = messageId;
 
         _client.ExecuteAsync(new TdApi.SendMessage
         {
