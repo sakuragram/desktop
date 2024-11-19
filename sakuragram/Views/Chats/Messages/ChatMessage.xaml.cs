@@ -18,6 +18,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Controls.Messages;
 using sakuragram.Services;
+using sakuragram.Services.Chat;
 using sakuragram.Services.Core;
 using TdLib;
 
@@ -59,14 +60,18 @@ public partial class ChatMessage : Page
     public ReplyService _replyService;
     public MessageService _messageService;
 
+    public Chat _chat;
+    
     private bool _bIsSelected = false;
 
     private int _reactionGridRows = 0;
     private int _reactionGridColumns = 0;
     
-    public ChatMessage()
+    public ChatMessage(Chat chat, ReplyService replyService)
     {
         InitializeComponent();
+        _chat = chat;
+        _replyService = replyService;
     }
 
     private Task ProcessUpdates(TdApi.Update update)
@@ -113,7 +118,7 @@ public partial class ChatMessage : Page
         return Task.CompletedTask;
     }
 
-    public async void UpdateMessage(TdApi.Message message, List<TdApi.Message> album)
+    public async Task UpdateMessage(TdApi.Message message, List<TdApi.Message> album)
     {
         _chatId = message.ChatId;
         _messageId = message.Id;
@@ -694,9 +699,11 @@ public partial class ChatMessage : Page
     {
     }
 
-    private void ChatMessage_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    private async void ChatMessage_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
         _replyService.SelectMessageForReply(_messageId);
+        var message = await _client.GetMessageAsync(_chatId, _messageId);
+        await _chat.UpdateReplyInfo(message);
     }
 
     private async void ForwardMessageList_OnOpened(ContentDialog sender, ContentDialogOpenedEventArgs args)

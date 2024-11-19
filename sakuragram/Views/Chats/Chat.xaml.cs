@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
@@ -13,11 +14,11 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Controls.Messages;
 using sakuragram.Services;
+using sakuragram.Services.Chat;
 using sakuragram.Services.Core;
 using sakuragram.Views.Calls;
 using sakuragram.Views.Chats.Messages;
 using TdLib;
-using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 
 namespace sakuragram.Views.Chats;
 
@@ -51,12 +52,16 @@ public sealed partial class Chat : Page
 
     #endregion
         
-    private ReplyService _replyService;
+    private ReplyService _replyService = new ReplyService();
     private MessageService _messageService;
+    
+    private int _chatActionRows = 0;
+    private int _chatActionColumns = 0;
     
     private List<TdApi.StickerSet> _stickerSets = [];
     private List<TdApi.StickerSet> _alreadyAddedStickerSets = [];
     private int _currentStickerSet = -1;
+    private int _currentMediaPage;
 
     public Chat(long id, bool isForum, TdApi.ForumTopic forumTopic)
     {
@@ -82,9 +87,9 @@ public sealed partial class Chat : Page
         
         ColumnMediaPanel.Width = new GridLength(0);
         
-        ButtonEmoji.Click += (_, _) => SelectMediaPage(0);
-        ButtonStickers.Click += (_, _) => SelectMediaPage(1);
-        ButtonAnimations.Click += (_, _) => SelectMediaPage(2);
+        BarItemEmojis.PointerPressed += (_, _) => SelectMediaPage(0);
+        BarItemStickers.PointerPressed += (_, _) => SelectMediaPage(1);
+        BarItemAnimations.PointerPressed += (_, _) => SelectMediaPage(2);
     }
 
     private async Task ProcessUpdates(TdApi.Update update)
@@ -97,8 +102,6 @@ public sealed partial class Chat : Page
                 {
                     await DispatcherQueue.EnqueueAsync(async () =>
                     {
-                        await GenerateMessageByType([updateNewMessage.Message]);
-
                         // For debug
                         if (FeaturesManager._debugMode)
                         {
@@ -106,6 +109,13 @@ public sealed partial class Chat : Page
                             MessagesList.Children.Add(message);
                             message.UpdateMessage(updateNewMessage.Message);
                         }
+                        else
+                        {
+                            await GenerateMessageByType([updateNewMessage.Message]);
+                        }
+
+                        await DispatcherQueue.EnqueueAsync(() => 
+                            MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight));
                     });
                 }
                 break;
@@ -156,14 +166,16 @@ public sealed partial class Chat : Page
             }
             case TdApi.Update.UpdateChatTitle updateChatTitle:
             {
-                await DispatcherQueue.EnqueueAsync(() => ChatTitle.Text = updateChatTitle.Title);
+                if (updateChatTitle.ChatId == _chatId)
+                    await DispatcherQueue.EnqueueAsync(() => ChatTitle.Text = updateChatTitle.Title);
                 break;
             }
             case TdApi.Update.UpdateUserStatus updateUserStatus:
             {
+                if (updateUserStatus.UserId != _chat.Id) return;
                 if (_chat.Type is TdApi.ChatType.ChatTypePrivate)
                 {
-                    ChatMembers.DispatcherQueue.TryEnqueue(() =>
+                    await DispatcherQueue.EnqueueAsync(() =>
                     {
                         var status = updateUserStatus.Status switch
                         {
@@ -297,40 +309,52 @@ public sealed partial class Chat : Page
         return ColumnMediaPanel.Width = _mediaMenuOpened ? new GridLength(350) : new GridLength(0);
     }
     
-    private async Task UpdateChat()
+    public async Task UpdateChat()
     {
         try
         {
             await _client.ExecuteAsync(new TdApi.OpenChat { ChatId = _chatService._openedChatId });
-            _chat = _client.GetChatAsync(_chatService._openedChatId).Result;
+            _chat = await _client.GetChatAsync(_chatService._openedChatId);
+            if (_chat == null) return;
             await DispatcherQueue.EnqueueAsync(() => ChatTitle.Text = _isForum 
                 ? _forumTopic.Info.Name
                 : _chat.Title);
             
             if (_isForum) ChatPhoto.Visibility = Visibility.Collapsed;
-            else await ChatPhoto.InitializeProfilePhoto(null, _chat);
+            else await ChatPhoto.InitializeProfilePhoto(null, _chat, 30, 30);
 
-            if (_isForum)
+            try
             {
-                if (_forumTopic.DraftMessage != null)
+                var pinnedMessage = await _client.GetChatPinnedMessageAsync(_chat.Id);
+                if (pinnedMessage != null)
                 {
-                    UserMessageInput.Text = _forumTopic.DraftMessage.InputMessageText switch
-                    {
-                        TdApi.InputMessageContent.InputMessageText text => text.Text.Text,
-                        _ => string.Empty
-                    };
+                    var pinText = await MessageService.GetTextMessageContent(pinnedMessage);
+                    pinText = Regex.Replace(pinText, @"\s+", " ");
+                    pinText = pinText.Trim();
+                    await DispatcherQueue.EnqueueAsync(() => TextBlockPinnedMessage.Text = pinText);
+                }
+                else
+                {
+                    await DispatcherQueue.EnqueueAsync(() => BorderPinnedMessage.Visibility = Visibility.Collapsed);
                 }
             }
-            else
+            catch (TdException e)
             {
-                if (_chat.DraftMessage != null)
+                Logger.Log(Logger.LogType.Error, e);
+                await DispatcherQueue.EnqueueAsync(() => BorderPinnedMessage.Visibility = Visibility.Collapsed);
+            }
+
+            {
                 {
-                    UserMessageInput.Text = _chat.DraftMessage.InputMessageText switch
                     {
-                        TdApi.InputMessageContent.InputMessageText text => text.Text.Text,
-                        _ => string.Empty
-                    };
-                }
+            
+            if (_isForum && _forumTopic.DraftMessage != null)
+            {
+                PrepareDraftMessage(_forumTopic.DraftMessage);
+            }
+            else if (_chat.DraftMessage != null)
+            {
+                PrepareDraftMessage(_chat.DraftMessage);
             }
 
             if (_chat.Background != null)
@@ -354,6 +378,36 @@ public sealed partial class Chat : Page
                 }
             }
             
+            if (_chat.UnreadCount > 0 || _chat.UnreadMentionCount > 0 || _chat.UnreadReactionCount > 0)
+            {
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    ColumnUnreadActions.Width = new GridLength(50);
+                    PanelUnreadActions.Visibility = Visibility.Visible;
+                });
+            }
+            else
+            {
+                await DispatcherQueue.EnqueueAsync(() =>
+                {
+                    ColumnUnreadActions.Width = new GridLength(0);
+                    PanelUnreadActions.Visibility = Visibility.Collapsed;
+                });
+            }
+            
+            if (_chat.UnreadCount > 0)
+            {
+                await DispatcherQueue.EnqueueAsync(() => ButtonUnreadMessages.Visibility = Visibility.Visible);
+            }
+            if (_chat.UnreadMentionCount > 0)
+            {
+                await DispatcherQueue.EnqueueAsync(() => ButtonUnreadMention.Visibility = Visibility.Visible);
+            }
+            if (_chat.UnreadReactionCount > 0)
+            {
+                await DispatcherQueue.EnqueueAsync(() => ButtonUnreadReaction.Visibility = Visibility.Visible);
+            }
+            
             switch (_chat.Type)
             {
                 case TdApi.ChatType.ChatTypePrivate typePrivate:
@@ -365,7 +419,7 @@ public sealed partial class Chat : Page
                         {
                             TdApi.UserStatus.UserStatusOnline => "Online",
                             TdApi.UserStatus.UserStatusOffline => "Offline",
-                            TdApi.UserStatus.UserStatusRecently => "Recently",
+                            TdApi.UserStatus.UserStatusRecently => "Last seen recently",
                             TdApi.UserStatus.UserStatusLastWeek => "Last week",
                             TdApi.UserStatus.UserStatusLastMonth => "Last month",
                             TdApi.UserStatus.UserStatusEmpty => "A long time",
@@ -421,12 +475,10 @@ public sealed partial class Chat : Page
                     break;
             }
             
-            if (_chat != null)
-            {
-                var messages = await GetMessagesAsync(_chatId, _isForum);
-                await GenerateMessageByType(messages);
-                _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
-            }
+            var messages = await GetMessagesAsync(_chatId, _isForum);
+            await GenerateMessageByType(messages);
+            if (_chat.UnreadCount == 0) MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
+            _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
 
             var settings = SettingsService.LoadSettings();
             IconMedia.Glyph = settings.StartMediaPage switch
@@ -486,7 +538,7 @@ public sealed partial class Chat : Page
                         Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100),
                         OnlyLocal = _hasInternetConnection
                     });
-                    return messages.Messages_.ToList();
+                    return messages.Messages_.Reverse().ToList();
                 }
                 else
                 {
@@ -496,7 +548,7 @@ public sealed partial class Chat : Page
                         MessageId = lastMessageId,
                         Limit = Math.Min(maxMessagesToLoad - totalMessagesLoaded, 100)
                     });
-                    return messages.Messages_.ToList();
+                    return messages.Messages_.Reverse().ToList();
                 }
 
                 if (messages.Messages_ == null || !messages.Messages_.Any())
@@ -529,18 +581,17 @@ public sealed partial class Chat : Page
     {
         List<TdApi.Message> addedMessages = [];
         
-        await DispatcherQueue.EnqueueAsync(() =>
+        await DispatcherQueue.EnqueueAsync(async () =>
         {
-            foreach (var message in messages)
+            foreach (var message in messages.Where(message => !addedMessages.Contains(message)))
             {
-                if (addedMessages.Contains(message)) continue;
                 switch (message.Content)
                 {
                     case TdApi.MessageContent.MessageText:
                     {
-                        var textMessage = new ChatMessage();
+                        var textMessage = new ChatMessage(this, _replyService);
                         textMessage._messageService = _messageService;
-                        textMessage.UpdateMessage(message, null);
+                        await textMessage.UpdateMessage(message, null);
                         MessagesList.Children.Add(textMessage);
                         break;
                     }
@@ -556,8 +607,8 @@ public sealed partial class Chat : Page
                     }
                     case TdApi.MessageContent.MessageSticker or TdApi.MessageContent.MessageAnimation:
                     {
-                        var stickerMessage = new ChatMessage();
-                        stickerMessage.UpdateMessage(message, null);
+                        var stickerMessage = new ChatMessage(this, _replyService);
+                        await stickerMessage.UpdateMessage(message, null);
                         MessagesList.Children.Add(stickerMessage);
                         break;
                     }
@@ -569,8 +620,8 @@ public sealed partial class Chat : Page
                         //     _mediaAlbum.Add(message);
                         // }
                     
-                        var photoMessage = new ChatMessage();
-                        photoMessage.UpdateMessage(message, null);
+                        var photoMessage = new ChatMessage(this, _replyService);
+                        await photoMessage.UpdateMessage(message, null);
                         MessagesList.Children.Add(photoMessage);
                         break;
                     }
@@ -582,14 +633,7 @@ public sealed partial class Chat : Page
         
     private async void SendMessage_OnClick(object sender, RoutedEventArgs e)
     {
-            
         if (UserMessageInput.Text.Length <= 0) return;
-
-        var text = _client.ExecuteAsync(new TdApi.ParseTextEntities
-        {
-            Text = UserMessageInput.Text,
-            ParseMode = new TdApi.TextParseMode.TextParseModeMarkdown {Version = 0}
-        }).Result;
         if (_replyService.GetReplyMessageId() == 0)
         {
             await _client.ExecuteAsync(new TdApi.SendMessage
@@ -597,13 +641,13 @@ public sealed partial class Chat : Page
                 ChatId = _chatId,
                 InputMessageContent = new TdApi.InputMessageContent.InputMessageText
                 {
-                    Text = text,
+                    Text = new TdApi.FormattedText {Text = UserMessageInput.Text},
                 }
             });
         }
         else
         {
-            _replyService.ReplyOnMessage(_chatId, _replyService.GetReplyMessageId(), UserMessageInput.Text);
+            _replyService.ReplyOnMessage(_chatId, UserMessageInput.Text);
         }
 
         //MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
@@ -614,6 +658,131 @@ public sealed partial class Chat : Page
     private void MoreActions_OnClick(object sender, RoutedEventArgs e)
     {
         ContextMenu.ShowAt(MoreActions);
+    }
+
+    private async void PrepareDraftMessage(TdApi.DraftMessage draftMessage)
+    {
+        if (draftMessage.InputMessageText == null) return;
+        await DispatcherQueue.EnqueueAsync(() => UserMessageInput.Text = draftMessage.InputMessageText switch
+        {
+            TdApi.InputMessageContent.InputMessageText text => text.Text.Text,
+            _ => string.Empty
+        });
+
+        if (draftMessage.ReplyTo == null) return;
+        switch (draftMessage.ReplyTo)
+        {
+            case TdApi.InputMessageReplyTo.InputMessageReplyToExternalMessage inputMessageReplyToExternalMessage:
+                await UpdateReplyInfo(inputTextQuote: inputMessageReplyToExternalMessage);
+                _replyService.SelectMessageForReply(inputMessageReplyToExternalMessage.MessageId);
+                break;
+            case TdApi.InputMessageReplyTo.InputMessageReplyToMessage replyToMessage:
+                await UpdateReplyInfo(inputReplyTo: replyToMessage);
+                _replyService.SelectMessageForReply(replyToMessage.MessageId);
+                break;
+            case TdApi.InputMessageReplyTo.InputMessageReplyToStory inputMessageReplyToStory:
+                await UpdateReplyInfo(storyId: inputMessageReplyToStory.StoryId);
+                break;
+        }
+    }
+    
+    public async Task UpdateReplyInfo(TdApi.Message messageReply = null,
+        TdApi.InputMessageReplyTo.InputMessageReplyToMessage inputReplyTo = null,
+        TdApi.InputMessageReplyTo.InputMessageReplyToExternalMessage inputTextQuote = null, int storyId = 0)
+    {
+        string senderName = string.Empty;
+        string messageText = string.Empty;
+        TdApi.Message message = null;
+        
+        if (messageReply != null)
+        {
+            message = messageReply;
+            senderName = await UserService.GetSenderName(messageReply);
+            messageText = await MessageService.GetTextMessageContent(messageReply);
+        }
+        else if (inputTextQuote != null)
+        {
+            message = await _client.GetMessageAsync(inputTextQuote.MessageId);
+            var chat = await _client.GetChatAsync(message.ChatId);
+            senderName = await UserService.GetSenderName(message);
+            senderName = chat.Title + "=>" + senderName;
+            messageText = inputTextQuote.Quote.Text.Text;
+        }
+        else if (inputReplyTo != null)
+        {
+            message = await _client.GetMessageAsync(_chatId, inputReplyTo.MessageId);
+            senderName = await UserService.GetSenderName(message);
+            messageText = inputReplyTo.Quote != null 
+                ? inputReplyTo.Quote.Text.Text 
+                : await MessageService.GetTextMessageContent(message);
+        }
+        
+        messageText = Regex.Replace(messageText, @"\s+", " ");
+        messageText = messageText.Trim();
+
+        await DispatcherQueue.EnqueueAsync(async () =>
+        {
+            if (message != null)
+            {
+                switch (message.Content)
+                {
+                    case TdApi.MessageContent.MessageAnimation messageAnimation:
+                        if (messageAnimation.Animation.Minithumbnail != null)
+                        {
+                            await DispatcherQueue.EnqueueAsync(async () =>
+                            {
+                                ImageReplyMedia.Source =
+                                    await MediaService.GetImageFromByteArray(messageAnimation.Animation.Minithumbnail.Data);
+                                ImageReplyMedia.Visibility = Visibility.Visible;
+                            });
+                        }
+                        break;
+                    case TdApi.MessageContent.MessagePhoto messagePhoto:
+                        if (messagePhoto.Photo.Minithumbnail != null)
+                        {
+                            await DispatcherQueue.EnqueueAsync(async () =>
+                            {
+                                ImageReplyMedia.Source =
+                                    await MediaService.GetImageFromByteArray(messagePhoto.Photo.Minithumbnail.Data);
+                                ImageReplyMedia.Visibility = Visibility.Visible;
+                            });
+                        }
+                        break;
+                    case TdApi.MessageContent.MessageVideo messageVideo:
+                        if (messageVideo.Video.Minithumbnail != null)
+                        {
+                            await DispatcherQueue.EnqueueAsync(async () =>
+                            {
+                                ImageReplyMedia.Source =
+                                    await MediaService.GetImageFromByteArray(messageVideo.Video.Minithumbnail.Data);
+                                ImageReplyMedia.Visibility = Visibility.Visible;
+                            });
+                        }
+                        break;
+                    case TdApi.MessageContent.MessageVideoNote messageVideoNote:
+                        if (messageVideoNote.VideoNote.Minithumbnail != null)
+                        {
+                            await DispatcherQueue.EnqueueAsync(async () =>
+                            {
+                                ImageReplyMedia.Source =
+                                    await MediaService.GetImageFromByteArray(messageVideoNote.VideoNote.Minithumbnail
+                                        .Data);
+                                ImageReplyMedia.Visibility = Visibility.Visible;
+                            });
+                        }
+                        break;
+                    default:
+                        await DispatcherQueue.EnqueueAsync(() => ImageReplyMedia.Visibility = Visibility.Collapsed);
+                        break;
+                }
+            }
+            
+            TextBlockReplyName.Text = $"Reply to {senderName}";
+            TextBlockReplyContent.Text = messageText;
+            BorderReply.Visibility = Visibility.Visible;
+            RowUserActions.Height = new GridLength(100);
+            GridUserActions.Height = 100;
+        });
     }
         
     public void CloseChat()
@@ -720,7 +889,7 @@ public sealed partial class Chat : Page
         args.Cancel = true;
         if (_pollOptionsCount >= 10) return;
 
-        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => {
+        DispatcherQueue.EnqueueAsync(() => {
             var newPollOption = new TextBox
             {
                 PlaceholderText = "Add an option",
@@ -1031,24 +1200,26 @@ public sealed partial class Chat : Page
 
     private void SelectMediaPage(int index)
     {
+        _currentMediaPage = index;
+        
         switch (index)
         {
             case 0: // Emojis
-                ButtonEmoji.IsEnabled = false;
-                ButtonStickers.IsEnabled = true;
-                ButtonAnimations.IsEnabled = true;
+                BarItemEmojis.IsSelected = false;
+                BarItemStickers.IsSelected = true;
+                BarItemAnimations.IsSelected = true;
                 break;
             case 1: // Stickers
                 GenerateStickers();
-                ButtonEmoji.IsEnabled = true;
-                ButtonStickers.IsEnabled = false;
-                ButtonAnimations.IsEnabled = true;
+                BarItemEmojis.IsSelected = true;
+                BarItemStickers.IsSelected = false;
+                BarItemAnimations.IsSelected = true;
                 break;
             case 2: // GIFs
                 GenerateAnimations();
-                ButtonEmoji.IsEnabled = true;
-                ButtonStickers.IsEnabled = true;
-                ButtonAnimations.IsEnabled = false;
+                BarItemEmojis.IsSelected = true;
+                BarItemStickers.IsSelected = true;
+                BarItemAnimations.IsSelected = false;
                 break;
         }
     }
@@ -1257,6 +1428,7 @@ public sealed partial class Chat : Page
     
     private async void ScrollViewer_OnViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
     {
+        if (_currentMediaPage != 1) return;
         if (!e.IsIntermediate)
         {
             var scrollViewer = (ScrollViewer)sender;
@@ -1319,5 +1491,17 @@ public sealed partial class Chat : Page
                 _currentStickerSet = endIndex;
             }
         }
+    }
+
+    private void ButtonReplyClose_OnClick(object sender, RoutedEventArgs e)
+    {
+        BorderReply.Visibility = Visibility.Collapsed;
+        RowUserActions.Height = new GridLength(45);
+        GridUserActions.Height = 45;
+    }
+
+    private void ButtonUnreadMessages_OnClick(object sender, RoutedEventArgs e)
+    {
+        MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
     }
 }
