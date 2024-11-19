@@ -96,7 +96,8 @@
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
                            Text="Privacy" />
                 
-                <controls:SettingsExpander Header="Phone number">
+                <controls:SettingsExpander x:Name="ExpanderPhoneNumber"
+                                           Header="Phone number">
                     <TextBlock x:Name="PhoneNumber" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
@@ -104,16 +105,20 @@
                         <controls:SettingsCard Description="Users who add your number to their contact will see it on Telegram only if they are your contacts"
                                                Header="Who can see my phone number"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox x:Name="ComboBoxPhoneNumber">
+                            <ComboBox x:Name="ComboBoxPhoneNumber"
+                                      SelectionChanged="ComboBoxPhoneNumber_OnSelectionChanged">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
                             </ComboBox>
                         </controls:SettingsCard>
                         
-                        <controls:SettingsCard Header="Who can find me by my number"
+                        <controls:SettingsCard x:Name="CardFindMeByNumber"
+                                               Header="Who can find me by my number"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox x:Name="ComboBoxFindMeByNumber"
+                                      SelectedIndex="0"
+                                      SelectionChanged="ComboBoxFindMeByNumber_OnSelectionChanged">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                             </ComboBox>
@@ -131,14 +136,15 @@
                 </controls:SettingsExpander>
                 
                 <controls:SettingsExpander Header="Last Seen and Online">
-                    <TextBlock x:Name="LastSeenAndOnline" Text="Everybody" win:IsTextSelectionEnabled="True"
+                    <TextBlock x:Name="TextBlockLastSeenAndOnline" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Description="Unless you are a Premium user, you won't see Last Seen or Online statuses for people with whom you don't share yours."
                                                Header="Who can see my last seen time"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxLastSeen">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -160,14 +166,16 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Profile photos">
-                    <TextBlock x:Name="ProfilePhotos" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Profile photos"
+                                           x:Name="ExpanderProfilePhotos">
+                    <TextBlock x:Name="TextBlockProfilePhotos" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Header="Who can see my profile photos"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxProfilePhotos">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -191,14 +199,16 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Bio">
-                    <TextBlock x:Name="Bio" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Bio"
+                                           x:Name="ExpanderBio">
+                    <TextBlock x:Name="TextBlockBio" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Header="Who can see my bio"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxBio">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -216,14 +226,16 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Date of birth">
-                    <TextBlock x:Name="DateOfBirth" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Date of birth"
+                                           x:Name="ExpanderDateOfBirth">
+                    <TextBlock x:Name="TextBlockDateOfBirth" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Header="Who can see my date of birth"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxDateOfBirth">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -241,15 +253,17 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Forwarded messages">
-                    <TextBlock x:Name="ForwardedMessages" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Forwarded messages"
+                                           x:Name="ExpanderForwardedMessages">
+                    <TextBlock x:Name="TextBlockForwardedMessages" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Description="Messages you send will not link back to your account when forwarded by other users."
                                                Header="Who can add a link to my account when forwarding my messages"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxForwardedMessages">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -267,14 +281,16 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Calls">
-                    <TextBlock x:Name="Calls" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Calls"
+                                           x:Name="ExpanderCalls">
+                    <TextBlock x:Name="TextBlockCalls" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Header="Who can call me"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxCalls">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -299,14 +315,16 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Groups and Channels">
-                    <TextBlock x:Name="GroupsAndChannels" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Groups and Channels"
+                                           x:Name="ExpanderGroupsAndChannels">
+                    <TextBlock x:Name="TextBlockGroupsAndChannels" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Header="Who can add me to groups and channels"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxGroupsAndChannels">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -331,14 +349,16 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Voice messages">
-                    <TextBlock x:Name="VoiceMessages" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Voice messages"
+                                           x:Name="ExpanderVoiceMessages">
+                    <TextBlock x:Name="TextBlockVoiceMessages" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Header="Who can send me voice messages"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxVoiceMessages">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts</ComboBoxItem>
                                 <ComboBoxItem>Nobody</ComboBoxItem>
@@ -356,15 +376,17 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 
-                <controls:SettingsExpander Header="Messages">
-                    <TextBlock x:Name="Messages" Text="Everybody" win:IsTextSelectionEnabled="True"
+                <controls:SettingsExpander Header="Messages"
+                                           x:Name="ExpanderMessages">
+                    <TextBlock x:Name="TextBlockMessages" Text="Everybody" win:IsTextSelectionEnabled="True"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:SettingsExpander.Items>
                         
                         <controls:SettingsCard Description="You can restrict messages from users who are not in your contacts and don't have Premium."
                                                Header="Who can send me messages"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE799;}">
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox SelectedIndex="0"
+                                      x:Name="ComboBoxMessages">
                                 <ComboBoxItem>Everybody</ComboBoxItem>
                                 <ComboBoxItem>My contacts and Premium users</ComboBoxItem>
                             </ComboBox>
