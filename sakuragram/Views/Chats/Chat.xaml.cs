@@ -648,6 +648,7 @@ public sealed partial class Chat : Page
         else
         {
             _replyService.ReplyOnMessage(_chatId, UserMessageInput.Text);
+            PrepareDraftMessage(null);
         }
 
         //MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
