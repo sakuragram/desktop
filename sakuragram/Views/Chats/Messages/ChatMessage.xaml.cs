@@ -129,13 +129,13 @@ public partial class ChatMessage : Page
 
         if (sender.User != null)
         {
-            await ProfilePicture.InitializeProfilePhoto(sender.User, null);
+            await ProfilePicture.InitializeProfilePhoto(sender.User, null, canOpenProfile: true);
             if (sender.User.Id == currentUser.Id) 
                 MessageBackground.Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseAltBrush"];
         }
         else if (sender.Chat != null)
         {
-            await ProfilePicture.InitializeProfilePhoto(null, sender.Chat);
+            await ProfilePicture.InitializeProfilePhoto(null, sender.Chat, canOpenProfile: true);
         }
 
         DisplayName.Text = DisplayName.Text = sender.User == null 
@@ -299,6 +299,13 @@ public partial class ChatMessage : Page
                 break;
             case TdApi.MessageContent.MessagePhoto messagePhoto:
                 GeneratePhotoMessage(messagePhoto, message.MediaAlbumId, album);
+                break;
+            case TdApi.MessageContent.MessageDocument messageDocument:
+                TextBlock textMessage = new();
+                textMessage.Text = messageDocument.Caption.Text;
+                textMessage.IsTextSelectionEnabled = true;
+                textMessage.TextWrapping = TextWrapping.Wrap;
+                PanelMessageContent.Children.Add(textMessage);
                 break;
             case TdApi.MessageContent.MessageUnsupported:
                 TextBlock textUnsupported = new();
@@ -598,6 +605,7 @@ public partial class ChatMessage : Page
         await DispatcherQueue.EnqueueAsync(() =>
         {
             Reaction reactionControl = new(reaction, _chatId, _messageId);
+            reactionControl.Margin = new Thickness(0, 2, 2, 0);
 
             if (_reactionGridColumns == 5)
             {
@@ -760,8 +768,9 @@ public partial class ChatMessage : Page
         // if (_messageService._isMessageSelected) Select_OnClick(null, null);
     }
 
-    private void ButtonReply_OnClick(object sender, RoutedEventArgs e)
+    private async void ButtonReply_OnClick(object sender, RoutedEventArgs e)
     {
-        throw new NotImplementedException();
+        var replies = await _chat.GetMessagesAsync(_chatId, true, _messageId, 0);
+        await _chat.GenerateMessageByType(replies, true);
     }
 }

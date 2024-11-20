@@ -516,10 +516,12 @@ public sealed partial class Chat : Page
         // }
     }
 
-    private async Task<List<TdApi.Message>> GetMessagesAsync(long chatId, bool isForum, long lastMessageId = 0, int offset = 0)
+    public async Task<List<TdApi.Message>> GetMessagesAsync(long chatId = 0, bool isMessageThread = false, long lastMessageId = 0, int offset = 0)
     {
         try
         {
+            if (chatId == 0) return new List<TdApi.Message>();
+            
             var chat = await _client.GetChatAsync(chatId);
             int totalMessagesLoaded = 0;
             const int maxMessagesToLoad = 50;
@@ -529,7 +531,7 @@ public sealed partial class Chat : Page
             while (totalMessagesLoaded < maxMessagesToLoad && chat != null)
             {
                 TdApi.Messages messages;
-                if (!isForum)
+                if (!isMessageThread)
                 {
                     messages = await _client.ExecuteAsync(new TdApi.GetChatHistory
                     {
@@ -577,55 +579,62 @@ public sealed partial class Chat : Page
         }
     }
     
-    private async Task GenerateMessageByType(List<TdApi.Message> messages)
+    public async Task GenerateMessageByType(List<TdApi.Message> messages, bool clear = false)
     {
         List<TdApi.Message> addedMessages = [];
         
         await DispatcherQueue.EnqueueAsync(async () =>
         {
+            if (clear) MessagesList.Children.Clear();
+            
             foreach (var message in messages.Where(message => !addedMessages.Contains(message)))
             {
-                switch (message.Content)
-                {
-                    case TdApi.MessageContent.MessageText:
-                    {
-                        var textMessage = new ChatMessage(this, _replyService);
-                        textMessage._messageService = _messageService;
-                        await textMessage.UpdateMessage(message, null);
-                        MessagesList.Children.Add(textMessage);
-                        break;
-                    }
-                    case TdApi.MessageContent.MessageChatChangeTitle or TdApi.MessageContent.MessagePinMessage 
-                        or TdApi.MessageContent.MessageGiftedPremium
-                        or TdApi.MessageContent.MessageGameScore or TdApi.MessageContent.MessageChatBoost 
-                        or TdApi.MessageContent.MessageUnsupported:
-                    {
-                        var changeTitleMessage = new ChatServiceMessage();
-                        changeTitleMessage.UpdateMessage(message);
-                        MessagesList.Children.Add(changeTitleMessage);
-                        break;
-                    }
-                    case TdApi.MessageContent.MessageSticker or TdApi.MessageContent.MessageAnimation:
-                    {
-                        var stickerMessage = new ChatMessage(this, _replyService);
-                        await stickerMessage.UpdateMessage(message, null);
-                        MessagesList.Children.Add(stickerMessage);
-                        break;
-                    }
-                    case TdApi.MessageContent.MessagePhoto:
-                    {
-                        // if (message.MediaAlbumId != 0)
-                        // {
-                        //     _mediaAlbumId = message.MediaAlbumId;
-                        //     _mediaAlbum.Add(message);
-                        // }
-                    
-                        var photoMessage = new ChatMessage(this, _replyService);
-                        await photoMessage.UpdateMessage(message, null);
-                        MessagesList.Children.Add(photoMessage);
-                        break;
-                    }
-                }
+                var messageEntry = new ChatMessage(this, _replyService);
+                messageEntry._messageService = _messageService;
+                await messageEntry.UpdateMessage(message, null);
+                MessagesList.Children.Add(messageEntry);
+                
+                // switch (message.Content)
+                // {
+                //     case TdApi.MessageContent.MessageText:
+                //     {
+                //         var textMessage = new ChatMessage(this, _replyService);
+                //         textMessage._messageService = _messageService;
+                //         await textMessage.UpdateMessage(message, null);
+                //         MessagesList.Children.Add(textMessage);
+                //         break;
+                //     }
+                //     case TdApi.MessageContent.MessageChatChangeTitle or TdApi.MessageContent.MessagePinMessage 
+                //         or TdApi.MessageContent.MessageGiftedPremium
+                //         or TdApi.MessageContent.MessageGameScore or TdApi.MessageContent.MessageChatBoost 
+                //         or TdApi.MessageContent.MessageUnsupported:
+                //     {
+                //         var changeTitleMessage = new ChatServiceMessage();
+                //         changeTitleMessage.UpdateMessage(message);
+                //         MessagesList.Children.Add(changeTitleMessage);
+                //         break;
+                //     }
+                //     case TdApi.MessageContent.MessageSticker or TdApi.MessageContent.MessageAnimation:
+                //     {
+                //         var stickerMessage = new ChatMessage(this, _replyService);
+                //         await stickerMessage.UpdateMessage(message, null);
+                //         MessagesList.Children.Add(stickerMessage);
+                //         break;
+                //     }
+                //     case TdApi.MessageContent.MessagePhoto:
+                //     {
+                //         // if (message.MediaAlbumId != 0)
+                //         // {
+                //         //     _mediaAlbumId = message.MediaAlbumId;
+                //         //     _mediaAlbum.Add(message);
+                //         // }
+                //     
+                //         var photoMessage = new ChatMessage(this, _replyService);
+                //         await photoMessage.UpdateMessage(message, null);
+                //         MessagesList.Children.Add(photoMessage);
+                //         break;
+                //     }
+                // }
                 addedMessages.Add(message);
             }
         });
