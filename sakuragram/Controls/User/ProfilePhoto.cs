@@ -25,7 +25,8 @@ public class ProfilePhoto : RelativePanel
     private TdApi.Chat _chat;
     private TdApi.ChatActiveStories _stories;
     
-    public async Task InitializeProfilePhoto(TdApi.User user, TdApi.Chat chat, int width = 32, int height = 32)
+    public async Task InitializeProfilePhoto(TdApi.User user, TdApi.Chat chat, int width = 32, int height = 32, 
+        bool canOpenProfile = false)
     {
         if (user != null)
         {
@@ -98,6 +99,10 @@ public class ProfilePhoto : RelativePanel
         else if (chat != null)
             await DispatcherQueue.EnqueueAsync(async () => await MediaService.GetChatPhoto(chat, this));
 
+        PointerPressed += async (_, _) =>
+        {
+            if (canOpenProfile) await UserService.ShowProfile(_user, _chat, XamlRoot);
+        };
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
 
