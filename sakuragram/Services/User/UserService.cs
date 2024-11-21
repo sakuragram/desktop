@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
+using sakuragram.Views.Profile;
 using TdLib;
 
 namespace sakuragram.Services;
@@ -140,5 +142,17 @@ public class UserService
         }
         
         return null;
+    }
+
+    public static async Task ShowProfile(TdApi.User user = null, TdApi.Chat chat = null, XamlRoot xamlRoot = null)
+    {
+        if (xamlRoot == null) return;
+        
+        Profile profile = new()
+        {
+            XamlRoot = xamlRoot,
+        };
+        
+        await profile.ShowAsync();
     }
 }

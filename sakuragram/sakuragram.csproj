@@ -92,6 +92,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.ru-RU.resx</DependentUpon>
     </Compile>
+    <Compile Update="Views\MediaPlayer\MiniVideoPlayer.cs">
+      <DependentUpon>MiniVideoPlayer.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <WebView2EnableCsWinRTProjection>False</WebView2EnableCsWinRTProjection>
