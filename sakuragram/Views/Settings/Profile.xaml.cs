@@ -6,6 +6,7 @@ using Windows.Storage.Pickers;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Controls.User;
 using sakuragram.Services;
@@ -81,8 +82,22 @@ public partial class Profile : Page
             TextBlockBirthdate.Visibility = Visibility.Collapsed;
         }
         
-        MediaService.GetUserPhoto(_currentUser, PersonPicture);
         PersonPicture.Visibility = Visibility.Visible;
+        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+    }
+
+    private async Task ProcessUpdates(TdApi.Update update)
+    {
+        switch (update)
+        {
+            case TdApi.Update.UpdateUser { User: TdApi.User updateUser }:
+                if (updateUser.Id == _currentUser.Id)
+                {
+                    _currentUser = updateUser;
+                    await PersonPicture.InitializeProfilePhoto(_currentUser, null, 100, 100);
+                }
+                break;
+        }
     }
 
     private async void UpdateBirthDate()
@@ -242,10 +257,16 @@ public partial class Profile : Page
         var chat = await _client.GetChatAsync(chatId);
         
         var button = new Button();
-        button.Click += (sender, args) => ButtonPersonalChatEntry_OnClick(sender, args, chat);
+        button.Click += async (_, _) =>
+        {
+            await _client.SetPersonalChatAsync(chat.Id);
+            ContentDialogChangeConnectedChannel.Hide();
+        };
         button.Margin = new Thickness(0, 4, 0, 4);
         button.Width = 350;
         button.Height = 60;
+        button.HorizontalContentAlignment = HorizontalAlignment.Left;
+        button.VerticalContentAlignment = VerticalAlignment.Center;
             
         var stackPanel = new StackPanel();
         stackPanel.Orientation = Orientation.Horizontal;
@@ -253,10 +274,8 @@ public partial class Profile : Page
         stackPanel.VerticalAlignment = VerticalAlignment.Center;
         
         var chatPhoto = new ProfilePhoto();
-        await chatPhoto.InitializeProfilePhoto(null, chat);
-        chatPhoto.Width = 40;
-        chatPhoto.Height = 40;
-        
+        await chatPhoto.InitializeProfilePhoto(null, chat, 40, 40);
+        chatPhoto.Margin = new Thickness(0, 0, 4, 0);
         stackPanel.Children.Add(chatPhoto);
         
         var verticalStackPanel = new StackPanel();
@@ -266,22 +285,31 @@ public partial class Profile : Page
         
         var chatTitle = new TextBlock();
         chatTitle.Text = chat.Title;
+        chatTitle.FontSize = 12;
+        chatTitle.Foreground = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
         verticalStackPanel.Children.Add(chatTitle);
         
         var chatSubscribers = new TextBlock();
-        chatSubscribers.FontSize = 12;
-        chatSubscribers.Text = " subscribers";
+        chatSubscribers.FontSize = 10;
+        chatSubscribers.Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"];
+        switch (chat.Type)
+        {
+            case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
+                if (typeSupergroup.IsChannel)
+                {
+                    var supergroup = await _client.GetSupergroupAsync(typeSupergroup.SupergroupId);
+                    chatSubscribers.Text = $"{supergroup.MemberCount} members";
+                }
+                break;
+            default:
+                chatSubscribers.Text = "0 members";
+                break;
+        }
         verticalStackPanel.Children.Add(chatSubscribers);
         
         stackPanel.Children.Add(verticalStackPanel);
         button.Content = stackPanel;
         StackPanelChats.Children.Add(button);
-    }
-
-    private async void ButtonPersonalChatEntry_OnClick(object sender, RoutedEventArgs e, TdApi.Chat chat)
-    {
-        await _client.SetPersonalChatAsync(chatId:chat.Id);
-        ContentDialogChangeConnectedChannel.Hide();
     }
     
     private async void ButtonRemoveConnectedChannel_OnClick(object sender, RoutedEventArgs e)
