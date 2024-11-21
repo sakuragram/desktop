@@ -77,6 +77,8 @@ public partial class App : Application
 		_client.Bindings.SetLogVerbosityLevel(_logLevel);
 		_client.Bindings.SetLogFilePath(_logFilePath);
 		_client.Bindings.SetLogFileMaxSize(_logFileMaxSize);
+		_client.SetLogStreamAsync(new TdApi.LogStream.LogStreamFile 
+			{ Path = _logFilePath, MaxFileSize = _logFileMaxSize });
 
 		#endregion
 
