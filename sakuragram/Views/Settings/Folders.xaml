@@ -46,6 +46,29 @@
                 <StackPanel x:Name="PanelUserRecommendedFolders" />
                 
             </StackPanel>
+            
+            <ContentDialog x:Name="DialogEditFolder"
+                           IsPrimaryButtonEnabled="True"
+                           PrimaryButtonText="Save"
+                           CloseButtonText="Close"
+                           DefaultButton="Primary"
+                           Width="300"
+                           MaxWidth="300"
+                           Height="450">
+                <ContentDialog.TitleTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="Edit folder"/>
+                    </DataTemplate>
+                </ContentDialog.TitleTemplate>
+                <StackPanel>
+                    <TextBox x:Name="TextBoxEditFolderName"
+                             PlaceholderText="Folder name"/>
+                    <MenuFlyoutSeparator Margin="4"/>
+                    <controls:SettingsCard Height="30"/>
+                    <controls:SettingsExpander Height="30"/>
+                </StackPanel>
+            </ContentDialog>
+            
         </Grid>
     </ScrollViewer>
     

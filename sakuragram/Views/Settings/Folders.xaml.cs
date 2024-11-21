@@ -2,6 +2,7 @@
 using System.IO;
 using System.Diagnostics;
 using CommunityToolkit.WinUI.Controls;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using TdLib;
 
@@ -20,7 +21,7 @@ public partial class Folders : Page
         GenerateFolders(_hasInternetConnection);
     }
     
-    private void GenerateFolders(bool hasInternetConnection)
+    private async void GenerateFolders(bool hasInternetConnection)
     {
         PanelUserFolders.Children.Clear();
         
@@ -38,22 +39,44 @@ public partial class Folders : Page
                 folderIcon.ShowAsMonochrome = false;
             }
             
-            TdApi.ChatFolder chatFolderInfo = _client.GetChatFolderAsync(userFolder.Id).Result;
+            TdApi.ChatFolder chatFolderInfo = await _client.GetChatFolderAsync(userFolder.Id);
+            var folderChatCount = await _client.GetChatFolderChatCountAsync(chatFolderInfo);
 
-            Button button = new();
-            button.Content = "Delete";
-            button.Click += (sender, args) =>
+            StackPanel stackPanel = new();
+            stackPanel.Orientation = Orientation.Horizontal;
+            
+            Button buttonDelete = new();
+            buttonDelete.Content = "Delete";
+            buttonDelete.Click += async (_, _) =>
             {
-                _client.DeleteChatFolderAsync(userFolder.Id, []);
+                await _client.DeleteChatFolderAsync(userFolder.Id, []);
                 GenerateFolders(_hasInternetConnection);
+            };
+            
+            Button buttonEdit = new();
+            buttonEdit.Content = "Edit";
+            buttonEdit.Margin = new Thickness(0, 0, 5, 0);
+            buttonEdit.Click += async (_, _) =>
+            {
+                TextBoxEditFolderName.Text = userFolder.Title;
+                await DialogEditFolder.ShowAsync();
+                DialogEditFolder.PrimaryButtonClick += async (_, _) =>
+                {
+                    await _client.EditChatFolderAsync(userFolder.Id, new TdApi.ChatFolder
+                    {
+                        Title = TextBoxEditFolderName.Text
+                    });
+                };
             };
             
             SettingsCard card = new();
             card.Header = userFolder.Title;
             //card.HeaderIcon = folderIcon != null ? folderIcon : null;
-            card.Description = chatFolderInfo.IncludedChatIds.Length + " chats";
-            card.Content = button;
+            card.Description = folderChatCount.Count_ + " chats";
             
+            stackPanel.Children.Add(buttonEdit);
+            stackPanel.Children.Add(buttonDelete);
+            card.Content = stackPanel;
             PanelUserFolders.Children.Add(card);
         }
 
@@ -69,7 +92,7 @@ public partial class Folders : Page
 
                 Button button = new();
                 button.Content = "Add";
-                button.Click += async (sender, args) =>
+                button.Click += async (_, _) =>
                 {
                     await _client.CreateChatFolderAsync(folder.Folder);
                     GenerateFolders(_hasInternetConnection);
