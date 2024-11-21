@@ -32,7 +32,7 @@
                 <RowDefinition Height="*" 
                                MaxHeight="1000" />
                 <RowDefinition x:Name="RowUserActions" 
-                               Height="45" />
+                               Height="Auto" />
             </Grid.RowDefinitions>
             
             <StackPanel VerticalAlignment="Top"
@@ -68,7 +68,7 @@
                                     HorizontalAlignment="Right" 
                                     VerticalAlignment="Center"
                                     Margin="0, 0, 5 0">
-                            <Button x:Name="SearchMessages" 
+                            <Button x:Name="ButtonSearchMessages" 
                                     Click="SearchMessages_OnClick" 
                                     HorizontalAlignment="Right" 
                                     VerticalAlignment="Center"
@@ -78,7 +78,7 @@
                                     <FontIcon Glyph="&#xE721;" />
                                 </Button.Content>
                             </Button>
-                            <Button x:Name="CreateVideoCall" 
+                            <Button x:Name="ButtonCreateVideoCall" 
                                     Click="CreateVideoCall_OnClick"
                                     HorizontalAlignment="Right" 
                                     VerticalAlignment="Center"
@@ -87,8 +87,16 @@
                                     <FontIcon Glyph="&#xF715;" />
                                 </Button.Content>
                             </Button>
-                            <Button x:Name="MoreActions" 
-                                    Click="MoreActions_OnClick" 
+                            <Button x:Name="ButtonChatEventLog"
+                                    Click="ButtonChatEventLog_OnClick"
+                                    HorizontalAlignment="Right" 
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,5,0">
+                                <Button.Content>
+                                    <FontIcon Glyph="&#xF715;" />
+                                </Button.Content>
+                            </Button>
+                            <Button x:Name="ButtonMoreActions"
                                     HorizontalAlignment="Right" 
                                     VerticalAlignment="Center"
                                     IsEnabled="True" >
@@ -96,37 +104,43 @@
                                     <FontIcon Glyph="&#xE712;" />
                                 </Button.Content>
                                 <Button.Flyout>
-                                    <MenuFlyout x:Name="ContextMenu" Placement="Bottom">
+                                    <MenuFlyout x:Name="ContextMenu" Placement="BottomEdgeAlignedRight">
                                         <MenuFlyoutItem Text="Mute" 
                                                         Click="ContextMenuNotifications_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemNotifications"/>
                                         <MenuFlyoutItem Text="View group info" 
                                                         Click="ContextMenuViewGroupInfo_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemViewGroupInfo"/>
                                         <MenuFlyoutItem Text="To beginning" 
                                                         Click="ContextMenuToBeginning_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemToBeginning"/>
                                         <MenuFlyoutItem Text="Manage group" 
                                                         Click="ContextMenuManageGroup_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemManageGroup"/>
                                         <MenuFlyoutItem Text="Boost group" 
                                                         Click="ContextMenuBoostGroup_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemBoostGroup"/>
                                         <MenuFlyoutItem Text="Create poll" 
                                                         Click="ContextMenuCreatePoll_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemCreatePoll"/>
                                         <MenuFlyoutItem Text="Report" 
                                                         Click="ContextMenuReport_OnClick"
-                                                        IsEnabled="False"/>
-                                        <MenuFlyoutItem Text="Mute" 
-                                                        Click="ContextMenuNotifications_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="True"
+                                                        x:Name="FlyoutItemReport"/>
                                         <MenuFlyoutItem Text="Clear history" 
                                                         Click="ContextMenuClearHistory_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemClearHistory"/>
                                         <MenuFlyoutItem Text="Leave" 
                                                         Click="ContextMenuLeaveGroup_OnClick"
-                                                        IsEnabled="False"/>
+                                                        IsEnabled="False"
+                                                        x:Name="FlyoutItemLeave"/>
                                     </MenuFlyout>
                                 </Button.Flyout>
                             </Button>
@@ -581,6 +595,14 @@
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
+            </ContentDialog>
+            <ContentDialog x:Name="DialogReportChat"
+                           CloseButtonText="Cancel"
+                           PrimaryButtonText="Report"
+                           PrimaryButtonClick="DialogReportChat_OnPrimaryButtonClick"
+                           DefaultButton="Primary">
+                <TextBox x:Name="TextBoxReportDetails"
+                         PlaceholderText="Report details (optional)"/>
             </ContentDialog>
         </Grid>
         

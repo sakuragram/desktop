@@ -79,11 +79,11 @@ public sealed partial class Chat : Page
         
         #if DEBUG
         {
-            CreateVideoCall.IsEnabled = true;
+            ButtonCreateVideoCall.IsEnabled = true;
         }
         #else
         {
-            CreateVideoCall.IsEnabled = false;
+            ButtonCreateVideoCall.IsEnabled = false;
         }
         #endif
         
@@ -321,6 +321,116 @@ public sealed partial class Chat : Page
             await DispatcherQueue.EnqueueAsync(() => ChatTitle.Text = _isForum 
                 ? _forumTopic.Info.Name
                 : _chat.Title);
+            var currentUser = await _client.GetMeAsync();
+            var memberInfo = await _client.GetChatMemberAsync(_chat.Id, new TdApi.MessageSender.MessageSenderUser { UserId = currentUser.Id });
+
+            bool isChannel = false;
+            
+            switch (_chat.Type)
+            {
+                case TdApi.ChatType.ChatTypePrivate typePrivate:
+                    var user = await _client.GetUserAsync(typePrivate.UserId);
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        ChatMembers.Text = user.Status switch
+                        {
+                            TdApi.UserStatus.UserStatusOnline => "Online",
+                            TdApi.UserStatus.UserStatusOffline => "Offline",
+                            TdApi.UserStatus.UserStatusRecently => "Last seen recently",
+                            TdApi.UserStatus.UserStatusLastWeek => "Last week",
+                            TdApi.UserStatus.UserStatusLastMonth => "Last month",
+                            TdApi.UserStatus.UserStatusEmpty => "A long time",
+                            _ => "Unknown"
+                        };
+                    });
+                    break;
+                case TdApi.ChatType.ChatTypeBasicGroup typeBasicGroup:
+                    var basicGroupInfo = await _client.GetBasicGroupFullInfoAsync(
+                        basicGroupId: typeBasicGroup.BasicGroupId);
+                    await DispatcherQueue.EnqueueAsync(() => ChatMembers.Text = basicGroupInfo.Members.Length + " members");
+                    break;
+                case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
+                    try
+                    {
+                        var supergroup = await _client.GetSupergroupAsync(
+                            supergroupId: typeSupergroup.SupergroupId);
+                        var supergroupInfo = await _client.GetSupergroupFullInfoAsync(
+                            supergroupId: typeSupergroup.SupergroupId);
+                        _linkedChatId = supergroupInfo.LinkedChatId;
+
+                        if (supergroup.IsChannel)
+                        {
+                            isChannel = true;
+                            await DispatcherQueue.EnqueueAsync(() =>
+                            {
+                                UserActionsPanel.Visibility = supergroup.Status switch
+                                {
+                                    TdApi.ChatMemberStatus.ChatMemberStatusCreator => Visibility.Visible,
+                                    TdApi.ChatMemberStatus.ChatMemberStatusAdministrator => Visibility.Visible,
+                                    TdApi.ChatMemberStatus.ChatMemberStatusMember => Visibility.Collapsed,
+                                    TdApi.ChatMemberStatus.ChatMemberStatusBanned => Visibility.Collapsed,
+                                    TdApi.ChatMemberStatus.ChatMemberStatusRestricted => Visibility.Collapsed,
+                                    TdApi.ChatMemberStatus.ChatMemberStatusLeft => Visibility.Collapsed,
+                                    _ => Visibility.Collapsed
+                                };
+
+                                ButtonFastAction.Visibility = Visibility.Visible;
+                            });
+                        }
+                        else
+                        {
+                            isChannel = false;
+                            await DispatcherQueue.EnqueueAsync(() => ButtonFastAction.Visibility = Visibility.Collapsed);
+                        }
+
+                        await DispatcherQueue.EnqueueAsync(() => ChatMembers.Text = supergroupInfo.MemberCount + " members");
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e);
+                        throw;
+                    }
+
+                    break;
+            }
+            
+            if (memberInfo != null)
+            {
+                switch (memberInfo.Status)
+                {
+                    case TdApi.ChatMemberStatus.ChatMemberStatusAdministrator administrator:
+                        Visibility canManageChat = administrator.Rights.CanManageChat
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                        Visibility canPostMessages = administrator.Rights.CanPostMessages
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+
+                        FlyoutItemManageGroup.Visibility = canManageChat;
+                        ButtonChatEventLog.Visibility = canManageChat;
+                        UserActionsPanel.Visibility = canPostMessages;
+                        ButtonFastAction.Visibility = canPostMessages;
+                        break;
+                    case TdApi.ChatMemberStatus.ChatMemberStatusBanned banned:
+                        var banDialog = new ContentDialog
+                        {
+                            Title = "You have been banned",
+                            Content = "You have been banned from this group.",
+                            CloseButtonText = "Close"
+                        };
+                        banDialog.XamlRoot = XamlRoot;
+                        banDialog.ShowAsync();
+                        break;
+                    case TdApi.ChatMemberStatus.ChatMemberStatusCreator creator:
+                        break;
+                    case TdApi.ChatMemberStatus.ChatMemberStatusLeft left:
+                        break;
+                    case TdApi.ChatMemberStatus.ChatMemberStatusMember member:
+                        break;
+                    case TdApi.ChatMemberStatus.ChatMemberStatusRestricted restricted:
+                        break;
+                }
+            }
             
             if (_isForum) ChatPhoto.Visibility = Visibility.Collapsed;
             else await ChatPhoto.InitializeProfilePhoto(null, _chat, 30, 30);
@@ -346,9 +456,74 @@ public sealed partial class Chat : Page
                 await DispatcherQueue.EnqueueAsync(() => BorderPinnedMessage.Visibility = Visibility.Collapsed);
             }
 
+            if (_chat.ActionBar != null)
             {
+                await DispatcherQueue.EnqueueAsync(() =>
                 {
+                    switch (_chat.ActionBar)
                     {
+                        case TdApi.ChatActionBar.ChatActionBarAddContact:
+                            Button addContact = new();
+                            addContact.Content = "Add contact";
+                            ActionBarSetGridPosition(addContact);
+                            break;
+                        case TdApi.ChatActionBar.ChatActionBarInviteMembers:
+                            Button inviteMembers = new();
+                            inviteMembers.Content = "Invite members";
+                            ActionBarSetGridPosition(inviteMembers);
+                            break;
+                        case TdApi.ChatActionBar.ChatActionBarJoinRequest:
+                            Button joinRequest = new();
+                            joinRequest.Content = "Join request";
+                            ActionBarSetGridPosition(joinRequest);
+                            break;
+                        case TdApi.ChatActionBar.ChatActionBarReportAddBlock:
+                            Button reportAddBlock = new();
+                            reportAddBlock.Content = "Report";
+                            ActionBarSetGridPosition(reportAddBlock);
+                            break;
+                        case TdApi.ChatActionBar.ChatActionBarReportSpam:
+                            Button reportSpam = new();
+                            reportSpam.Content = "Report";
+                            ActionBarSetGridPosition(reportSpam);
+                            break;
+                        case TdApi.ChatActionBar.ChatActionBarReportUnrelatedLocation:
+                            Button reportUnrelatedLocation = new();
+                            reportUnrelatedLocation.Content = "Report";
+                            ActionBarSetGridPosition(reportUnrelatedLocation);
+                            break;
+                        case TdApi.ChatActionBar.ChatActionBarSharePhoneNumber:
+                            Button sharePhoneNumber = new();
+                            sharePhoneNumber.Content = "Share phone number";
+                            ActionBarSetGridPosition(sharePhoneNumber);
+                            break;
+                    }
+
+                    void ActionBarSetGridPosition(Button button)
+                    {
+                        GridChatActions.Children.Add(button);
+                        if (_chatActionColumns >= 1)
+                        {
+                            button.Margin = new Thickness(0, 4, 0, 0);
+                            _chatActionColumns = 0;
+                            _chatActionRows++;
+                            Grid.SetRow(button, _chatActionRows);
+                            Grid.SetColumn(button, 0);
+                            _chatActionColumns++;
+                        }
+                        else
+                        {
+                            button.Margin = new Thickness(4, 0, 4, 0);
+                            Grid.SetColumn(button, _chatActionColumns);
+                            _chatActionColumns++;
+                        }
+                    }
+                });
+            }
+            else
+            {
+                await DispatcherQueue.EnqueueAsync(() => GridChatActions.Visibility = Visibility.Collapsed);
+            }
             
             if (_isForum && _forumTopic.DraftMessage != null)
             {
@@ -408,73 +583,6 @@ public sealed partial class Chat : Page
             if (_chat.UnreadReactionCount > 0)
             {
                 await DispatcherQueue.EnqueueAsync(() => ButtonUnreadReaction.Visibility = Visibility.Visible);
-            }
-            
-            switch (_chat.Type)
-            {
-                case TdApi.ChatType.ChatTypePrivate typePrivate:
-                    var user = await _client.GetUserAsync(userId: typePrivate.UserId)
-                        .WaitAsync(new CancellationToken());
-                    await DispatcherQueue.EnqueueAsync(() =>
-                    {
-                        ChatMembers.Text = user.Status switch
-                        {
-                            TdApi.UserStatus.UserStatusOnline => "Online",
-                            TdApi.UserStatus.UserStatusOffline => "Offline",
-                            TdApi.UserStatus.UserStatusRecently => "Last seen recently",
-                            TdApi.UserStatus.UserStatusLastWeek => "Last week",
-                            TdApi.UserStatus.UserStatusLastMonth => "Last month",
-                            TdApi.UserStatus.UserStatusEmpty => "A long time",
-                            _ => "Unknown"
-                        };
-                    });
-                    break;
-                case TdApi.ChatType.ChatTypeBasicGroup typeBasicGroup:
-                    var basicGroupInfo = await _client.GetBasicGroupFullInfoAsync(
-                        basicGroupId: typeBasicGroup.BasicGroupId);
-                    await DispatcherQueue.EnqueueAsync(() => ChatMembers.Text = basicGroupInfo.Members.Length + " members");
-                    break;
-                case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
-                    try
-                    {
-                        var supergroup = await _client.GetSupergroupAsync(
-                            supergroupId: typeSupergroup.SupergroupId);
-                        var supergroupInfo = await _client.GetSupergroupFullInfoAsync(
-                            supergroupId: typeSupergroup.SupergroupId);
-                        _linkedChatId = supergroupInfo.LinkedChatId;
-
-                        if (supergroup.IsChannel)
-                        {
-                            await DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                UserActionsPanel.Visibility = supergroup.Status switch
-                                {
-                                    TdApi.ChatMemberStatus.ChatMemberStatusCreator => Visibility.Visible,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusAdministrator => Visibility.Visible,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusMember => Visibility.Collapsed,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusBanned => Visibility.Collapsed,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusRestricted => Visibility.Collapsed,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusLeft => Visibility.Collapsed,
-                                    _ => Visibility.Collapsed
-                                };
-
-                                ButtonFastAction.Visibility = Visibility.Visible;
-                            });
-                        }
-                        else
-                        {
-                            await DispatcherQueue.EnqueueAsync(() => ButtonFastAction.Visibility = Visibility.Collapsed);
-                        }
-
-                        await DispatcherQueue.EnqueueAsync(() => ChatMembers.Text = supergroupInfo.MemberCount + " members");
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e);
-                        throw;
-                    }
-
-                    break;
             }
             
             var messages = await GetMessagesAsync(_chatId, _isForum);
@@ -636,11 +744,6 @@ public sealed partial class Chat : Page
         UserMessageInput.Text = string.Empty;
     }
 
-    private void MoreActions_OnClick(object sender, RoutedEventArgs e)
-    {
-        ContextMenu.ShowAt(MoreActions);
-    }
-
     private async void PrepareDraftMessage(TdApi.DraftMessage draftMessage)
     {
         if (draftMessage.InputMessageText == null) return;
@@ -761,7 +864,6 @@ public sealed partial class Chat : Page
             TextBlockReplyName.Text = $"Reply to {senderName}";
             TextBlockReplyContent.Text = messageText;
             BorderReply.Visibility = Visibility.Visible;
-            RowUserActions.Height = new GridLength(100);
             GridUserActions.Height = 100;
         });
     }
@@ -793,25 +895,25 @@ public sealed partial class Chat : Page
     {
     }
 
-    private void ContextMenuCreatePoll_OnClick(object sender, RoutedEventArgs e)
+    private async void ContextMenuCreatePoll_OnClick(object sender, RoutedEventArgs e)
     {
-        CreatePoll.ShowAsync();
+        await CreatePoll.ShowAsync();
     }
 
-    private void ContextMenuReport_OnClick(object sender, RoutedEventArgs e)
+    private async void ContextMenuReport_OnClick(object sender, RoutedEventArgs e)
     {
-        _client.ExecuteAsync(new TdApi.ReportChat
-        {
-            ChatId = _chatId
-        });
+        await DialogReportChat.ShowAsync();
     }
 
     private void ContextMenuClearHistory_OnClick(object sender, RoutedEventArgs e)
     {
-        _client.ExecuteAsync(new TdApi.DeleteChatHistory
+        if (_chat.CanBeDeletedOnlyForSelf)
         {
-            ChatId = _chatId, RemoveFromChatList = false, Revoke = true
-        });
+            _client.ExecuteAsync(new TdApi.DeleteChatHistory
+            {
+                ChatId = _chatId, RemoveFromChatList = false, Revoke = true
+            });
+        }
     }
 
     private void ContextMenuLeaveGroup_OnClick(object sender, RoutedEventArgs e)
@@ -1484,5 +1586,19 @@ public sealed partial class Chat : Page
     private void ButtonUnreadMessages_OnClick(object sender, RoutedEventArgs e)
     {
         MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
+    }
+
+    private async void DialogReportChat_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    {
+        await _client.ExecuteAsync(new TdApi.ReportChat
+        {
+            ChatId = _chatId,
+            Text = TextBoxReportDetails.Text
+        });
+    }
+
+    private void ButtonChatEventLog_OnClick(object sender, RoutedEventArgs e)
+    {
+        throw new NotImplementedException();
     }
 }
