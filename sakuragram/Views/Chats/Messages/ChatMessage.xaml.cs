@@ -52,7 +52,7 @@ public partial class ChatMessage : Page
     private Image _contactMessage;
 
     /** can be used only for photo, video, audio and document messages */
-    private long _mediaAlbumId;
+    public long _mediaAlbumId;
     private List<TdApi.Message> _mediaAlbum;
 
     #endregion
@@ -87,7 +87,7 @@ public partial class ChatMessage : Page
                     {
                         case TdApi.MessageContent.MessagePhoto messagePhoto:
                         {
-                            GeneratePhotoMessage(messagePhoto, _mediaAlbumId, _mediaAlbum);
+                            GeneratePhotoMessage(messagePhoto);
                             break;
                         }
                     }
@@ -118,10 +118,11 @@ public partial class ChatMessage : Page
         return Task.CompletedTask;
     }
 
-    public async Task UpdateMessage(TdApi.Message message, List<TdApi.Message> album)
+    public async Task UpdateMessage(TdApi.Message message)
     {
         _chatId = message.ChatId;
         _messageId = message.Id;
+        _mediaAlbumId = message.MediaAlbumId;
         var chat = await _client.GetChatAsync(_chatId);
         var currentUser = await _client.GetMeAsync();
 
@@ -288,7 +289,16 @@ public partial class ChatMessage : Page
 
         #region MessageContent
 
-        switch (message.Content)
+        GenerateMessageFromContent(message.Content);
+        
+        #endregion
+
+        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+    }
+
+    private void GenerateMessageFromContent(TdApi.MessageContent messageContent)
+    {
+        switch (messageContent)
         {
             case TdApi.MessageContent.MessageText messageText:
                 GenerateTextMessage(messageText);
@@ -298,7 +308,7 @@ public partial class ChatMessage : Page
                 GenerateStickerMessage(messageSticker);
                 break;
             case TdApi.MessageContent.MessagePhoto messagePhoto:
-                GeneratePhotoMessage(messagePhoto, message.MediaAlbumId, album);
+                GeneratePhotoMessage(messagePhoto);
                 break;
             case TdApi.MessageContent.MessageDocument messageDocument:
                 TextBlock textMessage = new();
@@ -320,13 +330,18 @@ public partial class ChatMessage : Page
                 PanelMessageContent.Children.Add(textNotFound);
                 break;
         }
-
-        #endregion
-
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
     }
-
-    private async void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto, long mediaAlbumId, List<TdApi.Message> album)
+    
+    public void AddAlbumElement(TdApi.Message message)
+    {
+        if (message.MediaAlbumId == 0) return;
+        if (message.MediaAlbumId == _mediaAlbumId)
+        {
+            GenerateMessageFromContent(message.Content);
+        }
+    }
+    
+    private async void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto)
     {
         // _photoMessage = new();
         // _photoMessage.Width = messagePhoto.Photo.Sizes[1].Width * (1.0 / 1.5);

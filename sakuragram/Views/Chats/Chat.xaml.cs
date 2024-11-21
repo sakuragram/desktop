@@ -52,7 +52,7 @@ public sealed partial class Chat : Page
 
     #endregion
         
-    private ReplyService _replyService = new ReplyService();
+    private ReplyService _replyService = new();
     private MessageService _messageService;
     
     private int _chatActionRows = 0;
@@ -62,6 +62,8 @@ public sealed partial class Chat : Page
     private List<TdApi.StickerSet> _alreadyAddedStickerSets = [];
     private int _currentStickerSet = -1;
     private int _currentMediaPage;
+    
+    private ChatMessage _lastChatMessage;
 
     public Chat(long id, bool isForum, TdApi.ForumTopic forumTopic)
     {
@@ -589,52 +591,21 @@ public sealed partial class Chat : Page
             
             foreach (var message in messages.Where(message => !addedMessages.Contains(message)))
             {
-                var messageEntry = new ChatMessage(this, _replyService);
-                messageEntry._messageService = _messageService;
-                await messageEntry.UpdateMessage(message, null);
-                MessagesList.Children.Add(messageEntry);
+                if (_lastChatMessage != null)
+                {
+                    if (message.MediaAlbumId != 0 && _lastChatMessage._mediaAlbumId == message.MediaAlbumId) 
+                    {
+                        _lastChatMessage.AddAlbumElement(message);
+                        addedMessages.Add(message);
+                        continue;
+                    }
+                }
                 
-                // switch (message.Content)
-                // {
-                //     case TdApi.MessageContent.MessageText:
-                //     {
-                //         var textMessage = new ChatMessage(this, _replyService);
-                //         textMessage._messageService = _messageService;
-                //         await textMessage.UpdateMessage(message, null);
-                //         MessagesList.Children.Add(textMessage);
-                //         break;
-                //     }
-                //     case TdApi.MessageContent.MessageChatChangeTitle or TdApi.MessageContent.MessagePinMessage 
-                //         or TdApi.MessageContent.MessageGiftedPremium
-                //         or TdApi.MessageContent.MessageGameScore or TdApi.MessageContent.MessageChatBoost 
-                //         or TdApi.MessageContent.MessageUnsupported:
-                //     {
-                //         var changeTitleMessage = new ChatServiceMessage();
-                //         changeTitleMessage.UpdateMessage(message);
-                //         MessagesList.Children.Add(changeTitleMessage);
-                //         break;
-                //     }
-                //     case TdApi.MessageContent.MessageSticker or TdApi.MessageContent.MessageAnimation:
-                //     {
-                //         var stickerMessage = new ChatMessage(this, _replyService);
-                //         await stickerMessage.UpdateMessage(message, null);
-                //         MessagesList.Children.Add(stickerMessage);
-                //         break;
-                //     }
-                //     case TdApi.MessageContent.MessagePhoto:
-                //     {
-                //         // if (message.MediaAlbumId != 0)
-                //         // {
-                //         //     _mediaAlbumId = message.MediaAlbumId;
-                //         //     _mediaAlbum.Add(message);
-                //         // }
-                //     
-                //         var photoMessage = new ChatMessage(this, _replyService);
-                //         await photoMessage.UpdateMessage(message, null);
-                //         MessagesList.Children.Add(photoMessage);
-                //         break;
-                //     }
-                // }
+                var messageEntry = new ChatMessage(this, _replyService);
+                _lastChatMessage = messageEntry;
+                messageEntry._messageService = _messageService;
+                await messageEntry.UpdateMessage(message);
+                MessagesList.Children.Add(messageEntry);
                 addedMessages.Add(message);
             }
         });
