@@ -104,7 +104,7 @@ public sealed partial class ChatsView : Page
             try
             {
                 var currentUser = await _client.GetMeAsync();
-                await CurrentUserPicture.InitializeProfilePhoto(currentUser, null, 42, 42);
+                await CurrentUserPicture.InitializeProfilePhoto(currentUser, sizes: 42);
                 FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
                 FlyoutItemCurrentUser.Icon = new BitmapIcon
                 {

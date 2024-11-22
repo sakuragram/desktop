@@ -50,7 +50,7 @@ public partial class Profile : Page
         }
         _personalChats = await _client.GetSuitablePersonalChatsAsync();
         
-        await PersonPicture.InitializeProfilePhoto(_currentUser, null, 100, 100);
+        await PersonPicture.InitializeProfilePhoto(_currentUser, sizes: 100);
         
         TextBlockId.Text = $"ID: {_currentUser.Id}";
         TextBoxFirstName.Text = _currentUser.FirstName;
@@ -94,7 +94,7 @@ public partial class Profile : Page
                 if (updateUser.Id == _currentUser.Id)
                 {
                     _currentUser = updateUser;
-                    await PersonPicture.InitializeProfilePhoto(_currentUser, null, 100, 100);
+                    await PersonPicture.InitializeProfilePhoto(_currentUser, sizes: 100);
                 }
                 break;
         }
@@ -274,7 +274,7 @@ public partial class Profile : Page
         stackPanel.VerticalAlignment = VerticalAlignment.Center;
         
         var chatPhoto = new ProfilePhoto();
-        await chatPhoto.InitializeProfilePhoto(null, chat, 40, 40);
+        await chatPhoto.InitializeProfilePhoto(chat: chat, sizes: 40);
         chatPhoto.Margin = new Thickness(0, 0, 4, 0);
         stackPanel.Children.Add(chatPhoto);
         

@@ -25,7 +25,7 @@ public class ProfilePhoto : RelativePanel
     private TdApi.Chat _chat;
     private TdApi.ChatActiveStories _stories;
     
-    public async Task InitializeProfilePhoto(TdApi.User user, TdApi.Chat chat, int width = 32, int height = 32, 
+    public async Task InitializeProfilePhoto(TdApi.User user = null, TdApi.Chat chat = null, int sizes = 32, 
         bool canOpenProfile = false)
     {
         if (user != null)
@@ -40,8 +40,8 @@ public class ProfilePhoto : RelativePanel
         {
             _personPicture = new PersonPicture();
             _personPicture.BorderThickness = new Thickness(10);
-            _personPicture.Width = width;
-            _personPicture.Height = height;
+            _personPicture.Width = sizes;
+            _personPicture.Height = sizes;
             
             _statusBorder = new Border();
             _statusBorder.Background = new SolidColorBrush(Colors.Cyan);

@@ -26,7 +26,24 @@
                 Width="Auto"
                 Background="{StaticResource SolidBackgroundFillColorBaseBrush}" 
                 CornerRadius="10">
-            <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Orientation="Vertical" Padding="5">
+            
+            <Border.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Text="Reply"/>
+                    <MenuFlyoutItem Text="Forward"/>
+                    <MenuFlyoutItem Text="Select"/>
+                    <MenuFlyoutItem Text="Edit"/>
+                    <MenuFlyoutItem Text="Delete"/>
+                    <MenuFlyoutItem Text="Report"/>
+                    <MenuFlyoutItem Text="Copy message link"/>
+                    <MenuFlyoutItem Text="Message ID:"/>
+                </MenuFlyout>
+            </Border.ContextFlyout>
+            
+            <StackPanel HorizontalAlignment="Stretch" 
+                        VerticalAlignment="Stretch" 
+                        Orientation="Vertical" 
+                        Padding="5">
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch">
@@ -137,27 +154,4 @@
             </StackPanel>
         </ContentDialog>
     </StackPanel>
-    
-    <Page.Resources>
-        <CommandBarFlyout Placement="Bottom" x:Name="CommandBarFlyout1">
-            <AppBarButton x:Name="ContextMenuReply" Label="Reply" ToolTipService.ToolTip="Share" 
-                          Click="Reply_OnClick"/>
-            <AppBarButton x:Name="ContextMenuForward" Label="Forward" ToolTipService.ToolTip="Save" 
-                          Click="Forward_OnClick"/>
-            <AppBarButton x:Name="ContextMenuSelect" Label="Select" ToolTipService.ToolTip="Save" 
-                          Click="Select_OnClick"/>
-            <AppBarButton x:Name="ContextMenuEdit" Label="Edit" IsEnabled="False" ToolTipService.ToolTip="Save" 
-                          Click="Edit_OnClick"/>
-            <AppBarButton x:Name="ContextMenuDelete" Label="Delete" Icon="Delete" ToolTipService.ToolTip="Delete" 
-                          Click="Delete_OnClick"/>
-            <AppBarButton x:Name="ContextMenuPin" Label="Pin" ToolTipService.ToolTip="Delete" Click="Pin_OnClick"/>
-            <CommandBarFlyout.SecondaryCommands>
-                <AppBarButton x:Name="ContextMenuReport" Label="Report" ToolTipService.ToolTip="Save" 
-                              Click="Report_OnClick"/>
-                <AppBarButton x:Name="ContextMenuMessageLink" Label="Copy message link" ToolTipService.ToolTip="Delete" 
-                              Click="MessageLink_OnClick"/>
-                <AppBarButton x:Name="ContextMenuMessageId" Content="Message ID:" />
-            </CommandBarFlyout.SecondaryCommands>
-        </CommandBarFlyout>
-    </Page.Resources>
 </Page>

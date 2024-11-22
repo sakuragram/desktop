@@ -226,7 +226,7 @@ public sealed partial class ChatEntry
         {
             try
             {
-                await ChatEntryProfilePicture.InitializeProfilePhoto(null, _chat, 46, 46);
+                await ChatEntryProfilePicture.InitializeProfilePhoto(chat: _chat, sizes: 46);
             }
             catch (Exception e)
             {

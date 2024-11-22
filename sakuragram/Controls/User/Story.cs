@@ -30,13 +30,13 @@ public class Story : Button
             {
                 var user = await _client.GetUserAsync(stories.ChatId);
                 avatar = new ProfilePhoto();
-                await avatar.InitializeProfilePhoto(user, null, 30, 30);
+                await avatar.InitializeProfilePhoto(user, sizes: 30);
             }
             else if (stories.ChatId < 0)
             {
                 var chat = await _client.GetChatAsync(stories.ChatId);
                 avatar = new ProfilePhoto();
-                await avatar.InitializeProfilePhoto(null, chat, 30, 30);
+                await avatar.InitializeProfilePhoto(chat: chat, sizes: 30);
             }
 
             Padding = new Thickness(0);

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Foundation;
+using Windows.UI.ViewManagement;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -88,7 +90,10 @@ public sealed partial class MainWindow : Window
 		#endregion
 			
 		TrySetDesktopAcrylicBackdrop();
-            
+		
+		ApplicationView.PreferredLaunchViewSize = new Size(980, 800); 
+		ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
+		
 		if (App._authNeeded)
 		{
 			PanelContent.Visibility = Visibility.Collapsed;

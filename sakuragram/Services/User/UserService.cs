@@ -144,15 +144,25 @@ public class UserService
         return null;
     }
 
+    public static string GetUserStatus(TdApi.UserStatus status)
+    {
+        return status switch
+        {
+            TdApi.UserStatus.UserStatusEmpty => "empty",
+            TdApi.UserStatus.UserStatusLastMonth => "last month",
+            TdApi.UserStatus.UserStatusLastWeek => "last week",
+            TdApi.UserStatus.UserStatusOffline => "offline",
+            TdApi.UserStatus.UserStatusOnline => "online",
+            TdApi.UserStatus.UserStatusRecently => "last seen recently",
+            _ => "status not found"
+        };
+    }
+    
     public static async Task ShowProfile(TdApi.User user = null, TdApi.Chat chat = null, XamlRoot xamlRoot = null)
     {
         if (xamlRoot == null) return;
-        
-        Profile profile = new()
-        {
-            XamlRoot = xamlRoot,
-        };
-        
+        Profile profile = new() { XamlRoot = xamlRoot, };
+        await profile.PrepareProfileWindow(user, chat);
         await profile.ShowAsync();
     }
 }

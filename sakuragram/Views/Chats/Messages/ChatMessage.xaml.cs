@@ -54,6 +54,7 @@ public partial class ChatMessage : Page
     /** can be used only for photo, video, audio and document messages */
     public long _mediaAlbumId;
     private List<TdApi.Message> _mediaAlbum;
+    private int _mediaElementsCount = 0;
 
     #endregion
 
@@ -139,11 +140,13 @@ public partial class ChatMessage : Page
             await ProfilePicture.InitializeProfilePhoto(null, sender.Chat, canOpenProfile: true);
         }
 
-        DisplayName.Text = DisplayName.Text = sender.User == null 
-            ? sender.Chat?.Title 
-            : (sender.User.LastName ?? string.Empty) == string.Empty 
-                ? sender.User.FirstName 
-                : sender.User.FirstName + " " + sender.User.LastName;
+        if (sender.User != null)
+        {
+            if (sender.User.Id == currentUser.Id) DisplayName.Visibility = Visibility.Collapsed;
+            else SetDisplayName();
+        }
+        else SetDisplayName();
+        
         TextBlockSendTime.Text = MathService.CalculateDateTime(message.Date).ToShortTimeString();
         TextBlockEdited.Visibility = message.EditDate != 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -294,6 +297,16 @@ public partial class ChatMessage : Page
         #endregion
 
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+
+        void SetDisplayName()
+        {
+            DisplayName.Visibility = Visibility.Visible;
+            DisplayName.Text = DisplayName.Text = sender.User == null 
+                ? sender.Chat?.Title 
+                : (sender.User.LastName ?? string.Empty) == string.Empty 
+                    ? sender.User.FirstName 
+                    : sender.User.FirstName + " " + sender.User.LastName;
+        }
     }
 
     private void GenerateMessageFromContent(TdApi.MessageContent messageContent)
@@ -312,10 +325,21 @@ public partial class ChatMessage : Page
                 break;
             case TdApi.MessageContent.MessageDocument messageDocument:
                 TextBlock textMessage = new();
-                textMessage.Text = messageDocument.Caption.Text;
+                textMessage.Text = messageDocument.Document.FileName;
                 textMessage.IsTextSelectionEnabled = true;
                 textMessage.TextWrapping = TextWrapping.Wrap;
-                PanelMessageContent.Children.Add(textMessage);
+                if (_mediaElementsCount > 0) PanelMessageContent.Children.Insert(_mediaElementsCount + 1, textMessage);
+                else PanelMessageContent.Children.Add(textMessage);
+                _mediaElementsCount++;
+                
+                if (messageDocument.Caption != null)
+                {
+                    TextBlock captionTextBlock = new();
+                    captionTextBlock.Text = messageDocument.Caption.Text;
+                    captionTextBlock.IsTextSelectionEnabled = true;
+                    captionTextBlock.TextWrapping = TextWrapping.Wrap;
+                    PanelMessageContent.Children.Add(captionTextBlock);
+                }
                 break;
             case TdApi.MessageContent.MessageUnsupported:
                 TextBlock textUnsupported = new();
@@ -650,19 +674,6 @@ public partial class ChatMessage : Page
         _reactionGridColumns++;
     }
 
-    private void ShowMenu(bool isTransient)
-    {
-        _isContextMenuOpen = isTransient;
-        FlyoutShowOptions myOption = new FlyoutShowOptions();
-        myOption.ShowMode = isTransient ? FlyoutShowMode.Transient : FlyoutShowMode.Standard;
-        CommandBarFlyout1.ShowAt(Message, myOption);
-    }
-
-    private void UIElement_OnRightTapped(object sender, RightTappedRoutedEventArgs e)
-    {
-        ShowMenu(!_isContextMenuOpen);
-    }
-
     private void Reply_OnClick(object sender, RoutedEventArgs e)
     {
         _replyService.SelectMessageForReply(_messageId);
@@ -698,8 +709,6 @@ public partial class ChatMessage : Page
 
         dataPackage.SetText(messageLink.Result.Link);
         Clipboard.SetContent(dataPackage);
-
-        ShowMenu(false);
     }
 
     private void Select_OnClick(object sender, RoutedEventArgs e)
