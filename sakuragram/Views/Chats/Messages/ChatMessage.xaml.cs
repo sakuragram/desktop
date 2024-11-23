@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Media.Core;
+using Windows.UI.Input;
 using Windows.UI.Text;
 using CommunityToolkit.WinUI;
 using Microsoft.UI;
@@ -35,6 +36,7 @@ public partial class ChatMessage : Page
 
     #region MessageContent
 
+    private TdApi.Message _message;
     private TdApi.MessageContent _messageContent;
     
     private TextBlock _textMessage;
@@ -121,6 +123,7 @@ public partial class ChatMessage : Page
 
     public async Task UpdateMessage(TdApi.Message message)
     {
+        _message = message;
         _chatId = message.ChatId;
         _messageId = message.Id;
         _mediaAlbumId = message.MediaAlbumId;
@@ -132,6 +135,7 @@ public partial class ChatMessage : Page
         if (sender.User != null)
         {
             await ProfilePicture.InitializeProfilePhoto(sender.User, null, canOpenProfile: true);
+            var emojiStatus = await _client.GetDefaultChatEmojiStatusesAsync();
             if (sender.User.Id == currentUser.Id) 
                 MessageBackground.Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseAltBrush"];
         }
@@ -147,8 +151,11 @@ public partial class ChatMessage : Page
         }
         else SetDisplayName();
         
-        TextBlockSendTime.Text = MathService.CalculateDateTime(message.Date).ToShortTimeString();
-        TextBlockEdited.Visibility = message.EditDate != 0 ? Visibility.Visible : Visibility.Collapsed;
+        TextBlockSendTime.Text = string.IsNullOrEmpty(message.AuthorSignature) 
+            ? MathService.CalculateDateTime(message.Date).ToShortTimeString()
+            : message.AuthorSignature + ", " + MathService.CalculateDateTime(message.Date).ToShortTimeString();
+        
+        IconEdited.Visibility = message.EditDate != 0 ? Visibility.Visible : Visibility.Collapsed;
 
         #region ReplyInfo
 
@@ -248,8 +255,8 @@ public partial class ChatMessage : Page
         
             if (message.InteractionInfo.ViewCount > 0 && message.IsChannelPost)
             {
-                TextBlockViews.Text = message.InteractionInfo.ViewCount + " views";
-                TextBlockViews.Visibility = Visibility.Visible;
+                TextBlockViews.Text = message.InteractionInfo.ViewCount.ToString();
+                PanelViews.Visibility = Visibility.Visible;
             }
             else
             {
@@ -262,7 +269,7 @@ public partial class ChatMessage : Page
                 if (chat.Type is TdApi.ChatType.ChatTypeSupergroup { IsChannel: true })
                 {
                     PanelReply.Visibility = Visibility.Visible;
-                    ButtonReply.Content = "Leave a comment";
+                    TextBlockLastReply.Text = "Leave a comment";
                 }
                 else if (chat.Type is TdApi.ChatType.ChatTypeSupergroup { IsChannel: false })
                 {
@@ -271,21 +278,45 @@ public partial class ChatMessage : Page
                 
                 if (message.InteractionInfo.ReplyInfo.ReplyCount > 0)
                 {
-                    TextBlockReplies.Text = message.InteractionInfo.ReplyInfo.ReplyCount + " replies";
-                    TextBlockReplies.Visibility = Visibility.Visible;
+                    TextBlockReplies.Text = message.InteractionInfo.ReplyInfo.ReplyCount.ToString();
+                    PanelReplies.Visibility = Visibility.Visible;
 
                     if (chat.Type is TdApi.ChatType.ChatTypeSupergroup { IsChannel: true })
                     {
+                        PanelReplies.Visibility = Visibility.Collapsed;
                         PanelReply.Visibility = Visibility.Visible;
-                        ButtonReply.Content = message.InteractionInfo.ReplyInfo.ReplyCount + " replies";
+                        TextBlockLastReply.Text = message.InteractionInfo.ReplyInfo.ReplyCount + " comments";
+
+                        try
+                        {
+                            var firstLastReplySender =
+                                await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[0]);
+                            var secondLastReplySender =
+                                await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[1]);
+                            var thirdLastReplySender =
+                                await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[2]);
+
+                            await PhotoFirstLastReply.InitializeProfilePhoto(firstLastReplySender.User,
+                                firstLastReplySender.Chat, 16);
+                            await PhotoSecondLastReply.InitializeProfilePhoto(secondLastReplySender.User,
+                                secondLastReplySender.Chat, 16);
+                            await PhotoThirdLastReply.InitializeProfilePhoto(thirdLastReplySender.User,
+                                thirdLastReplySender.Chat, 16);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            throw;
+                        }
                     }
                 }
                 else
                 {
                     TextBlockReplies.Text = string.Empty;
-                    TextBlockReplies.Visibility = Visibility.Collapsed;
+                    PanelReplies.Visibility = Visibility.Collapsed;
                 }
             }
+            else PanelReplies.Visibility = Visibility.Collapsed;
         }
         
         #endregion
@@ -796,5 +827,11 @@ public partial class ChatMessage : Page
     {
         var replies = await _chat.GetMessagesAsync(_chatId, true, _messageId, 0);
         await _chat.GenerateMessageByType(replies, true);
+    }
+
+    private async void DisplayName_OnTapped(object sender, TappedRoutedEventArgs e)
+    {
+        var messageSender = await UserService.GetSender(_message.SenderId);
+        await UserService.ShowProfile(messageSender.User, messageSender.Chat);
     }
 }

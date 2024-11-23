@@ -44,11 +44,20 @@
                         VerticalAlignment="Stretch" 
                         Orientation="Vertical" 
                         Padding="5">
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch">
-                    <TextBlock x:Name="DisplayName" Text="@username" FontStyle="Oblique" Foreground="Orange" />
-                </StackPanel>
+                <Grid HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      ColumnDefinitions="Auto, *, Auto">
+                    <TextBlock x:Name="DisplayName" 
+                               Text="@username" 
+                               FontStyle="Oblique" 
+                               Foreground="Orange"
+                               Tapped="DisplayName_OnTapped"
+                               Grid.Column="0"/>
+                    <Image x:Name="ImageEmojiStatus"
+                           Grid.Column="1"/>
+                    <TextBlock x:Name="TextBlockAdminTitle"
+                               Grid.Column="2"/>
+                </Grid>
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch">
@@ -73,39 +82,67 @@
                 <StackPanel x:Name="PanelMessageContent" />
                 <Grid x:Name="GridReactions"
                       Margin="0, 3"/>
-                <StackPanel Orientation="Horizontal" 
-                            HorizontalAlignment="Stretch">
-                    <TextBlock x:Name="TextBlockReplies"
-                               Visibility="Collapsed"
-                               Text="views"
-                               Foreground="{StaticResource TextFillColorTertiaryBrush}"
-                               HorizontalTextAlignment="Right"
-                               HorizontalAlignment="Right"/>
-                    <TextBlock x:Name="TextBlockViews"
-                               Visibility="Collapsed"
-                               Text="views"
-                               Foreground="{StaticResource TextFillColorTertiaryBrush}"
-                               HorizontalTextAlignment="Right"
-                               HorizontalAlignment="Right"/>
-                    <TextBlock x:Name="TextBlockEdited"
-                               Visibility="Collapsed"
-                               Text="edited"
-                               Foreground="{StaticResource TextFillColorTertiaryBrush}"
-                               HorizontalTextAlignment="Right"
-                               HorizontalAlignment="Right"/>
+                <Grid HorizontalAlignment="Stretch"
+                      ColumnDefinitions="*, Auto, Auto, Auto, Auto">
+                    <StackPanel x:Name="PanelReplies"
+                                Orientation="Horizontal"
+                                Grid.Column="1">
+                        <FontIcon Glyph="&#xE97A;"
+                                  FontSize="12"
+                                  Margin="0, 0, 3, 0"/>
+                        <TextBlock x:Name="TextBlockReplies"
+                                   FontSize="12"
+                                   Text="replies"
+                                   Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                   HorizontalTextAlignment="Right"
+                                   HorizontalAlignment="Right"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal"
+                                x:Name="PanelViews"
+                                Margin="5, 0"
+                                Grid.Column="2">
+                        <FontIcon Glyph="&#xE890;"
+                                  FontSize="12"
+                                  Margin="0, 0, 3, 0"/>
+                        <TextBlock x:Name="TextBlockViews"
+                                   Text="views"
+                                   FontSize="12"
+                                   Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                   HorizontalTextAlignment="Right"
+                                   HorizontalAlignment="Right"/>
+                    </StackPanel>
+                    <FontIcon x:Name="IconEdited"
+                              FontSize="12"
+                              Visibility="Collapsed"
+                              Glyph="&#xE70F;"
+                              HorizontalAlignment="Right"
+                              Margin="5, 0"
+                              Grid.Column="3"/>
                     <TextBlock x:Name="TextBlockSendTime"
+                               FontSize="12"
                                Text="SendTime"
                                Foreground="{StaticResource TextFillColorTertiaryBrush}" 
                                HorizontalTextAlignment="Right" 
-                               HorizontalAlignment="Right"/>
-                </StackPanel>
+                               HorizontalAlignment="Right"
+                               Grid.Column="4"/>
+                </Grid>
                 <StackPanel x:Name="PanelReply"
                             Visibility="Collapsed">
                     <MenuFlyoutSeparator Margin="2" />
                     <Button x:Name="ButtonReply"
-                            Content="Leave a comment"
                             HorizontalAlignment="Stretch"
-                            Click="ButtonReply_OnClick"/>
+                            HorizontalContentAlignment="Left"
+                            Click="ButtonReply_OnClick">
+                        <StackPanel HorizontalAlignment="Left"
+                                    VerticalAlignment="Stretch"
+                                    Orientation="Horizontal">
+                            <user:ProfilePhoto x:Name="PhotoFirstLastReply"/>
+                            <user:ProfilePhoto x:Name="PhotoSecondLastReply"/>
+                            <user:ProfilePhoto x:Name="PhotoThirdLastReply"/>
+                            <TextBlock x:Name="TextBlockLastReply"
+                                       Text="Leave a comment"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </StackPanel>
         </Border>
