@@ -152,8 +152,7 @@
 		</controls:TitleBar>
 		
 		<Grid Grid.Row="1">
-			<Frame x:Name="ContentFrame" 
-			       NavigationFailed="ContentFrame_NavigationFailed">
+			<Frame x:Name="ContentFrame">
 				<Frame.ContentTransitions>
 					<TransitionCollection>
 						<NavigationThemeTransition  />

@@ -24,7 +24,7 @@ namespace sakuragram.Views;
 
 public sealed partial class ChatsView : Page
 {
-    private static TdClient _client = App._client;
+    public TdClient _client = App._client;
     private ChatService _chatService = App.ChatService;
     private TdApi.Chats _addedChats;
         
@@ -46,82 +46,21 @@ public sealed partial class ChatsView : Page
     public Frame MainWindowFrame;
     public TitleBar MainWindowTitleBar;
     public StackPanel MainWindowTitleBarContent;
+    
+    public ItemsControl PinnedChatsItemsList;
+    public ItemsControl ChatsItemsList;
         
     public ChatsView()
     {
         InitializeComponent();
-            
-        SelectorBarItem selectorBarItemAllChats = new();
-        selectorBarItemAllChats.Margin = new Thickness(0, 0, 5, 0);
-        selectorBarItemAllChats.Text = "All chats";
-        selectorBarItemAllChats.PointerPressed += (_, _) => GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-        SelectorBarFolders.Items.Add(selectorBarItemAllChats);
-        
-        foreach (var folder in App._folders)
-        {
-            SelectorBarItem selectorBarItem = new();
-            selectorBarItem.Margin = new Thickness(0, 0, 5, 0);
-            selectorBarItem.Text = folder.Title;
-            selectorBarItem.Tag = $"{folder.Title}_{folder.Id}";
-            selectorBarItem.PointerPressed += (_, _) =>
-            {
-                App._folderId = folder.Id;
-                GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
-                selectorBarItem.IsSelected = true;
-            };
-            SelectorBarFolders.Items.Add(selectorBarItem);
-        }
-        
-        if (App._folderId != -1)
-        {
-            GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});
-        }
-        else
-        {
-            GenerateChatEntries(new TdApi.ChatList.ChatListMain());
-            App._folderId = -1;
-        }
+
+        PinnedChatsItemsList = PinnedChatsList;
+        ChatsItemsList = ChatsList;
             
         ColumnForumTopics.Width = new GridLength(0);
         
-        FlyoutItemTelegramFeatures.Click += (_, _) =>
-        {
-            ProcessStartInfo startInfo = new ProcessStartInfo("https://t.me/TelegramTips");
-            startInfo.UseShellExecute = true;
-            Process.Start(startInfo);
-        };
-        FlyoutItemSakuragramNews.Click += (_, _) =>
-        {
-            ProcessStartInfo startInfo = new ProcessStartInfo("https://t.me/sakuragram");
-            startInfo.UseShellExecute = true;
-            Process.Start(startInfo);
-        };
-        
-        // GenerateUsers();
-
-        DispatcherQueue.EnqueueAsync(async () =>
-        {
-            try
-            {
-                var currentUser = await _client.GetMeAsync();
-                await CurrentUserPicture.InitializeProfilePhoto(currentUser, sizes: 42);
-                FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
-                FlyoutItemCurrentUser.Icon = new BitmapIcon
-                {
-                    ShowAsMonochrome = false,
-                    UriSource = new Uri(currentUser.ProfilePhoto.Small.Local.Path),
-                    Width = 32,
-                    Height = 32
-                };
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        });
-        
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
+        FlyoutItemTelegramFeatures.Click += (_, _) => OpenChat(-1001224624669);
+        FlyoutItemSakuragramNews.Click += (_, _) => OpenChat(-1002187436725);
     }
 
     private async Task ProcessUpdates(TdApi.Update update)
@@ -166,20 +105,20 @@ public sealed partial class ChatsView : Page
         });
     }
         
-    public async void OpenChat(long chatId, bool isForum, TdApi.ForumTopic forumTopic)
+    public async void OpenChat(long chatId = 0, bool isForum = false, TdApi.ForumTopic forumTopic = null)
     {
         try
         {
-            await DispatcherQueue.EnqueueAsync(() =>
+            await DispatcherQueue.EnqueueAsync(async () =>
             {
                 if (isForum)
                 {
-                    _currentChat = _chatService.OpenForum(chatId, forumTopic).Result;
+                    _currentChat = await _chatService.OpenForum(chatId, forumTopic);
                     _isForumTopicOpened = true;
                 }
                 else
                 {
-                    _currentChat = _chatService.OpenChat(chatId).Result;
+                    _currentChat = await _chatService.OpenChat(chatId);
                     if (_isForumOpened && _isForumTopicOpened) ColumnForumTopics.Width = new GridLength(0);
                     _isForumOpened = false;
                     _isForumTopicOpened = false;
@@ -223,7 +162,7 @@ public sealed partial class ChatsView : Page
                 {
                     try
                     {
-                        OpenChat(chat.Id, true, forumTopic);
+                        OpenChat(chat.Id, isForum: true, forumTopic: forumTopic);
                         _isForumTopicOpened = true;
                         _isForumOpened = false;
                     }
@@ -270,7 +209,7 @@ public sealed partial class ChatsView : Page
         ContentFrame.Children.Remove(_currentChat);
     }
         
-    private async Task GenerateChatEntries(TdApi.ChatList chatList)
+    public async Task GenerateChatEntries(TdApi.ChatList chatList)
     {
         PinnedChatsList.Items.Clear();
         ChatsList.Items.Clear();
@@ -342,16 +281,6 @@ public sealed partial class ChatsView : Page
         }   
         
         _firstGenerate = false;
-    }
-
-    private void ButtonSavedMessages_OnClick(object sender, RoutedEventArgs e)
-    {
-        OpenChat(_client.ExecuteAsync(new TdApi.GetMe()).Result.Id, false, null);
-    }
-
-    private void ButtonNewMessage_OnClick(object sender, RoutedEventArgs e)
-    {
-        NewMessage.ShowAsync();
     }
 
     private async void NewGroup_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -510,17 +439,14 @@ public sealed partial class ChatsView : Page
     private async void FlyoutItemAddAccount_OnClick(object sender, RoutedEventArgs e)
     {
         MainWindowTitleBarContent.Visibility = Visibility.Collapsed;
-        await App.AddNewAccount();
         MainWindowTitleBar.IsBackButtonVisible = true;
         MainWindowTitleBar.BackButtonClick += async (_, _) =>
         {
-            await App.RemoveNewAccount();
             MainWindowTitleBar.IsBackButtonVisible = false;
             MainWindowFrame.Navigate(typeof(ChatsView));
             MainWindowTitleBarContent.Visibility = Visibility.Visible;
         };
-        MainWindowFrame.Navigate(typeof(LoginView));
-        if (MainWindowFrame.Content is LoginView login) login._window = MainWindow;
+        await AccountManager.AddNewAccount(MainWindow, MainWindowFrame);
     }
 
     private async void FlyoutItemLogOut_OnClick(object sender, RoutedEventArgs e)
@@ -560,37 +486,107 @@ public sealed partial class ChatsView : Page
     
     private void GenerateUsers()
     {
-        var localSettings = SettingsService.LoadSettings();
+        var localAccountSettings = SettingsService.LoadAccountSettings();
 			
-        if (localSettings.ClientIDs.Count > 1)
+        if (localAccountSettings.AccountIds.Count > 1)
         {
             DispatcherQueue.EnqueueAsync(async () =>
             {
-                var clientIds = localSettings.ClientIDs;
-                var clientIndex = localSettings.ClientIndex;
-                int index = 0;
-					
-                foreach (var clientId in localSettings.ClientIDs)
+                var accountIds = localAccountSettings.AccountIds;
+                var accountIndex = localAccountSettings.SelectedAccount;
+                int index = -1;
+					   
+                foreach (var accountId in accountIds)
                 {
-                    var user = await _client.GetUserAsync(clientId);
-                    var accountItem = new MenuFlyoutItem();
-                    accountItem.Text = user.FirstName + " " + user.LastName;
-                    accountItem.Tag = clientIds.IndexOf(clientId) == clientIndex
-                        ? clientIds.IndexOf(clientId)
-                        : "error";
+                    if (accountId == accountIds[accountIndex]) continue;
+                    var user = await _client.GetUserAsync(accountId);
+                    var accountItem = new MenuFlyoutItem
+                    {
+                        Icon = new BitmapIcon
+                        {
+                            UriSource = new Uri(user.ProfilePhoto.Small.Local.Path), 
+                            ShowAsMonochrome = false
+                        },
+                        Text = user.FirstName + " " + user.LastName,
+                        Tag = accountId
+                    };
                     accountItem.Click += async (_, _) =>
                     {
-                        await App.SwitchAccount(clientIds.IndexOf(index));
-                        MainWindowFrame.Navigate(typeof(ChatsView));
+                        await AccountManager.SwitchAccount(MainWindow, (long)accountItem.Tag);
                     };
                     index++;
-                    FlyoutClientActions.Items.Add(accountItem);
+                    FlyoutItemCurrentUser.Items.Add(accountItem);
                 }
             });
         }
-        else
+    }
+
+    private Task GenerateFolders()
+    {
+        SelectorBarFolders.Items.Clear();
+        var localAccountSettings = SettingsService.LoadAccountInfoSettings();
+        
+        SelectorBarItem selectorBarItemAllChats = new();
+        selectorBarItemAllChats.Margin = new Thickness(0, 0, 5, 0);
+        selectorBarItemAllChats.Text = "All chats";
+        selectorBarItemAllChats.PointerPressed += async (_, _) => await GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+        SelectorBarFolders.Items.Add(selectorBarItemAllChats);
+        
+        foreach (var folder in localAccountSettings.ChatFolders)
         {
-            SeparatorUsers.Visibility = Visibility.Collapsed;
+            SelectorBarItem selectorBarItem = new();
+            selectorBarItem.Margin = new Thickness(0, 0, 5, 0);
+            selectorBarItem.Text = folder.Title;
+            selectorBarItem.Tag = $"{folder.Title}_{folder.Id}";
+            selectorBarItem.PointerPressed += async (_, _) =>
+            {
+                App._folderId = folder.Id;
+                await GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
+                selectorBarItem.IsSelected = true;
+            };
+            SelectorBarFolders.Items.Add(selectorBarItem);
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    public async Task PrepareChatsView()
+    {
+        GenerateUsers();
+        await GenerateFolders();
+
+        await DispatcherQueue.EnqueueAsync(async () =>
+        {
+            try
+            {
+                var currentUser = await _client.GetMeAsync();
+                await CurrentUserPicture.InitializeProfilePhoto(currentUser, sizes: 42);
+                FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
+                FlyoutItemCurrentUser.Icon = new BitmapIcon
+                {
+                    ShowAsMonochrome = false,
+                    UriSource = new Uri(currentUser.ProfilePhoto.Small.Local.Path),
+                    Width = 32,
+                    Height = 32
+                };
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        });
+        
+        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
+        
+        if (App._folderId != -1)
+        {
+            GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});
+        }
+        else
+        { 
+            GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+            App._folderId = -1;
         }
     }
 }

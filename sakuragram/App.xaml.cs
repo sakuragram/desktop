@@ -22,16 +22,14 @@ public partial class App : Application
 	{
 		InitializeComponent();
 	}
-
-	private static EventHandler<TdApi.Update> _updateHandler;
 	
 	public MainWindow _mWindow;
 
 	public static TdClient _client;
 	public static GitHubClient _githubClient;
 	
-	private static List<long> _clientIDs = [];
-	private static long _userToLogin = -1;
+	public static int _accountIndexToLogin = -1;
+	private bool _isClientAlreadyInitialized = false;
 	
 	private static readonly ManualResetEventSlim ReadyToAuthenticate = new();
 
@@ -52,13 +50,11 @@ public partial class App : Application
 
 	public static int _folderId = -1;
 
-	public static Task PrepareApplication()
+	public static async Task PrepareApplication()
 	{
 		#region Variables prepairing
 
-		var settings = SettingsService.LoadSettings();
-		
-		_clientIDs = settings.ClientIDs;
+		_accountIndexToLogin = await AccountManager.GetSelectedAccount();
 
 		#endregion
 		
@@ -71,14 +67,8 @@ public partial class App : Application
 		#endregion
 
 		#region Telegram Client
-
 		
-		_client = new TdClient();
-		_client.Bindings.SetLogVerbosityLevel(_logLevel);
-		_client.Bindings.SetLogFilePath(_logFilePath);
-		_client.Bindings.SetLogFileMaxSize(_logFileMaxSize);
-		_client.SetLogStreamAsync(new TdApi.LogStream.LogStreamFile 
-			{ Path = _logFilePath, MaxFileSize = _logFileMaxSize });
+		CreateClient();
 
 		#endregion
 
@@ -89,20 +79,7 @@ public partial class App : Application
 
 		#endregion
 
-		#region Telegram Update Handler
-
-		_updateHandler = UpdateHandler;
-		_client.UpdateReceived += _updateHandler;
-
-		#endregion
-
 		ReadyToAuthenticate.Wait();
-		return Task.CompletedTask;
-	}
-
-	private static async void UpdateHandler(object _, TdApi.Update update)
-	{
-		await ProcessUpdates(update);
 	}
 
 	private static async Task ProcessUpdates(TdApi.Update update)
@@ -118,18 +95,7 @@ public partial class App : Application
 					};
 				break;
 			case TdApi.Update.UpdateAuthorizationState { AuthorizationState: TdApi.AuthorizationState.AuthorizationStateWaitTdlibParameters }:
-				// int userIndex = 0;
-				// if (_userToLogin > -1)
-				// {
-				// 	userIndex = _clientIDs.IndexOf(_userToLogin);
-				// }
-				// else
-				// {
-				// 	var waitSettings = SettingsService.LoadSettings();
-				// 	if (_clientIDs.Contains(waitSettings.ClientIDs[waitSettings.ClientIndex]))
-				// 		userIndex = _clientIDs.IndexOf(waitSettings.ClientIDs[waitSettings.ClientIndex]);
-				// }
-				
+				var dbPath = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\u_{_accountIndexToLogin}");
 				await _client.ExecuteAsync(new TdApi.SetTdlibParameters
 				{
 					ApiId = Config.ApiId,
@@ -142,7 +108,7 @@ public partial class App : Application
 					DeviceModel = "Desktop",
 					SystemLanguageCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName,
 					ApplicationVersion = Config.AppVersion,
-					DatabaseDirectory = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\u_0"),
+					DatabaseDirectory = dbPath,
 					FilesDirectory = _filesDirectory,
 				});
 				break;
@@ -161,19 +127,16 @@ public partial class App : Application
 				break;
 			case TdApi.Update.UpdateAuthorizationState { AuthorizationState: TdApi.AuthorizationState.AuthorizationStateReady }:
 				var user = await _client.ExecuteAsync(new TdApi.GetMe());
-				if (_clientIDs.Contains(user.Id)) return;
-				_clientIDs.Add(user.Id);
-				var readySettings = SettingsService.LoadSettings();
-				SettingsService.SaveSettings(new Settings
+				var readyAccountSettings = SettingsService.LoadAccountSettings();
+				var accountIds = readyAccountSettings.AccountIds;
+				
+				if (!accountIds.Contains(user.Id)) accountIds.Add(user.Id);
+				SettingsService.SaveAccountSettings(new AccountSettings
 				{
-					AutoUpdate = readySettings.AutoUpdate,
-					InstallBeta = readySettings.InstallBeta,
-					Language = readySettings.Language,
-					ChatBottomFastAction = readySettings.ChatBottomFastAction,
-					StartMediaPage = readySettings.StartMediaPage,
-					ClientIDs = _clientIDs,
-					ClientIndex = readySettings.ClientIndex
+					SelectedAccount = _accountIndexToLogin,
+					AccountIds = accountIds
 				});
+				
 				await _client.LoadActiveStoriesAsync(new TdApi.StoryList.StoryListMain());
 				break;
 			case TdApi.Update.UpdateUser:
@@ -203,84 +166,29 @@ public partial class App : Application
 			case TdApi.Update.UpdateChatFolders updateChatFolders:
 			{
 				_folders = updateChatFolders.ChatFolders;
+				
+				var accountInfo = SettingsService.LoadAccountInfoSettings();
+				accountInfo.ChatFolders = _folders;
+				SettingsService.SaveAccountInfoSettings(accountInfo);
 				break;
 			}
 		}
 	}
-
-	public static async Task AddNewAccount()
+	public static Task CreateClient()
 	{
-		
-		_client.UpdateReceived -= _updateHandler;
-		_updateHandler = null;
-		await _client.CloseAsync();
-		
-		_client = null;
-		_client = new TdClient { TimeoutToClose = new TimeSpan(1, 0, 0) };
-		_client.Bindings.SetLogVerbosityLevel(_logLevel);
-		_client.Bindings.SetLogFilePath(_logFilePath);
-		_client.Bindings.SetLogFileMaxSize(_logFileMaxSize);
-
-		_updateHandler = UpdateHandler;
-		_client.UpdateReceived += _updateHandler;
-		
-		var settings = SettingsService.LoadSettings();
-		SettingsService.SaveSettings(new Settings
-		{
-			AutoUpdate = settings.AutoUpdate,
-			InstallBeta = settings.InstallBeta,
-			Language = settings.Language,
-			ChatBottomFastAction = settings.ChatBottomFastAction,
-			StartMediaPage = settings.StartMediaPage,
-			ClientIDs = settings.ClientIDs,
-			ClientIndex = _clientIDs.IndexOf(_client.GetMeAsync().Result.Id)
-		});
-	}
-
-	public static async Task SwitchAccount(long id)
-	{
-		_userToLogin = id;
-		
-		_client.UpdateReceived -= _updateHandler;
-		_updateHandler = null;
-		await _client.DestroyAsync();
-		
-		_client = null;
 		_client = new TdClient();
 		_client.Bindings.SetLogVerbosityLevel(_logLevel);
 		_client.Bindings.SetLogFilePath(_logFilePath);
 		_client.Bindings.SetLogFileMaxSize(_logFileMaxSize);
-		
-		_updateHandler = UpdateHandler;
-		_client.UpdateReceived += _updateHandler;
+		_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+		return Task.CompletedTask;
 	}
-
-	public static async Task RemoveNewAccount()
+	
+	public static Task DestroyClient()
 	{
-		_client.UpdateReceived -= _updateHandler;
-		_updateHandler = null;
-		await _client.DestroyAsync();
-		
+		_client.UpdateReceived -= async (_, update) => { await ProcessUpdates(update); };
 		_client = null;
-		_client = new TdClient();
-		_client.Bindings.SetLogVerbosityLevel(_logLevel);
-		_client.Bindings.SetLogFilePath(_logFilePath);
-		_client.Bindings.SetLogFileMaxSize(_logFileMaxSize);
-		
-		_updateHandler = UpdateHandler;
-		_client.UpdateReceived += _updateHandler;
-		
-		var settings = SettingsService.LoadSettings();
-		SettingsService.SaveSettings(new Settings
-		{
-			AutoUpdate = settings.AutoUpdate,
-			InstallBeta = settings.InstallBeta,
-			Language = settings.Language,
-			ChatBottomFastAction = settings.ChatBottomFastAction,
-			StartMediaPage = settings.StartMediaPage,
-			ClientIDs = _clientIDs,
-			ClientIndex = _clientIDs.IndexOf(_client.GetMeAsync().Result.Id)
-		});
+		return Task.CompletedTask;
 	}
 	
 	protected override async void OnLaunched(LaunchActivatedEventArgs args)

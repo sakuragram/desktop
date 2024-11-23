@@ -25,7 +25,7 @@ public sealed partial class MainWindow : Window
 	public Frame RootFrame;
 	public StackPanel TopBarContent;
 		
-	private static TdClient _client = App._client;
+	public TdClient _client = App._client;
 	private static TdApi.User _user;
 
 	private NavigationViewItem _lastItem;
@@ -107,6 +107,7 @@ public sealed partial class MainWindow : Window
 	            
 			DispatcherQueue.EnqueueAsync(async () =>
 			{
+				if (ContentFrame.Content is ChatsView chatsView) await chatsView.PrepareChatsView();
 				var user = await _client.GetMeAsync();
 				
 				Title = user.FirstName + " " + user.LastName + " (" + _totalUnreadCount + ")";
@@ -172,11 +173,6 @@ public sealed partial class MainWindow : Window
 		}
 
 		return false;
-	}
-		
-	private void ContentFrame_NavigationFailed(object sender, NavigationFailedEventArgs e) 
-	{
-
 	}
 
 	private async void ContentDialogNewVersion_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -271,7 +267,7 @@ public sealed partial class MainWindow : Window
 		if (ContentFrame.Content is ChatsView chatsView)
 		{
 			var item = (SearchEntry)args.SelectedItem; 
-			chatsView.OpenChat(item.ChatId, false, null);
+			chatsView.OpenChat(item.ChatId, isForum: false, forumTopic: null);
 		}
 	}
 	
@@ -443,5 +439,22 @@ public sealed partial class MainWindow : Window
 			chatsView.MainWindowTitleBar = TitleBar;
 			chatsView.MainWindowTitleBarContent = TopBarContent;
 		}
+	}
+
+	public async Task UpdateWindow(TdClient client)
+	{
+		_client = client;
+		OpenChatsView();
+		
+		if (ContentFrame.Content is ChatsView chatsView)
+		{
+			chatsView._client = client;
+			
+			chatsView.PinnedChatsItemsList.Items.Clear();
+			chatsView.ChatsItemsList.Items.Clear();
+			await chatsView.PrepareChatsView();
+		}
+		
+		PanelStories.Children.Clear();
 	}
 }

@@ -135,16 +135,17 @@
                             <MenuFlyout x:Name="FlyoutClientActions"
                                         Opening="FlyoutClientActions_OnOpening"
                                         Closing="FlyoutClientActions_OnClosing">
-                                <MenuFlyoutItem x:Name="FlyoutItemCurrentUser"
-                                                Click="FlyoutItemCurrentUser_OnClick"/>
-                                <MenuFlyoutSeparator/>
-                                <MenuFlyoutItem x:Name="FlyoutItemAddAccount"
-                                                Text="Add account"
-                                                Click="FlyoutItemAddAccount_OnClick">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE8FA;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
+                                <MenuFlyoutSubItem x:Name="FlyoutItemCurrentUser">
+                                    <MenuFlyoutSubItem.Items>
+                                        <MenuFlyoutItem Text="Add account"
+                                                        Click="FlyoutItemAddAccount_OnClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE8FA;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutSeparator />
+                                    </MenuFlyoutSubItem.Items>
+                                </MenuFlyoutSubItem>
                                 <MenuFlyoutSeparator/>
                                 <MenuFlyoutItem x:Name="FlyoutItemSavedMessages"
                                                 Text="Saved messages"
@@ -176,7 +177,6 @@
                                         <FontIcon Glyph="&#xE713;" />
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
-                                <MenuFlyoutSeparator x:Name="SeparatorUsers"/>
                             </MenuFlyout>
                         </user:ProfilePhoto.ContextFlyout>
                     </user:ProfilePhoto>
