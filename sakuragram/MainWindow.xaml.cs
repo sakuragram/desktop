@@ -103,7 +103,7 @@ public sealed partial class MainWindow : Window
 		else
 		{
 			OpenChatsView();
-			// CheckForUpdates();
+			CheckForUpdates();
 	            
 			DispatcherQueue.EnqueueAsync(async () =>
 			{

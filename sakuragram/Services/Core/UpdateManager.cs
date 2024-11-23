@@ -23,10 +23,22 @@ public class UpdateManager
     
     public async Task<string> GetLatestReleaseFromGitHub()
     {
-        var releases = await _gitHubClient.Repository.Release.GetAll(Config.GitHubRepoOwner, Config.GitHubRepoName).ConfigureAwait(false);
-        Release latestRelease = releases[0];
+        var localSettings = SettingsService.LoadSettings();
+
+        if (localSettings.InstallBeta)
+        {
+            var releases = await _gitHubClient.Repository.Release.GetAll(Config.GitHubRepoOwner, Config.GitHubRepoName);
+            Release latestRelease = releases[0];
         
-        return latestRelease.TagName;
+            return latestRelease.TagName;
+        }
+        else
+        {
+            var releases = await _gitHubClient.Repository.Release.GetLatest(Config.GitHubRepoOwner, Config.GitHubRepoName);
+            Release latestRelease = releases;
+        
+            return latestRelease.TagName;
+        }
     }
     
     public async Task<bool> CheckForUpdates()
@@ -36,6 +48,8 @@ public class UpdateManager
 
         if (latestVersion != null && latestVersion != currentVersion)
         {
+            if (latestVersion.Contains("v")) latestVersion = latestVersion.Replace("v", "");
+            if (latestVersion.Contains("-beta")) latestVersion = latestVersion.Replace("-beta", "");
             latestVersion = latestVersion.Replace(".", "");
             currentVersion = currentVersion.Replace(".", "");
 
