@@ -457,6 +457,7 @@ public sealed partial class MainWindow : Window
 	public async Task UpdateWindow(TdClient client)
 	{
 		_client = client;
+		ContentFrame.Content = null;
 		OpenChatsView();
 		
 		if (ContentFrame.Content is ChatsView chatsView)
