@@ -57,13 +57,21 @@ public partial class MediaPlayer
                                 break;
                             case TdApi.StoryContent.StoryContentVideo storyContentVideo:
                                 if (updateFile.File.Local.IsDownloadingCompleted)
-                                    await DispatcherQueue.EnqueueAsync(() => MediaPlayerElement.Source =
-                                        MediaSource.CreateFromUri(
-                                            new Uri(updateFile.File.Local.Path)));
+                                    await DispatcherQueue.EnqueueAsync(() =>
+                                    {
+                                        MediaPlayerElement.Source =
+                                            MediaSource.CreateFromUri(
+                                                new Uri(updateFile.File.Local.Path));
+                                        MediaPlayerElement.MediaPlayer.Play();
+                                    });
                                 else
-                                    await DispatcherQueue.EnqueueAsync(() => MediaPlayerElement.Source =
-                                        MediaSource.CreateFromUri(
-                                            new Uri(storyContentVideo.Video.Video.Local.Path)));
+                                    await DispatcherQueue.EnqueueAsync(() =>
+                                    {
+                                        MediaPlayerElement.Source =
+                                            MediaSource.CreateFromUri(
+                                                new Uri(storyContentVideo.Video.Video.Local.Path));
+                                        MediaPlayerElement.MediaPlayer.Play();
+                                    });
                                 break;
                         }
                 }
@@ -106,7 +114,10 @@ public partial class MediaPlayer
                             MediaPlayerElement.Source = MediaSource.CreateFromUri(
                                 new Uri(storyContentVideo.Video.Video.Local.Path));
                         else
-                            await _client.DownloadFileAsync(_fileId, 1);
+                        {
+                            await _client.DownloadFileAsync(_fileId, 1, synchronous: true);
+                            MediaPlayerElement.MediaPlayer.Play();
+                        }
                         break;
                 }
             }
@@ -139,5 +150,10 @@ public partial class MediaPlayer
                 }
                 break;
         }
+    }
+
+    private void MediaPlayer_OnClosed(object sender, WindowEventArgs args)
+    {
+        MediaPlayerElement.MediaPlayer.Pause();
     }
 }
