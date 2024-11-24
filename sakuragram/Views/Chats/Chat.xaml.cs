@@ -1,16 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Media.Core;
+using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.System;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Controls.Messages;
 using sakuragram.Services;
@@ -64,6 +69,8 @@ public sealed partial class Chat : Page
     private int _currentMediaPage;
     
     private ChatMessage _lastChatMessage;
+    
+    private List<StorageFile> _mediaFiles = [];
 
     public Chat(long id, bool isForum, TdApi.ForumTopic forumTopic)
     {
@@ -986,16 +993,115 @@ public sealed partial class Chat : Page
         ContextMenuMedia.ShowAt(ButtonAttachMedia);
     }
 
-    private void ContextMenuPhotoOrVideo_OnClick(object sender, RoutedEventArgs e)
+    private async void ContextMenuPhotoOrVideo_OnClick(object sender, RoutedEventArgs e)
     {
-        // SendMediaMessage.ShowAsync();
+        var folderPicker = new FileOpenPicker();
+
+        var mainWindow = (Application.Current as App)?._mWindow;
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(mainWindow);
+
+        WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+        folderPicker.FileTypeFilter.Add(".png");
+        folderPicker.FileTypeFilter.Add(".jpg");
+        folderPicker.FileTypeFilter.Add(".jpeg");
+        folderPicker.FileTypeFilter.Add(".mp4");
+        folderPicker.FileTypeFilter.Add(".mov");
+        folderPicker.FileTypeFilter.Add(".m4v");
+        var mediaFiles = await folderPicker.PickMultipleFilesAsync();
+        
+        if (mediaFiles != null) await GenerateMediaFiles(mediaFiles);
     }
 
-    private void ContextMenuFile_OnClick(object sender, RoutedEventArgs e)
+    private async void ContextMenuFile_OnClick(object sender, RoutedEventArgs e)
     {
-        // SendFileMessage.ShowAsync();
+        var folderPicker = new FileOpenPicker();
+
+        var mainWindow = (Application.Current as App)?._mWindow;
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(mainWindow);
+
+        WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+        folderPicker.FileTypeFilter.Add("*");
+        var documentFiles = await folderPicker.PickMultipleFilesAsync();
+        if (documentFiles != null) await GenerateMediaFiles(documentFiles);
     }
 
+    private async Task GenerateMediaFiles(IReadOnlyList<StorageFile> mediaFiles)
+    {
+        foreach (var mediaFile in mediaFiles)
+        {
+            if (!_mediaFiles.Contains(mediaFile)) _mediaFiles.Add(mediaFile);
+            var extension = Path.GetExtension(mediaFile.Name)?.ToLower();
+
+            switch (extension)
+            {
+                case ".png" or ".jpg" or ".jpeg" or ".webp":
+                {
+                    var image = new Image();
+                    image.Source = new BitmapImage(new Uri(mediaFile.Path));
+                    image.Stretch = Stretch.Fill;
+                    image.Margin = new Thickness(0, 0, 0, 4);
+                    FlipViewMedia.Items.Add(image);
+                    break;
+                }
+                case ".mp4" or ".mov" or ".m4v" or ".m4a" or ".webm" or ".gif":
+                {
+                    var video = new MediaPlayerElement();
+                    video.Source = MediaSource.CreateFromUri(new Uri(mediaFile.Path));
+                    video.AutoPlay = true;
+                    video.Stretch = Stretch.Fill;
+                    video.MediaPlayer.Volume = 0;
+                    video.Margin = new Thickness(0, 0, 0, 4);
+                    FlipViewMedia.Items.Add(video);
+                    break;
+                }
+                case ".mp3" or ".ogg" or ".wav":
+                    var audioStackPanel = new StackPanel();
+                    audioStackPanel.Orientation = Orientation.Horizontal;
+                    audioStackPanel.Margin = new Thickness(4);
+                    audioStackPanel.HorizontalAlignment = HorizontalAlignment.Left;
+                    audioStackPanel.VerticalAlignment = VerticalAlignment.Top;
+                    
+                    var playButton = new Button();
+                    playButton.Content = "\u25B6";
+                    playButton.Margin = new Thickness(0, 0, 4, 0);
+                    audioStackPanel.Children.Add(playButton);
+                    
+                    var audioNameTextBlock = new TextBlock();
+                    audioNameTextBlock.Text = mediaFile.Name;
+                    audioNameTextBlock.TextWrapping = TextWrapping.Wrap;
+                    audioStackPanel.Children.Add(audioNameTextBlock);
+                    FlipViewMedia.Items.Add(audioStackPanel);
+                    break;
+                default:
+                    var stackPanel = new StackPanel();
+                    stackPanel.Orientation = Orientation.Vertical;
+                    stackPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                    stackPanel.VerticalAlignment = VerticalAlignment.Center;
+                    
+                    var border = new Border();
+                    border.CornerRadius = new CornerRadius(4);
+                    border.Margin = new Thickness(0, 0, 4, 0);
+                    border.Child = new FontIcon{Glyph = "\uE7C3", FontSize = 20, Margin = new Thickness(4)};
+                    border.Padding = new Thickness(0);
+                    stackPanel.Children.Add(border);
+                    
+                    var textBlock = new TextBlock();
+                    textBlock.Text = mediaFile.Name;
+                    textBlock.TextWrapping = TextWrapping.Wrap;
+                    textBlock.FontSize = 16;
+                    stackPanel.Children.Add(textBlock);
+                    FlipViewMedia.Items.Add(stackPanel);
+                    break;
+            }
+        }
+
+        var openedPopups = VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot);
+        if (openedPopups.Count <= 0 && FlipViewMedia.Items.Count > 0)
+        {
+            await DialogSendMediaMessage.ShowAsync();
+        }
+    }
+    
     private void ContextMenuPoll_OnClick(object sender, RoutedEventArgs e)
     {
         CreatePoll.ShowAsync();
@@ -1355,5 +1461,118 @@ public sealed partial class Chat : Page
     private void ButtonChatEventLog_OnClick(object sender, RoutedEventArgs e)
     {
         throw new NotImplementedException();
+    }
+
+    private void DialogSendMediaMessage_OnClosed(ContentDialog sender, ContentDialogClosedEventArgs args)
+    {
+        _mediaFiles.Clear();
+        FlipViewMedia.Items.Clear();
+    }
+
+    private async void DialogSendMediaMessage_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    {
+        if (_mediaFiles.Count >= 2)
+        {
+            List<TdApi.InputMessageContent> inputMessageContents = [];
+            bool isCaptionAlreadyAdded = false;
+            
+            foreach (var mediaFile in _mediaFiles)
+            {
+                var extension = Path.GetExtension(mediaFile.Path)?.ToLower();
+                switch (extension)
+                {
+                    case ".png" or ".jpg" or ".jpeg" or ".webp":
+                        inputMessageContents.Add(new TdApi.InputMessageContent.InputMessagePhoto
+                        {
+                            Photo = new TdApi.InputFile.InputFileLocal
+                            {
+                                Path = mediaFile.Path
+                            },
+                            Caption = isCaptionAlreadyAdded ? null 
+                                : new TdApi.FormattedText {Text = TextBoxCaption.Text}
+                        });
+                        if (!isCaptionAlreadyAdded) isCaptionAlreadyAdded = true;
+                        break;
+                    case ".mp4" or ".mov" or ".m4v" or ".m4a" or ".webm":
+                        inputMessageContents.Add(new TdApi.InputMessageContent.InputMessageVideo
+                        {
+                            Video = new TdApi.InputFile.InputFileLocal
+                            {
+                                Path = mediaFile.Path
+                            },
+                            Caption = isCaptionAlreadyAdded ? null 
+                                : new TdApi.FormattedText {Text = TextBoxCaption.Text}
+                        });
+                        if (!isCaptionAlreadyAdded) isCaptionAlreadyAdded = true;
+                        break;
+                    case ".mp3" or ".ogg" or ".wav":
+                        inputMessageContents.Add(new TdApi.InputMessageContent.InputMessageAudio
+                        {
+                            Audio = new TdApi.InputFile.InputFileLocal
+                            {
+                                Path = mediaFile.Path
+                            },
+                            Caption = isCaptionAlreadyAdded ? null 
+                                : new TdApi.FormattedText {Text = TextBoxCaption.Text}
+                        });
+                        if (!isCaptionAlreadyAdded) isCaptionAlreadyAdded = true;
+                        break;
+                    case ".gif":
+                        inputMessageContents.Add(new TdApi.InputMessageContent.InputMessageAnimation
+                        {
+                            Animation = new TdApi.InputFile.InputFileLocal
+                            {
+                                Path = mediaFile.Path
+                            },
+                            Caption = isCaptionAlreadyAdded ? null 
+                                : new TdApi.FormattedText {Text = TextBoxCaption.Text}
+                        });
+                        if (!isCaptionAlreadyAdded) isCaptionAlreadyAdded = true;
+                        break;
+                    default:
+                        inputMessageContents.Add(new TdApi.InputMessageContent.InputMessageDocument
+                        {
+                            Document = new TdApi.InputFile.InputFileLocal
+                            {
+                                Path = mediaFile.Path
+                            },
+                            Caption = isCaptionAlreadyAdded ? null 
+                                : new TdApi.FormattedText {Text = TextBoxCaption.Text}
+                        });
+                        if (!isCaptionAlreadyAdded) isCaptionAlreadyAdded = true;
+                        break;
+                }
+            }
+
+            if (_replyService.GetReplyMessageId() != 0)
+            {
+                await _client.ExecuteAsync(new TdApi.SendMessageAlbum
+                {
+                    ChatId = _chatId,
+                    MessageThreadId = 0,
+                    ReplyTo = new TdApi.InputMessageReplyTo.InputMessageReplyToMessage {
+                        MessageId = _replyService.GetReplyMessageId(),},
+                    Options = null,
+                    InputMessageContents = inputMessageContents.ToArray()
+                });
+            }
+            else
+            {
+                await _client.ExecuteAsync(new TdApi.SendMessageAlbum
+                {
+                    ChatId = _chatId,
+                    MessageThreadId = 0,
+                    ReplyTo = null,
+                    Options = null,
+                    InputMessageContents = inputMessageContents.ToArray()
+                });
+            }
+        }
+    }
+
+    private void DialogSendMediaMessage_OnSecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    {
+        args.Cancel = true;
+        ContextMenuPhotoOrVideo_OnClick(sender, null);
     }
 }
