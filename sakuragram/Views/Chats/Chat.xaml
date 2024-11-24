@@ -454,15 +454,6 @@
                              PlaceholderText="Correct answer (ID)"/>
                 </StackPanel>
             </ContentDialog>
-            <ContentDialog x:Name="ExceptionDialog">
-                <ContentDialog.TitleTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="Exception" />
-                    </DataTemplate>
-                </ContentDialog.TitleTemplate>
-                <TextBlock x:Name="TextBlockException" 
-                           TextWrapping="Wrap"/>
-            </ContentDialog>
             <ContentDialog x:Name="DialogReportChat"
                            CloseButtonText="Cancel"
                            PrimaryButtonText="Report"

@@ -177,26 +177,8 @@ public sealed partial class Chat : Page
                 if (updateUserStatus.UserId != _chat.Id) return;
                 if (_chat.Type is TdApi.ChatType.ChatTypePrivate)
                 {
-                    await DispatcherQueue.EnqueueAsync(() =>
-                    {
-                        var status = updateUserStatus.Status switch
-                        {
-                            TdApi.UserStatus.UserStatusOnline => "Online",
-                            TdApi.UserStatus.UserStatusOffline => "Offline",
-                            TdApi.UserStatus.UserStatusRecently => "Last seen recently",
-                            TdApi.UserStatus.UserStatusLastWeek => "Last week",
-                            TdApi.UserStatus.UserStatusLastMonth => "Last month",
-                            TdApi.UserStatus.UserStatusEmpty => "Last seen a long time ago",
-                            _ => "Unknown"
-                        };
-        
-                        ChatMembers.Text = status;
-        
-                        if (_isProfileOpened)
-                        {
-                            TextBlockMembersOrStatus.Text = status;
-                        }
-                    });
+                    await DispatcherQueue.EnqueueAsync(() => 
+                        ChatMembers.Text = UserService.GetUserStatus(updateUserStatus.Status));
                 }
                 break;
             }
@@ -954,8 +936,7 @@ public sealed partial class Chat : Page
         catch (TdException e)
         {
             CreatePoll.Hide();
-            TextBlockException.Text = e.Message;
-            ExceptionDialog.ShowAsync();
+            Debug.WriteLine(e);
             throw;
         }
     }
@@ -995,14 +976,7 @@ public sealed partial class Chat : Page
                 SendMessage_OnClick(sender, null);
                 break;
             case VirtualKey.Escape:
-                if (_isProfileOpened)
-                {
-                    Profile.Hide();
-                }
-                else
-                {
-                    CloseChat();
-                }
+                CloseChat();
                 break;
         }
     }
@@ -1038,218 +1012,6 @@ public sealed partial class Chat : Page
         if (e.Pointer.PointerDeviceType == PointerDeviceType.Mouse)
         {
             await UserService.ShowProfile(chat: _chat, xamlRoot: XamlRoot);
-        }
-    }
-
-    private async void Profile_OnOpened(ContentDialog sender, ContentDialogOpenedEventArgs args)
-    {
-        switch (_chat.Type)
-        {
-            case TdApi.ChatType.ChatTypePrivate typePrivate:
-            {
-                var user = _client.GetUserAsync(typePrivate.UserId).Result;
-                var userFullInfo = _client.GetUserFullInfoAsync(typePrivate.UserId).Result;
-                    
-                Profile.Title = user.FirstName + " " + user.LastName;
-                TextBlockName.Text = user.FirstName + " " + user.LastName;
-                CardUsername.Header = "@" + user.Usernames.ActiveUsernames[0];
-                CardBio.Header = userFullInfo.Bio.Text;
-                CardUserId.Header = user.Id;
-                    
-                GroupInfo.Visibility = Visibility.Collapsed;
-
-                if (user.ProfilePhoto != null)
-                {
-                    if (user.ProfilePhoto.Small.Local.Path != string.Empty)
-                    {
-                        ProfilePicture.ProfilePicture = new BitmapImage(new Uri(user.ProfilePhoto.Small.Local.Path));
-                    }
-                    else
-                    {
-                        await _client.ExecuteAsync(new TdApi.DownloadFile
-                        {
-                            FileId = user.ProfilePhoto.Small.Id,
-                            Priority = 1
-                        });
-                    }
-                }
-                else
-                {
-                    ProfilePicture.DisplayName = user.FirstName + " " + user.LastName;
-                }
-
-                if (userFullInfo.PersonalChatId != 0)
-                {
-                    var personalChat = _client.GetChatAsync(userFullInfo.PersonalChatId).Result;
-                        
-                    TextBlockChannelName.Text = personalChat.Title;
-                    //TextBlockLastMessage.Text = personalChat.LastMessage.Content.ToString();
-
-                    switch (personalChat.Type)
-                    {
-                        case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
-                        {
-                            var chatFullInfo = _client.GetSupergroupFullInfoAsync(typeSupergroup.SupergroupId).Result;
-                            TextBlockMembers.Text = $"{chatFullInfo.MemberCount} members";
-                            break;
-                        }
-                    }
-                        
-                    if (personalChat.Photo != null)
-                    {
-                        if (personalChat.Photo.Small.Local.Path != string.Empty)
-                        {
-                            ChannelPicture.ProfilePicture = new BitmapImage(new Uri(personalChat.Photo.Small.Local.Path));
-                        }
-                        else
-                        {
-                            var photo = await _client.ExecuteAsync(new TdApi.DownloadFile
-                            {
-                                FileId = personalChat.Photo.Small.Id,
-                                Priority = 1
-                            });
-                            ChannelPicture.ProfilePicture = new BitmapImage(new Uri(photo.Local.Path));
-                        }
-                    }
-                    else
-                    {
-                        ChannelPicture.DisplayName = personalChat.Title;
-                    }
-                        
-                    ChannelInfo.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    SeparatorGroup.Visibility = Visibility.Collapsed;
-                    ChannelInfo.Visibility = Visibility.Collapsed;
-                }
-
-                break;
-            }
-            case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
-            {
-                var fullInfo = _client.GetSupergroupFullInfoAsync(typeSupergroup.SupergroupId).Result;
-                    
-                Profile.Title = _chat.Title;
-                TextBlockName.Text = _chat.Title;
-                TextBlockMembersOrStatus.Text = $"{fullInfo.MemberCount} members";
-                CardChatId.Header = _chat.Id;
-                    
-                if (fullInfo.Description != string.Empty)
-                {
-                    CardDescription.Header = fullInfo.Description;
-                    CardDescription.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    CardDescription.Visibility = Visibility.Collapsed;
-                }
-                    
-                if (fullInfo.InviteLink != null)
-                {
-                    if (fullInfo.InviteLink.InviteLink != string.Empty)
-                    {
-                        CardLink.Header = fullInfo.InviteLink.InviteLink;
-                        CardLink.Description = "Link";
-                        CardLink.Visibility = Visibility.Visible;
-                    }
-                    else
-                    {
-                        CardLink.Visibility = Visibility.Collapsed;
-                    }
-                }
-                else
-                {
-                    CardLink.Visibility = Visibility.Collapsed;
-                }
-                    
-                SeparatorMain.Visibility = Visibility.Collapsed;
-                UserInfo.Visibility = Visibility.Collapsed;
-                ChannelInfo.Visibility = Visibility.Collapsed;
-                    
-                if (_chat.Photo != null)
-                {
-                    if (_chat.Photo.Small.Local.Path != string.Empty)
-                    {
-                        ProfilePicture.ProfilePicture = new BitmapImage(new Uri(_chat.Photo.Small.Local.Path));
-                    }
-                    else
-                    {
-                        await _client.ExecuteAsync(new TdApi.DownloadFile
-                        {
-                            FileId = _chat.Photo.Small.Id,
-                            Priority = 1
-                        });
-                    }
-                }
-                else
-                {
-                    ProfilePicture.DisplayName = _chat.Title;
-                }
-                    
-                break;
-            }
-            case TdApi.ChatType.ChatTypeBasicGroup typeGroup:
-            {
-                var fullInfo = _client.GetBasicGroupFullInfoAsync(typeGroup.BasicGroupId).Result;
-                    
-                Profile.Title = _chat.Title;
-                TextBlockName.Text = _chat.Title;
-                TextBlockMembersOrStatus.Text = $"{fullInfo.Members.Length} members";
-                CardChatId.Header = _chat.Id;
-
-                if (fullInfo.Description != string.Empty)
-                {
-                    CardDescription.Header = fullInfo.Description;
-                    CardDescription.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    CardDescription.Visibility = Visibility.Collapsed;
-                }
-                    
-                if (fullInfo.InviteLink != null)
-                {
-                    if (fullInfo.InviteLink.InviteLink != string.Empty)
-                    {
-                        CardLink.Header = fullInfo.InviteLink.InviteLink;
-                        CardLink.Description = "Link";
-                        CardLink.Visibility = Visibility.Visible;
-                    }
-                    if (fullInfo.InviteLink.Name != string.Empty)
-                    {
-                        CardLink.Header = fullInfo.InviteLink.Name;
-                        CardLink.Description = "Link";
-                        CardLink.Visibility = Visibility.Visible;
-                    }
-                }
-                    
-                SeparatorMain.Visibility = Visibility.Collapsed;
-                UserInfo.Visibility = Visibility.Collapsed;
-                ChannelInfo.Visibility = Visibility.Collapsed;
-                    
-                if (_chat.Photo != null)
-                {
-                    if (_chat.Photo.Small.Local.Path != string.Empty)
-                    {
-                        ProfilePicture.ProfilePicture = new BitmapImage(new Uri(_chat.Photo.Small.Local.Path));
-                    }
-                    else
-                    {
-                        await _client.ExecuteAsync(new TdApi.DownloadFile
-                        {
-                            FileId = _chat.Photo.Small.Id,
-                            Priority = 1
-                        });
-                    }
-                }
-                else
-                {
-                    ProfilePicture.DisplayName = _chat.Title;
-                }
-                    
-                break;
-            }
         }
     }
 
