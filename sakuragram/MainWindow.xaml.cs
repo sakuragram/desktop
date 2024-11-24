@@ -15,6 +15,7 @@ using sakuragram.Controls.User;
 using sakuragram.Services;
 using sakuragram.Services.Core;
 using sakuragram.Views;
+using sakuragram.Views.MainWindowElements;
 using TdLib;
 using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 
@@ -123,6 +124,11 @@ public sealed partial class MainWindow : Window
 				FlyoutItemMuteFor1.Click += (_, _) => MuteChatsFor(8);
 				FlyoutItemMuteFor2.Click += (_, _) => MuteChatsFor(24);
 				
+				FlyoutItemCreatePc.Click += (_, _) => OpenCreateChatDialog(0);
+				FlyoutItemCreateGroup.Click += (_, _) => OpenCreateChatDialog(1);
+				FlyoutItemCreateChannel.Click += (_, _) => OpenCreateChatDialog(2);
+				FlyoutItemCreateSecretChat.Click += (_, _) => OpenCreateChatDialog(3);
+				
 				await UpdateNotificationInfo();
 			});
 			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
@@ -130,6 +136,13 @@ public sealed partial class MainWindow : Window
 
 			_mutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = int.MaxValue };
 			_unmutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = 0 };
+		}
+
+		void OpenCreateChatDialog(int chatType)
+		{
+			var dialog = new CreateChat(chatType);
+			dialog.XamlRoot = ContentFrame.XamlRoot;
+			dialog.ShowAsync();
 		}
 	}
 
