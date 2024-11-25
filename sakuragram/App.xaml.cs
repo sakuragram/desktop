@@ -196,6 +196,7 @@ public partial class App : Application
 		await PrepareApplication();
 
 		_mWindow = new MainWindow();
+		// TODO: Load all chat folders before starting the app and save it to user database
 		_mWindow.Activate();
 	}
 }
