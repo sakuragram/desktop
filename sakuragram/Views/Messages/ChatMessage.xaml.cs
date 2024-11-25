@@ -352,6 +352,9 @@ public partial class ChatMessage : Page
                 CheckSticker(messageSticker);
                 GenerateStickerMessage(messageSticker);
                 break;
+            case TdApi.MessageContent.MessageAnimation messageAnimation:
+                GenerateAnimationMessage(messageAnimation);
+                break;
             case TdApi.MessageContent.MessagePhoto messagePhoto:
                 GeneratePhotoMessage(messagePhoto);
                 break;
@@ -384,7 +387,22 @@ public partial class ChatMessage : Page
                 break;
         }
     }
-    
+
+    private async void GenerateAnimationMessage(TdApi.MessageContent.MessageAnimation messageAnimation)
+    {
+        MediaPlayerElement mediaPlayer = new();
+        if (messageAnimation.Animation.Animation_.Local.IsDownloadingCompleted) 
+            mediaPlayer.Source = MediaSource.CreateFromUri(new Uri(messageAnimation.Animation.Animation_.Local.Path));
+        else await _client.DownloadFileAsync(messageAnimation.Animation.Animation_.Id, 1, synchronous:true)
+                .ContinueWith(_ =>
+                {
+                    mediaPlayer.Source = 
+                        MediaSource.CreateFromUri(new Uri(messageAnimation.Animation.Animation_.Local.Path));
+                });
+        PanelMessageContent.Children.Add(mediaPlayer);
+        mediaPlayer.MediaPlayer.AutoPlay = true;
+    }
+
     public void AddAlbumElement(TdApi.Message message)
     {
         if (message.MediaAlbumId == 0) return;
