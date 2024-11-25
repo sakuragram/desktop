@@ -628,7 +628,7 @@ public sealed partial class Chat : Page
             {
                 ChatId = chatId,
                 FromMessageId = lastMessageId,
-                Limit = 30,
+                Limit = 42,
                 OnlyLocal = _hasInternetConnection
             });
             return messages.Messages_.Reverse().ToList();
@@ -846,8 +846,9 @@ public sealed partial class Chat : Page
     {
     }
 
-    private void ContextMenuViewGroupInfo_OnClick(object sender, RoutedEventArgs e)
+    private async void ContextMenuViewGroupInfo_OnClick(object sender, RoutedEventArgs e)
     {
+        await UserService.ShowProfile(chat: _chat, xamlRoot: XamlRoot);
     }
 
     private void ContextMenuToBeginning_OnClick(object sender, RoutedEventArgs e)

@@ -111,7 +111,7 @@
                                                         x:Name="FlyoutItemNotifications"/>
                                         <MenuFlyoutItem Text="View group info" 
                                                         Click="ContextMenuViewGroupInfo_OnClick"
-                                                        IsEnabled="False"
+                                                        IsEnabled="True"
                                                         x:Name="FlyoutItemViewGroupInfo"/>
                                         <MenuFlyoutItem Text="To beginning" 
                                                         Click="ContextMenuToBeginning_OnClick"
