@@ -117,8 +117,7 @@ public partial class Profile
             {
                 case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
                     var fullInfo = await _client.GetSupergroupFullInfoAsync(typeSupergroup.SupergroupId);
-                    var supergroupMembers = await _client.GetSupergroupMembersAsync(typeSupergroup.SupergroupId, 
-                        new TdApi.SupergroupMembersFilter.SupergroupMembersFilterRecent(), limit: 10);
+                    
                     DialogProfile.Title = typeSupergroup.IsChannel 
                         ? "Channel info"
                         : "Group info";
@@ -139,19 +138,25 @@ public partial class Profile
 
                     if (!string.IsNullOrEmpty(fullInfo.Description)) CardBio.Header = fullInfo.Description;
                     else CardBio.Visibility = Visibility.Collapsed;
-
-                    if (supergroupMembers != null)
+                    
+                    if (!typeSupergroup.IsChannel)
                     {
-                        foreach (var member in supergroupMembers.Members)
+                        var supergroupMembers = await _client.GetSupergroupMembersAsync(typeSupergroup.SupergroupId, 
+                            new TdApi.SupergroupMembersFilter.SupergroupMembersFilterRecent(), limit: 10);
+                        
+                        if (supergroupMembers != null)
                         {
-                            var card = new SettingsCard();
-                            var memberUsername = new TextBlock();
-                            var memberSender = await UserService.GetSender(member.MemberId);
-                            memberUsername.Text = memberSender.User != null
-                                ? memberSender.User.FirstName
-                                : memberSender.Chat.Title;
-                            card.Content = memberUsername;
-                            ExpanderMembers.Items.Add(card);
+                            foreach (var member in supergroupMembers.Members)
+                            {
+                                var card = new SettingsCard();
+                                var memberUsername = new TextBlock();
+                                var memberSender = await UserService.GetSender(member.MemberId);
+                                memberUsername.Text = memberSender.User != null
+                                    ? memberSender.User.FirstName
+                                    : memberSender.Chat.Title;
+                                card.Content = memberUsername;
+                                ExpanderMembers.Items.Add(card);
+                            }
                         }
                     }
                     
