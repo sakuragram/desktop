@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Grid
+    x:Class="sakuragram.Views.Messages.MessageElements.DocumentType"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+    
+    <Button Grid.Column="0"
+            Width="32"
+            Height="32"
+            Margin="0, 0, 4, 0"
+            Padding="0">
+        <FontIcon Glyph="&#xE7C3;"
+                  FontSize="12"
+                  Margin="4"/>
+    </Button>
+    <StackPanel Grid.Column="1">
+        <TextBlock x:Name="TextBlockDocumentTitle"
+                   Foreground="{StaticResource TextFillColorPrimaryBrush}"
+                   FontSize="16"/>
+        <TextBlock x:Name="TextBlockDocumentSize"
+                   Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                   FontSize="12"/>
+    </StackPanel>
+    
+</Grid> 

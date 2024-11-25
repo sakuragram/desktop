@@ -21,6 +21,7 @@ using sakuragram.Controls.Messages;
 using sakuragram.Services;
 using sakuragram.Services.Chat;
 using sakuragram.Services.Core;
+using sakuragram.Views.Messages.MessageElements;
 using TdLib;
 
 namespace sakuragram.Views.Chats.Messages;
@@ -287,27 +288,27 @@ public partial class ChatMessage : Page
                         PanelReply.Visibility = Visibility.Visible;
                         TextBlockLastReply.Text = message.InteractionInfo.ReplyInfo.ReplyCount + " comments";
 
-                        try
-                        {
-                            var firstLastReplySender =
-                                await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[0]);
-                            var secondLastReplySender =
-                                await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[1]);
-                            var thirdLastReplySender =
-                                await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[2]);
-
-                            await PhotoFirstLastReply.InitializeProfilePhoto(firstLastReplySender.User,
-                                firstLastReplySender.Chat, 16);
-                            await PhotoSecondLastReply.InitializeProfilePhoto(secondLastReplySender.User,
-                                secondLastReplySender.Chat, 16);
-                            await PhotoThirdLastReply.InitializeProfilePhoto(thirdLastReplySender.User,
-                                thirdLastReplySender.Chat, 16);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            throw;
-                        }
+                        // try
+                        // {
+                        //     var firstLastReplySender =
+                        //         await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[0]);
+                        //     var secondLastReplySender =
+                        //         await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[1]);
+                        //     var thirdLastReplySender =
+                        //         await UserService.GetSender(message.InteractionInfo.ReplyInfo.RecentReplierIds[2]);
+                        //
+                        //     await PhotoFirstLastReply.InitializeProfilePhoto(firstLastReplySender.User,
+                        //         firstLastReplySender.Chat, 16);
+                        //     await PhotoSecondLastReply.InitializeProfilePhoto(secondLastReplySender.User,
+                        //         secondLastReplySender.Chat, 16);
+                        //     await PhotoThirdLastReply.InitializeProfilePhoto(thirdLastReplySender.User,
+                        //         thirdLastReplySender.Chat, 16);
+                        // }
+                        // catch (Exception e)
+                        // {
+                        //     Console.WriteLine(e);
+                        //     throw;
+                        // }
                     }
                 }
                 else
@@ -355,15 +356,12 @@ public partial class ChatMessage : Page
                 GeneratePhotoMessage(messagePhoto);
                 break;
             case TdApi.MessageContent.MessageDocument messageDocument:
-                TextBlock textMessage = new();
-                textMessage.Text = messageDocument.Document.FileName;
-                textMessage.IsTextSelectionEnabled = true;
-                textMessage.TextWrapping = TextWrapping.Wrap;
-                if (_mediaElementsCount > 0) PanelMessageContent.Children.Insert(_mediaElementsCount + 1, textMessage);
-                else PanelMessageContent.Children.Add(textMessage);
+                DocumentType documentType = new(messageDocument.Document);
+                if (_mediaElementsCount > 0) PanelMessageContent.Children.Insert(_mediaElementsCount + 1, documentType);
+                else PanelMessageContent.Children.Add(documentType);
                 _mediaElementsCount++;
                 
-                if (messageDocument.Caption != null)
+                if (!string.IsNullOrEmpty(messageDocument.Caption.Text))
                 {
                     TextBlock captionTextBlock = new();
                     captionTextBlock.Text = messageDocument.Caption.Text;

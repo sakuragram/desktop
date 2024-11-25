@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Controls;
+﻿using System;
+using Microsoft.UI.Xaml.Controls;
 using TdLib;
 
 namespace sakuragram.Views.Chats.Messages
@@ -44,6 +45,11 @@ namespace sakuragram.Views.Chats.Messages
                 TdApi.MessageContent.MessageChatChangeTitle messageChatChangeTitleText => $"{senderName} changed chat title to «{messageChatChangeTitleText.Title}»",
                 _ => "Unsupported message type"
             };
+        }
+
+        public void UpdateDateMessage(DateTime newDate = default, DateTime oldDate = default)
+        {
+            MessageText.Text = newDate.ToString(newDate.Year > oldDate.Year ? "M yyyy" : "M");
         }
     }
 }

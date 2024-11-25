@@ -96,6 +96,11 @@
       <DependentUpon>MiniVideoPlayer.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Remove="Views\Chats\Messages\ChatDebugMessage.xaml" />
+    <Resource Remove="Views\Chats\Messages\ChatMessage.xaml" />
+    <Resource Remove="Views\Chats\Messages\ChatServiceMessage.xaml" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <WebView2EnableCsWinRTProjection>False</WebView2EnableCsWinRTProjection>
     <PackageIcon>Light@2x.png</PackageIcon>
