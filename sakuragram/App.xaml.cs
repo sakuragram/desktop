@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -197,6 +198,10 @@ public partial class App : Application
 
 		_mWindow = new MainWindow();
 		// TODO: Load all chat folders before starting the app and save it to user database
+		if (DevelopmentConfig.ChatListVersion == 2)
+		{
+			if (_mWindow.ChatsView != null) await _mWindow.ChatsView.PrepareChatFolders();
+		}
 		_mWindow.Activate();
 	}
 }
