@@ -14,7 +14,7 @@
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
 	<WindowsSdkPackageVersion>10.0.26100.38</WindowsSdkPackageVersion>
-	<ApplicationIcon>StoreLogo.scale-400.ico</ApplicationIcon>
+	<ApplicationIcon>Assets\icons\app\White Icon (Circle).ico</ApplicationIcon>
 	<Title>sakuragram</Title>
 	<Authors>cherrymerry</Authors>
 	<PackageProjectUrl>https://github.com/sakuragram/desktop</PackageProjectUrl>
@@ -103,7 +103,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <WebView2EnableCsWinRTProjection>False</WebView2EnableCsWinRTProjection>
-    <PackageIcon>Light@2x.png</PackageIcon>
+    <PackageIcon>Assets\icons\app\White Icon (Circle).ico</PackageIcon>
     <PackageOutputPath />
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
