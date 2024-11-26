@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RelativePanel
+    x:Class="sakuragram.Views.Messages.MessageElements.MediaLoading"
+    x:Name="PanelMediaLoading"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:winUi="using:CommunityToolkit.Labs.WinUI"
+    mc:Ignorable="d"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch">
+    
+    <winUi:Shimmer x:Name="ShimmerLoading"
+                   IsActive="True"
+                   HorizontalAlignment="Stretch"
+                   VerticalAlignment="Stretch"
+                   Width="Auto"
+                   Height="Auto"
+                   RelativePanel.AlignBottomWithPanel="True"
+                   RelativePanel.AlignTopWithPanel="True"
+                   RelativePanel.AlignLeftWithPanel="True"
+                   RelativePanel.AlignRightWithPanel="True">
+    </winUi:Shimmer>
+    <StackPanel HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                RelativePanel.AlignVerticalCenterWithPanel="True"
+                RelativePanel.AlignHorizontalCenterWithPanel="True"
+                Width="Auto"
+                Height="Auto">
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Width="32"
+                Height="32"
+                Background="Black"
+                CornerRadius="32">
+            <ProgressRing IsActive="True"
+                          Margin="4"/>
+        </Border>
+    </StackPanel>
+    
+</RelativePanel>
