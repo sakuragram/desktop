@@ -87,6 +87,7 @@ namespace sakuragram.Views
 				case 0:
 					ButtonNext.IsEnabled = false;
 					TextBoxPhoneNumber.IsEnabled = false;
+					SwitchTestBackend.IsEnabled = false;
 					LoginProgress.Visibility = Visibility.Visible;
 					try
 					{

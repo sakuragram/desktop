@@ -25,13 +25,6 @@
 		             Visibility="Collapsed" 
 		             PasswordChar="*"
 		             Margin="0, 0, 0, 4" />
-		<ToggleSwitch x:Name="SwitchTestBackend"
-		              IsOn="False"
-		              OnContent="Test backend"
-		              OffContent="Test backend"
-		              HorizontalAlignment="Center"
-		              VerticalAlignment="Center"
-		              Toggled="SwitchTestBackend_OnToggled"/>
 		<ProgressBar x:Name="LoginProgress" IsIndeterminate="True" ShowPaused="False" ShowError="False" 
 		             Width="200"
 		             Visibility="Collapsed"
@@ -42,6 +35,13 @@
 			        Width="200" 
 			        Click="button_Next_Click"
 			        Margin="0, 4, 0, 8" />
+		<ToggleSwitch x:Name="SwitchTestBackend"
+		              IsOn="False"
+		              OnContent="Test backend"
+		              OffContent="Test backend"
+		              HorizontalAlignment="Center"
+		              VerticalAlignment="Center"
+		              Toggled="SwitchTestBackend_OnToggled"/>
 		<HyperlinkButton x:Name="ForgotPassword" Content="Forgot password?" Click="ForgotPassword_OnClick" 
 	                 Width="200"
 	                 Visibility="Collapsed"
