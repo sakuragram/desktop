@@ -34,8 +34,7 @@
                 Height="32"
                 Background="Black"
                 CornerRadius="32">
-            <ProgressRing IsActive="True"
-                          Margin="4"/>
+            <ProgressRing IsActive="True"/>
         </Border>
     </StackPanel>
     

@@ -21,6 +21,7 @@
     <messageElements:MediaLoading RelativePanel.AlignBottomWithPanel="True"
                                   RelativePanel.AlignTopWithPanel="True"
                                   RelativePanel.AlignLeftWithPanel="True"
-                                  RelativePanel.AlignRightWithPanel="True"/>
+                                  RelativePanel.AlignRightWithPanel="True"
+                                  x:Name="MediaLoading"/>
     
 </RelativePanel>

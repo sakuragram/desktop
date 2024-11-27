@@ -135,8 +135,7 @@ public partial class ChatMessage : Page
 
         if (sender.User != null)
         {
-            await ProfilePicture.InitializeProfilePhoto(sender.User, null, canOpenProfile: true);
-            var emojiStatus = await _client.GetDefaultChatEmojiStatusesAsync();
+            await ProfilePicture.InitializeProfilePhoto(sender.User, canOpenProfile: true);
             if (sender.User.Id == currentUser.Id) 
                 MessageBackground.Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseAltBrush"];
         }
@@ -147,7 +146,7 @@ public partial class ChatMessage : Page
 
         if (sender.User != null)
         {
-            if (sender.User.Id == currentUser.Id) DisplayName.Visibility = Visibility.Collapsed;
+            if (sender.User.Id == currentUser.Id) GridUserInfo.Visibility = Visibility.Collapsed;
             else SetDisplayName();
         }
         else SetDisplayName();
@@ -319,6 +318,12 @@ public partial class ChatMessage : Page
             }
             else PanelReplies.Visibility = Visibility.Collapsed;
         }
+        else
+        {
+            PanelViews.Visibility = Visibility.Collapsed;
+            PanelReplies.Visibility = Visibility.Collapsed;
+            GridReactions.Visibility = Visibility.Collapsed;
+        }
         
         #endregion
 
@@ -390,17 +395,8 @@ public partial class ChatMessage : Page
 
     private async void GenerateAnimationMessage(TdApi.MessageContent.MessageAnimation messageAnimation)
     {
-        MediaPlayerElement mediaPlayer = new();
-        if (messageAnimation.Animation.Animation_.Local.IsDownloadingCompleted) 
-            mediaPlayer.Source = MediaSource.CreateFromUri(new Uri(messageAnimation.Animation.Animation_.Local.Path));
-        else await _client.DownloadFileAsync(messageAnimation.Animation.Animation_.Id, 1, synchronous:true)
-                .ContinueWith(_ =>
-                {
-                    mediaPlayer.Source = 
-                        MediaSource.CreateFromUri(new Uri(messageAnimation.Animation.Animation_.Local.Path));
-                });
+        var mediaPlayer = new AnimationType(messageAnimation.Animation);
         PanelMessageContent.Children.Add(mediaPlayer);
-        mediaPlayer.MediaPlayer.AutoPlay = true;
     }
 
     public void AddAlbumElement(TdApi.Message message)
