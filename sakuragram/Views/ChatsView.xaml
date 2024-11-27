@@ -59,7 +59,7 @@
                               VerticalScrollBarVisibility="Auto"
                               Height="Auto"
                               ViewChanging="ScrollViewer_OnViewChanging">
-                    <StackPanel>
+                    <StackPanel x:Name="PanelChats">
                         <ItemsControl x:Name="PinnedChatsList"
                                       Width="Auto"
                                       ItemsPanel="{StaticResource VerticalItemsPanel}"/>

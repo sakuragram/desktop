@@ -104,7 +104,11 @@ public sealed partial class ChatsView : Page
             chatsListToInsert.Items.Insert(0, chatToMove);
         });
     }
-        
+
+    public async Task PrepareChatFolders()
+    {
+    }
+
     public async void OpenChat(long chatId = 0, bool isForum = false, TdApi.ForumTopic forumTopic = null)
     {
         try
@@ -135,67 +139,68 @@ public sealed partial class ChatsView : Page
         }
     }
 
-    public async void OpenForum(TdApi.Supergroup supergroup, TdApi.Chat chat)
+    public async Task OpenForum(TdApi.Supergroup supergroup, TdApi.Chat chat)
     {
-        _isForumOpened = true;
-        var forumTopics = await _client.ExecuteAsync(new TdApi.GetForumTopics
-        {
-            ChatId = chat.Id,
-            Limit = 100,
-            OffsetMessageId = chat.LastMessage.Id,
-            OffsetMessageThreadId = chat.LastMessage.MessageThreadId
-        });
-            
-        await DispatcherQueue.EnqueueAsync(async () =>
-        {
-            await ChatPhoto.InitializeProfilePhoto(null, chat);
-            ChatTitle.Text = chat.Title;
-            ChatMembers.Text = $"{supergroup.MemberCount} members";
-                
-            foreach (var forumTopic in forumTopics.Topics)
-            {
-                Button button = new(); 
-                button.Height = 50;
-                button.Width = 180;
-                button.Margin = new Thickness(4, 4, 4, 0);
-                button.Click += (_, _) =>
-                {
-                    try
-                    {
-                        OpenChat(chat.Id, isForum: true, forumTopic: forumTopic);
-                        _isForumTopicOpened = true;
-                        _isForumOpened = false;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e);
-                        throw;
-                    }
-                };
-                    
-                StackPanel stackPanel = new();
-                stackPanel.Orientation = Orientation.Vertical;
-                stackPanel.HorizontalAlignment = HorizontalAlignment.Left;
-                stackPanel.VerticalAlignment = VerticalAlignment.Stretch;
-                    
-                TextBlock topicNameTextBlock = new();
-                topicNameTextBlock.Text = forumTopic.Info.Name;
-                topicNameTextBlock.FontSize = 12;
-                stackPanel.Children.Add(topicNameTextBlock);
-                    
-                TextBlock topicLastMessageTextBlock = new();
-                topicLastMessageTextBlock.Text = UserService.GetSenderName(forumTopic.LastMessage).Result + ": " 
-                    + MessageService.GetTextMessageContent(forumTopic.LastMessage).Result;
-                topicLastMessageTextBlock.FontSize = 10;
-                topicLastMessageTextBlock.Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"];
-                stackPanel.Children.Add(topicLastMessageTextBlock);
-                    
-                button.Content = stackPanel;
-                PanelForumTopics.Children.Add(button);
-            }
-        });
-            
-        ColumnForumTopics.Width = new GridLength(200);
+        // TODO: fix
+        // _isForumOpened = true;
+        // var forumTopics = await _client.ExecuteAsync(new TdApi.GetForumTopics
+        // {
+        //     ChatId = chat.Id,
+        //     Limit = 100,
+        //     OffsetMessageId = chat.LastMessage.Id,
+        //     OffsetMessageThreadId = chat.LastMessage.MessageThreadId
+        // });
+        //     
+        // await DispatcherQueue.EnqueueAsync(async () =>
+        // {
+        //     await ChatPhoto.InitializeProfilePhoto(null, chat);
+        //     ChatTitle.Text = chat.Title;
+        //     ChatMembers.Text = $"{supergroup.MemberCount} members";
+        //         
+        //     foreach (var forumTopic in forumTopics.Topics)
+        //     {
+        //         Button button = new(); 
+        //         button.Height = 50;
+        //         button.Width = 180;
+        //         button.Margin = new Thickness(4, 4, 4, 0);
+        //         button.Click += (_, _) =>
+        //         {
+        //             try
+        //             {
+        //                 OpenChat(chat.Id, isForum: true, forumTopic: forumTopic);
+        //                 _isForumTopicOpened = true;
+        //                 _isForumOpened = false;
+        //             }
+        //             catch (Exception e)
+        //             {
+        //                 Debug.WriteLine(e);
+        //                 throw;
+        //             }
+        //         };
+        //             
+        //         StackPanel stackPanel = new();
+        //         stackPanel.Orientation = Orientation.Vertical;
+        //         stackPanel.HorizontalAlignment = HorizontalAlignment.Left;
+        //         stackPanel.VerticalAlignment = VerticalAlignment.Stretch;
+        //             
+        //         TextBlock topicNameTextBlock = new();
+        //         topicNameTextBlock.Text = forumTopic.Info.Name;
+        //         topicNameTextBlock.FontSize = 12;
+        //         stackPanel.Children.Add(topicNameTextBlock);
+        //             
+        //         TextBlock topicLastMessageTextBlock = new();
+        //         topicLastMessageTextBlock.Text = UserService.GetSenderName(forumTopic.LastMessage).Result + ": " 
+        //             + MessageService.GetTextMessageContent(forumTopic.LastMessage).Result;
+        //         topicLastMessageTextBlock.FontSize = 10;
+        //         topicLastMessageTextBlock.Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"];
+        //         stackPanel.Children.Add(topicLastMessageTextBlock);
+        //             
+        //         button.Content = stackPanel;
+        //         PanelForumTopics.Children.Add(button);
+        //     }
+        // });
+        //     
+        // ColumnForumTopics.Width = new GridLength(200);
     }
 
     public void CloseChat()
@@ -208,8 +213,8 @@ public sealed partial class ChatsView : Page
         }
         ContentFrame.Children.Remove(_currentChat);
     }
-        
-    public async Task GenerateChatEntries(TdApi.ChatList chatList)
+
+    private async Task GenerateChatEntries(TdApi.ChatList chatList, StackPanel pinnedPanel = null, StackPanel chatsPanel = null)
     {
         PinnedChatsList.Items.Clear();
         ChatsList.Items.Clear();

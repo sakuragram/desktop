@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.Foundation;
 using Windows.UI.ViewManagement;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
@@ -18,6 +18,7 @@ using sakuragram.Views;
 using sakuragram.Views.MainWindowElements;
 using TdLib;
 using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
+using Size = Windows.Foundation.Size;
 
 namespace sakuragram;
 
@@ -25,8 +26,9 @@ public sealed partial class MainWindow : Window
 {
 	public Frame RootFrame;
 	public StackPanel TopBarContent;
-		
-	public TdClient _client = App._client;
+	public ChatsView ChatsView; 
+
+	private TdClient _client = App._client;
 	private static TdApi.User _user;
 
 	private NavigationViewItem _lastItem;
@@ -52,7 +54,7 @@ public sealed partial class MainWindow : Window
 			
 		RootFrame = ContentFrame;
 		TopBarContent = PanelContent;
-
+		
 		#region TitleBar
 
 		TitleBar.Title = Config.AppName;
@@ -451,6 +453,7 @@ public sealed partial class MainWindow : Window
 			chatsView.MainWindowFrame = ContentFrame;
 			chatsView.MainWindowTitleBar = TitleBar;
 			chatsView.MainWindowTitleBarContent = TopBarContent;
+			ChatsView = chatsView;
 		}
 	}
 
