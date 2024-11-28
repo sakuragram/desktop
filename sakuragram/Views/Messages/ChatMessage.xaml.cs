@@ -353,7 +353,7 @@ public partial class ChatMessage : Page
         switch (messageContent)
         {
             case TdApi.MessageContent.MessageText messageText:
-                GenerateTextMessage(messageText);
+                GenerateTextMessage(messageText.Text);
                 break;
             case TdApi.MessageContent.MessageSticker messageSticker:
                 CheckSticker(messageSticker);
@@ -373,11 +373,7 @@ public partial class ChatMessage : Page
                 
                 if (!string.IsNullOrEmpty(messageDocument.Caption.Text))
                 {
-                    TextBlock captionTextBlock = new();
-                    captionTextBlock.Text = messageDocument.Caption.Text;
-                    captionTextBlock.IsTextSelectionEnabled = true;
-                    captionTextBlock.TextWrapping = TextWrapping.Wrap;
-                    PanelMessageContent.Children.Add(captionTextBlock);
+                    GenerateTextMessage(messageDocument.Caption);
                 }
                 break;
             case TdApi.MessageContent.MessageUnsupported:
@@ -426,26 +422,31 @@ public partial class ChatMessage : Page
         //             _photoMessage.Source = new BitmapImage(new Uri(messagePhoto.Photo.Sizes[1].Photo.Local.Path));
         //         });
         // }
-        
-        if (messagePhoto.Caption != null)
-        {
-            _caption = new();
-            _caption.Text = messagePhoto.Caption.Text;
-            _caption.IsTextSelectionEnabled = true;
-            _caption.TextWrapping = TextWrapping.Wrap;
-        }
 
-        if (messagePhoto.ShowCaptionAboveMedia)
+        await DispatcherQueue.EnqueueAsync(() =>
         {
-            PanelMessageContent.Children.Add(_caption);
-            //PanelMessageContent.Children.Add(_photoMessage);
-        }
-        else
-        {
-            //PanelMessageContent.Children.Add(_photoMessage);
-            PanelMessageContent.Children.Add(_caption);
-        }
-        
+            if (messagePhoto.Caption != null)
+            {
+                var inlines = MessageService.GetTextEntities(messagePhoto.Caption).Result;
+
+                _caption = new();
+                _caption.IsTextSelectionEnabled = true;
+                _caption.TextWrapping = TextWrapping.Wrap;
+                _caption.Inlines.Add(inlines);
+            }
+
+            if (messagePhoto.ShowCaptionAboveMedia)
+            {
+                PanelMessageContent.Children.Add(_caption);
+                //PanelMessageContent.Children.Add(_photoMessage);
+            }
+            else
+            {
+                //PanelMessageContent.Children.Add(_photoMessage);
+                PanelMessageContent.Children.Add(_caption);
+            }
+        });
+
         // if (album != null && mediaAlbumId != 0)
         // {
         //     _mediaAlbum = album;
@@ -485,137 +486,15 @@ public partial class ChatMessage : Page
         // }
     }
 
-    private void GenerateTextMessage(TdApi.MessageContent.MessageText messageText)
+    private void GenerateTextMessage(TdApi.FormattedText messageText)
     {
+        var inlines = MessageService.GetTextEntities(messageText).Result;
+        
         TextBlock textMessage = new();
-        textMessage.Text = messageText.Text.Text;
         textMessage.IsTextSelectionEnabled = true;
         textMessage.TextWrapping = TextWrapping.Wrap;
+        textMessage.Inlines.Add(inlines);
         
-        var tempSpan = new Span();
-        var text = messageText.Text.Text;
-
-        int lastIndex = 0;
-
-        foreach (var entity in messageText.Text.Entities)
-        {
-            switch (entity.Type)
-            {
-                case TdApi.TextEntityType.TextEntityTypeUrl:
-                {
-                    var regex = new Regex(@"(https?://[^\s]+)");
-                    var match = regex.Match(text, lastIndex);
-
-                    if (match.Success)
-                    {
-                        var link = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri(link),
-                            Foreground = new SolidColorBrush(Colors.Azure),
-                            TextDecorations = TextDecorations.Underline
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = link });
-
-                        tempSpan.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        tempSpan.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeTextUrl url:
-                {
-                    var hyperlink = new Hyperlink
-                    {
-                        NavigateUri = new Uri(url.Url),
-                        Foreground = new SolidColorBrush(Colors.Azure),
-                        TextDecorations = TextDecorations.Underline
-                    };
-                    hyperlink.Inlines.Add(new Run { Text = text });
-                    
-                    tempSpan.Inlines.Add(new Run { Text = text.Substring(lastIndex, entity.Length - lastIndex) });
-                    tempSpan.Inlines.Add(hyperlink);
-                    lastIndex = entity.Offset + entity.Length;
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeHashtag:
-                {
-                    var regex = new Regex(@"(#\w+)");
-                    var match = regex.Match(text);
-                    
-                    if (match.Success)
-                    {
-                        var hashtag = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri("https://t.me/sakuragram/"),
-                            Foreground = new SolidColorBrush(Colors.Azure)
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = hashtag });
-                        
-                        tempSpan.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        tempSpan.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeMentionName mentionName:
-                {
-                    var regex = new Regex(@"(@\w+)");
-                    var match = regex.Match(text);
-                    
-                    if (match.Success)
-                    {
-                        var mention = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri($"https://t.me/{mentionName.UserId}"),
-                            Foreground = new SolidColorBrush(Colors.Azure)
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = mention });
-                        
-                        tempSpan.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        tempSpan.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeMention:
-                {
-                    var regex = new Regex(@"(@\w+)");
-                    var match = regex.Match(text);
-                    
-                    if (match.Success)
-                    {
-                        var mention = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri($"https://t.me/{mention.Replace("@", string.Empty)}"),
-                            Foreground = new SolidColorBrush(Colors.Azure)
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = mention });
-                        
-                        tempSpan.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        tempSpan.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeBold:{
-                    string boldText = text.Substring(entity.Offset, entity.Length);
-                    
-                    textMessage.Inlines.Add(new Run { Text = text.Substring(0, entity.Offset) });
-                    textMessage.Inlines.Add(new Run { Text = boldText, FontWeight = FontWeights.Bold, FontStyle = FontStyle.Italic });
-                    textMessage.Inlines.Add(new Run { Text = text.Substring(entity.Offset + entity.Length) });
-                    break;
-                }
-            }
-        }
-
-        tempSpan.Inlines.Add(new Run { Text = text.Substring(lastIndex) });
-
-        textMessage.Inlines.Clear();
-        textMessage.Inlines.Add(tempSpan);
         PanelMessageContent.Children.Add(textMessage);
     }
 

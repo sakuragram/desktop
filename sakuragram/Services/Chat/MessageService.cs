@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Windows.UI.Text;
+using Microsoft.UI;
+using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
 using TdLib;
 
 namespace sakuragram.Services;
@@ -113,5 +118,123 @@ public class MessageService
             };
             return lastMessage;
         }
+    }
+
+    public static async Task<Span> GetTextEntities(TdApi.FormattedText formattedText)
+    {
+        var inlines = new Span();
+        var text = formattedText.Text;
+        int lastIndex = 0;
+
+        foreach (var textEntity in formattedText.Entities)
+        {
+            switch (textEntity.Type)
+            {
+                case TdApi.TextEntityType.TextEntityTypeUrl:
+                {
+                    var regex = new Regex(@"(https?://[^\s]+)");
+                    var match = regex.Match(text, lastIndex);
+
+                    if (match.Success)
+                    {
+                        var link = match.Value;
+                        var hyperlink = new Hyperlink
+                        {
+                            NavigateUri = new Uri(link),
+                            Foreground = new SolidColorBrush(Colors.Azure),
+                            TextDecorations = TextDecorations.Underline
+                        };
+                        hyperlink.Inlines.Add(new Run { Text = link });
+
+                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                        inlines.Inlines.Add(hyperlink);
+                        lastIndex = match.Index + match.Length;
+                    }
+                    break;
+                }
+                case TdApi.TextEntityType.TextEntityTypeTextUrl url:
+                {
+                    var hyperlink = new Hyperlink
+                    {
+                        NavigateUri = new Uri(url.Url),
+                        Foreground = new SolidColorBrush(Colors.Azure),
+                        TextDecorations = TextDecorations.Underline
+                    };
+                    hyperlink.Inlines.Add(new Run { Text = text });
+                    
+                    inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, textEntity.Length - lastIndex) });
+                    inlines.Inlines.Add(hyperlink);
+                    lastIndex = textEntity.Offset + textEntity.Length;
+                    break;
+                }
+                case TdApi.TextEntityType.TextEntityTypeHashtag:
+                {
+                    var regex = new Regex(@"(#\w+)");
+                    var match = regex.Match(text);
+                    
+                    if (match.Success)
+                    {
+                        var hashtag = match.Value;
+                        var hyperlink = new Hyperlink
+                        {
+                            NavigateUri = new Uri("https://t.me/sakuragram/"),
+                            Foreground = new SolidColorBrush(Colors.Azure)
+                        };
+                        hyperlink.Inlines.Add(new Run { Text = hashtag });
+                        
+                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                        inlines.Inlines.Add(hyperlink);
+                        lastIndex = match.Index + match.Length;
+                    }
+                    break;
+                }
+                case TdApi.TextEntityType.TextEntityTypeMentionName mentionName:
+                {
+                    var regex = new Regex(@"(@\w+)");
+                    var match = regex.Match(text);
+                    
+                    if (match.Success)
+                    {
+                        var mention = match.Value;
+                        var hyperlink = new Hyperlink
+                        {
+                            NavigateUri = new Uri($"https://t.me/{mentionName.UserId}"),
+                            Foreground = new SolidColorBrush(Colors.Azure)
+                        };
+                        hyperlink.Inlines.Add(new Run { Text = mention });
+                        
+                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                        inlines.Inlines.Add(hyperlink);
+                        lastIndex = match.Index + match.Length;
+                    }
+                    break;
+                }
+                case TdApi.TextEntityType.TextEntityTypeMention:
+                {
+                    var regex = new Regex(@"(@\w+)");
+                    var match = regex.Match(text);
+                    
+                    if (match.Success)
+                    {
+                        var mention = match.Value;
+                        var hyperlink = new Hyperlink
+                        {
+                            NavigateUri = new Uri($"https://t.me/{mention.Replace("@", string.Empty)}"),
+                            Foreground = new SolidColorBrush(Colors.Azure)
+                        };
+                        hyperlink.Inlines.Add(new Run { Text = mention });
+                        
+                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                        inlines.Inlines.Add(hyperlink);
+                        lastIndex = match.Index + match.Length;
+                    }
+                    break;
+                }
+            }
+        }
+        
+        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex) });
+        
+        return inlines;
     }
 }
