@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommunityToolkit.WinUI;
 using Microsoft.UI;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -249,6 +250,10 @@ public sealed partial class ChatEntry
         {
             await DispatcherQueue.EnqueueAsync(() => 
                 UnreadMessagesCount.Background = new SolidColorBrush(Colors.Gray));
+        }
+        else
+        {
+            await DispatcherQueue.EnqueueAsync(() => UnreadMessagesCount.FontWeight = FontWeights.Bold);
         }
 
         #region Unread
