@@ -402,7 +402,7 @@
                                 Background="#1a1a1a"
                                 HorizontalContentAlignment="Center"
                                 HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
+                                VerticalAlignment="Bottom"
                                 Visibility="Collapsed"
                                 RelativePanel.AlignRightWithPanel="True"
                                 RelativePanel.AlignLeftWithPanel="True"

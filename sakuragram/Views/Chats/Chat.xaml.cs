@@ -68,6 +68,7 @@ public sealed partial class Chat : Page
     private int _currentStickerSet = -1;
     private int _currentMediaPage;
     
+    private ChatMessage _penultimateChatMessage;
     private ChatMessage _lastChatMessage;
     
     private List<StorageFile> _mediaFiles = [];
@@ -341,37 +342,11 @@ public sealed partial class Chat : Page
                 case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
                     try
                     {
-                        var supergroup = await _client.GetSupergroupAsync(
-                            supergroupId: typeSupergroup.SupergroupId);
                         var supergroupInfo = await _client.GetSupergroupFullInfoAsync(
                             supergroupId: typeSupergroup.SupergroupId);
                         _linkedChatId = supergroupInfo.LinkedChatId;
 
-                        if (supergroup.IsChannel)
-                        {
-                            isChannel = true;
-                            await DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                UserActionsPanel.Visibility = supergroup.Status switch
-                                {
-                                    TdApi.ChatMemberStatus.ChatMemberStatusCreator => Visibility.Visible,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusAdministrator => Visibility.Visible,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusMember => Visibility.Collapsed,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusBanned => Visibility.Collapsed,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusRestricted => Visibility.Collapsed,
-                                    TdApi.ChatMemberStatus.ChatMemberStatusLeft => Visibility.Collapsed,
-                                    _ => Visibility.Collapsed
-                                };
-
-                                ButtonFastAction.Visibility = Visibility.Visible;
-                            });
-                        }
-                        else
-                        {
-                            isChannel = false;
-                            await DispatcherQueue.EnqueueAsync(() =>
-                                ButtonFastAction.Visibility = Visibility.Collapsed);
-                        }
+                        isChannel = typeSupergroup.IsChannel;
 
                         await DispatcherQueue.EnqueueAsync(() =>
                             ChatMembers.Text = supergroupInfo.MemberCount + " members");
@@ -395,17 +370,42 @@ public sealed partial class Chat : Page
                     switch (memberInfo.Status)
                     {
                         case TdApi.ChatMemberStatus.ChatMemberStatusAdministrator administrator:
-                            Visibility canManageChat = administrator.Rights.CanManageChat
-                                ? Visibility.Visible
-                                : Visibility.Collapsed;
-                            Visibility canPostMessages = administrator.Rights.CanPostMessages
-                                ? Visibility.Visible
-                                : Visibility.Collapsed;
 
-                            FlyoutItemManageGroup.Visibility = canManageChat;
-                            ButtonChatEventLog.Visibility = canManageChat;
-                            UserActionsPanel.Visibility = canPostMessages;
-                            ButtonFastAction.Visibility = canPostMessages;
+                            #region admin_rights
+
+                            bool canManageChat = administrator.Rights.CanManageChat;
+                            bool canPostMessages = administrator.Rights.CanPostMessages;
+                            bool canDeleteMessages = administrator.Rights.CanDeleteMessages;
+                            bool canEditMessages = administrator.Rights.CanEditMessages;
+                            bool canChangeInfo = administrator.Rights.CanChangeInfo;
+                            bool canPostStories = administrator.Rights.CanPostStories;
+                            bool canDeleteStories = administrator.Rights.CanDeleteStories;
+                            bool canEditStories = administrator.Rights.CanEditStories;
+                            bool canInviteUsers = administrator.Rights.CanInviteUsers;
+                            bool canManageTopics = administrator.Rights.CanManageTopics;
+                            bool canPinMessages = administrator.Rights.CanPinMessages;
+                            bool canPromoteMembers = administrator.Rights.CanPromoteMembers;
+                            bool canRestrictMembers = administrator.Rights.CanRestrictMembers;
+                            bool canManageVideoChats = administrator.Rights.CanManageVideoChats;
+                            bool isAnonymous = administrator.Rights.IsAnonymous;
+
+                            #endregion
+
+                            if (canPostMessages && isChannel)
+                            {
+                                ButtonFastAction.Visibility = Visibility.Collapsed;
+                                UserActionsPanel.Visibility = Visibility.Visible;
+                            }
+                            else if (!canPostMessages && isChannel)
+                            {
+                                ButtonFastAction.Visibility = Visibility.Visible;
+                                UserActionsPanel.Visibility = Visibility.Collapsed;
+                            }
+                            else
+                            {
+                                ButtonFastAction.Visibility = Visibility.Visible;
+                                UserActionsPanel.Visibility = Visibility.Collapsed;
+                            }
                             break;
                         case TdApi.ChatMemberStatus.ChatMemberStatusBanned banned:
                             var banDialog = new ContentDialog
@@ -418,12 +418,8 @@ public sealed partial class Chat : Page
                             banDialog.ShowAsync();
                             break;
                         case TdApi.ChatMemberStatus.ChatMemberStatusCreator creator:
-                            break;
-                        case TdApi.ChatMemberStatus.ChatMemberStatusLeft left:
-                            break;
-                        case TdApi.ChatMemberStatus.ChatMemberStatusMember member:
-                            break;
-                        case TdApi.ChatMemberStatus.ChatMemberStatusRestricted restricted:
+                            ButtonFastAction.Visibility = Visibility.Collapsed;
+                            UserActionsPanel.Visibility = Visibility.Visible;
                             break;
                     }
                 }
@@ -606,10 +602,8 @@ public sealed partial class Chat : Page
             //     _ => string.Empty
             // }; TODO: Fix emojis
             
-            var messages = await GetMessagesAsync(_chatId, _isForum);
-            messages.Clear();
-            messages = await GetMessagesAsync(_chatId, _isForum);
-            await GenerateMessageByType(messages);
+            // var messages = await GetMessagesAsync(_chatId, _isForum);
+            // await GenerateMessageByType(messages);
         }
         catch (Exception e)
         {
