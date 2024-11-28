@@ -36,7 +36,7 @@ public sealed partial class ChatsView : Page
     private bool _isForumOpened = false;
     private bool _isForumTopicOpened = false;
     private bool _isChatOpened = false;
-    private int _totalUnreadArchivedChatsCount = 0;
+    private bool _isArchiveState = true;
     private StorageFile _newProfilePicture;
     private List<long> _chatsIds = [];
     private List<long> _pinnedChats = [];
@@ -58,7 +58,8 @@ public sealed partial class ChatsView : Page
         ChatsItemsList = ChatsList;
             
         ColumnForumTopics.Width = new GridLength(0);
-        
+
+        FlyoutItemExpandArchive.Click += (_, _) => UpdateArchiveState();
         FlyoutItemTelegramFeatures.Click += (_, _) => OpenChat(-1001224624669);
         FlyoutItemSakuragramNews.Click += (_, _) => OpenChat(-1002187436725);
     }
@@ -557,6 +558,9 @@ public sealed partial class ChatsView : Page
 
     public async Task PrepareChatsView()
     {
+        int currentIndex = 0;
+        string lastArchiveChannels = string.Empty;
+        
         GenerateUsers();
         await GenerateFolders();
 
@@ -565,6 +569,8 @@ public sealed partial class ChatsView : Page
             try
             {
                 var currentUser = await _client.GetMeAsync();
+                var archive = await _client.GetChatsAsync(new TdApi.ChatList.ChatListArchive(), 100);
+                
                 await CurrentUserPicture.InitializeProfilePhoto(currentUser, sizes: 42);
                 FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
                 FlyoutItemCurrentUser.Icon = new BitmapIcon
@@ -574,6 +580,28 @@ public sealed partial class ChatsView : Page
                     Width = 32,
                     Height = 32
                 };
+                
+                if (archive.ChatIds.Length > 0)
+                {
+                    ButtonArchive.Visibility = Visibility.Visible;
+                    SeparatorArchive.Visibility = Visibility.Visible;
+                    int totalUnreadCount = 0;
+            
+                    foreach (var chatId in archive.ChatIds)
+                    {
+                        var chat = await _client.GetChatAsync(chatId);
+                        totalUnreadCount += chat.UnreadCount;
+
+                        if (currentIndex != 3 && _isArchiveState)
+                        {
+                            lastArchiveChannels += chat.Title + ", ";
+                            currentIndex++;
+                        }
+                    }
+            
+                    BadgeArchiveUnreadCount.Value = totalUnreadCount;
+                    TextBlockLastChat.Text = lastArchiveChannels;
+                }
             }
             catch (Exception e)
             {
@@ -582,6 +610,7 @@ public sealed partial class ChatsView : Page
             }
         });
         
+        UpdateArchiveState();
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
         
         if (App._folderId != -1)
@@ -593,5 +622,23 @@ public sealed partial class ChatsView : Page
             GenerateChatEntries(new TdApi.ChatList.ChatListMain());
             App._folderId = -1;
         }
+    }
+
+    private void UpdateArchiveState()
+    {
+        var settings = SettingsService.LoadSettings();
+        SettingsService.SaveSettings(new Services.Core.Settings
+        {
+            InstallBeta = settings.InstallBeta,
+            ArchiveState = !settings.ArchiveState,
+            AutoUpdate = settings.AutoUpdate,
+            Language = settings.Language,
+            ChatBottomFastAction = settings.ChatBottomFastAction,
+            StartMediaPage = settings.StartMediaPage
+        });
+        _isArchiveState = !_isArchiveState;
+        FlyoutItemExpandArchive.Text = _isArchiveState ? "Expand" : "Collapse";
+        ButtonArchive.Height = _isArchiveState ? 40 : 50;
+        TextBlockLastChat.Visibility = _isArchiveState ? Visibility.Collapsed : Visibility.Visible;
     }
 }

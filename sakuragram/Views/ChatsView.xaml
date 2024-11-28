@@ -60,10 +60,54 @@
                               Height="Auto"
                               ViewChanging="ScrollViewer_OnViewChanging">
                     <StackPanel x:Name="PanelChats">
+                        <Button x:Name="ButtonArchive"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Center"
+                                Width="Auto"
+                                Height="50"
+                                Visibility="Collapsed">
+                            <Grid ColumnDefinitions="Auto, *, Auto"
+                                  HorizontalAlignment="Stretch"
+                                  Width="Auto">
+                                <FontIcon Glyph="&#xE74D;"
+                                          HorizontalAlignment="Left"
+                                          FontSize="14"
+                                          Margin="0, 0, 10, 0"
+                                          Grid.Column="0"/>
+                                <StackPanel HorizontalAlignment="Left"
+                                            Grid.Column="1">
+                                    <TextBlock Text="Archived chats"
+                                               FontSize="14"/>
+                                    <TextBlock Text="Last chats"
+                                               FontSize="10"
+                                               Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                               x:Name="TextBlockLastChat"/>
+                                </StackPanel>
+                                <InfoBadge Value="123456789"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Right"
+                                           x:Name="BadgeArchiveUnreadCount"
+                                           Grid.Column="2"/>
+                            </Grid>
+                            <Button.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="Expand"
+                                                    x:Name="FlyoutItemExpandArchive"/>
+                                    <MenuFlyoutItem Text="Move to tab menu"/>
+                                    <MenuFlyoutSeparator />
+                                    <MenuFlyoutItem Text="Mark as read"/>
+                                </MenuFlyout>
+                            </Button.ContextFlyout>
+                        </Button>
+                        <MenuFlyoutSeparator x:Name="SeparatorArchive" 
+                                             Margin="0, 4, 0, 4" 
+                                             Visibility="Collapsed"/>
                         <ItemsControl x:Name="PinnedChatsList"
                                       Width="Auto"
                                       ItemsPanel="{StaticResource VerticalItemsPanel}"/>
-                        <MenuFlyoutSeparator x:Name="Separator" Margin="0, 4, 0, 4" />
+                        <MenuFlyoutSeparator x:Name="Separator" 
+                                             Margin="0, 4, 0, 4" />
                         <ScrollViewer Margin="0"
                                       Width="350" 
                                       Height="Auto"
