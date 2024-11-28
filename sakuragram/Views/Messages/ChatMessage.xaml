@@ -21,6 +21,8 @@
                            VerticalAlignment="Bottom"/>
         <Border x:Name="MessageBackground" 
                 MinWidth="150"
+        <Border x:Name="MessageBackground"
+                MaxWidth="350"
                 Width="Auto"
                 Background="{StaticResource SolidBackgroundFillColorBaseBrush}" 
                 CornerRadius="10">

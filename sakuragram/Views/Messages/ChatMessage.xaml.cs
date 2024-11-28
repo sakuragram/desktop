@@ -136,18 +136,20 @@ public partial class ChatMessage : Page
         if (sender.User != null)
         {
             await ProfilePicture.InitializeProfilePhoto(sender.User, canOpenProfile: true);
-            if (sender.User.Id == currentUser.Id) 
-                MessageBackground.Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseAltBrush"];
+            if (sender.User.Id == currentUser.Id)
+            {
+                GridUserInfo.Visibility = Visibility.Collapsed;
+                MessageBackground.Background =
+                    (Brush)Application.Current.Resources["AccentAcrylicBackgroundFillColorBaseBrush"];
+                Reply.Background = (Brush)Application.Current.Resources["AccentAcrylicBackgroundFillColorDefaultBrush"];
+                ReplyFirstName.Foreground = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"];
+                ReplyInputContent.Foreground = (Brush)Application.Current.Resources["TextOnAccentFillColorSecondaryBrush"];
+            }
+            else SetDisplayName();
         }
         else if (sender.Chat != null)
         {
             await ProfilePicture.InitializeProfilePhoto(null, sender.Chat, canOpenProfile: true);
-        }
-
-        if (sender.User != null)
-        {
-            if (sender.User.Id == currentUser.Id) GridUserInfo.Visibility = Visibility.Collapsed;
-            else SetDisplayName();
         }
         else SetDisplayName();
         
