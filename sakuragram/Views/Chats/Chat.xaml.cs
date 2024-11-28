@@ -602,8 +602,8 @@ public sealed partial class Chat : Page
             //     _ => string.Empty
             // }; TODO: Fix emojis
             
-            // var messages = await GetMessagesAsync(_chatId, _isForum);
-            // await GenerateMessageByType(messages);
+            var messages = await GetMessagesAsync(_chatId, _isForum);
+            await GenerateMessageByType(messages);
         }
         catch (Exception e)
         {

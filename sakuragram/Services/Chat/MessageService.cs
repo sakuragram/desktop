@@ -132,10 +132,28 @@ public class MessageService
             {
                 case TdApi.TextEntityType.TextEntityTypeUrl:
                 {
-                    var regex = new Regex(@"(https?://[^\s]+)");
+                    var regex = new Regex(@"(https?://[^\s]+)\b");
                     var match = regex.Match(text, lastIndex);
 
                     if (match.Success)
+                    {
+                        var link = match.Value;
+                        var hyperlink = new Hyperlink
+                        {
+                            NavigateUri = new Uri(link),
+                            Foreground = new SolidColorBrush(Colors.Azure),
+                            TextDecorations = TextDecorations.Underline
+                        };
+                        hyperlink.Inlines.Add(new Run { Text = link });
+
+                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                        inlines.Inlines.Add(hyperlink);
+                        lastIndex = match.Index + match.Length;
+                    }
+
+                    var regexWithoutHttps = new Regex(@"^(?!https:\/\/)[a-zA-Z0-9\.\-\/]+$");
+                    var matchWithoutHttps = regexWithoutHttps.Match(text, lastIndex);
+                    if (matchWithoutHttps.Success)
                     {
                         var link = match.Value;
                         var hyperlink = new Hyperlink
@@ -154,15 +172,18 @@ public class MessageService
                 }
                 case TdApi.TextEntityType.TextEntityTypeTextUrl url:
                 {
+                    var urlText = text.Substring(textEntity.Offset, textEntity.Length);
                     var hyperlink = new Hyperlink
                     {
                         NavigateUri = new Uri(url.Url),
                         Foreground = new SolidColorBrush(Colors.Azure),
                         TextDecorations = TextDecorations.Underline
                     };
-                    hyperlink.Inlines.Add(new Run { Text = text });
-                    
-                    inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, textEntity.Length - lastIndex) });
+                    hyperlink.Inlines.Add(new Run { Text = urlText });
+                    if (textEntity.Offset > lastIndex)
+                    {
+                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, textEntity.Offset - lastIndex) });
+                    }
                     inlines.Inlines.Add(hyperlink);
                     lastIndex = textEntity.Offset + textEntity.Length;
                     break;
@@ -190,7 +211,7 @@ public class MessageService
                 }
                 case TdApi.TextEntityType.TextEntityTypeMentionName mentionName:
                 {
-                    var regex = new Regex(@"(@\w+)");
+                    var regex = new Regex(@"(@\w+)\b");
                     var match = regex.Match(text);
                     
                     if (match.Success)
@@ -211,9 +232,10 @@ public class MessageService
                 }
                 case TdApi.TextEntityType.TextEntityTypeMention:
                 {
-                    var regex = new Regex(@"(@\w+)");
+                    // Измененное регулярное выражение для захвата только корректных упоминаний вида @username
+                    var regex = new Regex(@"(@\w+)\b");
                     var match = regex.Match(text);
-                    
+    
                     if (match.Success)
                     {
                         var mention = match.Value;
@@ -223,7 +245,7 @@ public class MessageService
                             Foreground = new SolidColorBrush(Colors.Azure)
                         };
                         hyperlink.Inlines.Add(new Run { Text = mention });
-                        
+        
                         inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
                         inlines.Inlines.Add(hyperlink);
                         lastIndex = match.Index + match.Length;
