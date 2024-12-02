@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RelativePanel
+    x:Class="sakuragram.Views.MediaPlayers.Audio.MiniAudioPlayer"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:winUi="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d"
+    Margin="0, 0, 0, 4"
+    Height="65"
+    MinHeight="65"
+    MaxHeight="65"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch">
+    
+    <Border CornerRadius="4"
+            Padding="5"
+            Background="#1a1a1a"
+            RelativePanel.AlignBottomWithPanel="True"
+            RelativePanel.AlignLeftWithPanel="True"
+            RelativePanel.AlignRightWithPanel="True"
+            RelativePanel.AlignTopWithPanel="True">
+        <Grid ColumnDefinitions="Auto, Auto, Auto, *, Auto, Auto, Auto, Auto, Auto, Auto"
+              RowDefinitions="Auto, Auto"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Center">
+            <Button x:Name="ButtonPrevious"
+                    Grid.Column="0"
+                    Width="28"
+                    Height="28"
+                    Background="Transparent"
+                    Content="{winUi:FontIcon Glyph='&#xE70D;', FontSize='12', Foreground='White'}"
+                    Padding="0"/>
+            <Button x:Name="ButtonState"
+                    Grid.Column="1"/>
+            <Button x:Name="ButtonNext"
+                    Grid.Column="2"/>
+            <TextBlock x:Name="TextBlockTitle"
+                       Grid.Column="3"/>
+            <TextBlock x:Name="TextBlockTime"
+                       Grid.Column="4"/>
+            <Button x:Name="ButtonVolume"
+                    Grid.Column="5"/>
+            <Button x:Name="ButtonShuffle"
+                    Grid.Column="6"/>
+            <Button x:Name="ButtonRepeat"
+                    Grid.Column="7"/>
+            <Button x:Name="ButtonSpeed"
+                    Grid.Column="8"/>
+            <Button x:Name="ButtonClose"
+                    Grid.Column="9"/>
+            <Slider x:Name="Slider"
+                         Grid.Row="1"/>
+        </Grid>
+    </Border>
+    
+</RelativePanel>

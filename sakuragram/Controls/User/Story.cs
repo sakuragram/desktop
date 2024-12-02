@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using sakuragram.Services;
-using sakuragram.Views.MediaPlayer;
+using sakuragram.Views.MediaPlayers;
 using TdLib;
 
 namespace sakuragram.Controls.User;

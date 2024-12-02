@@ -34,7 +34,8 @@ public class SettingsService
             Language = "en",
             ChatBottomFastAction = "Discuss",
             StartMediaPage = "Stickers",
-            ArchiveState = true
+            ArchiveState = true,
+            Theme = 0
         };
         string jsonSettings = File.ReadAllText(SettingsPath);
         return JsonConvert.DeserializeObject<Settings>(jsonSettings);
@@ -82,6 +83,7 @@ public class Settings
     public string ChatBottomFastAction { get; set; }
     public string StartMediaPage { get; set; }
     public bool ArchiveState { get; set; }
+    public int Theme { get; set; }
 }
 
 public class AccountSettings

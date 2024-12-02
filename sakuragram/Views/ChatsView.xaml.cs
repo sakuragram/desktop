@@ -3,22 +3,22 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
+using Windows.UI.Core;
 using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using sakuragram.Services;
 using sakuragram.Services.Core;
 using sakuragram.Views.Chats;
 using TdLib;
-using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 
 namespace sakuragram.Views;
 
@@ -50,10 +50,20 @@ public sealed partial class ChatsView : Page
     public ItemsControl PinnedChatsItemsList;
     public ItemsControl ChatsItemsList;
         
+/// <summary>
+/// Initializes a new instance of the <see cref="ChatsView"/> class.
+/// </summary>
+/// <remarks>
+/// This constructor initializes the components for the chat view, sets up the UI elements for displaying pinned
+/// and regular chats, and configures event handlers for various UI interactions, such as changing themes and
+/// toggling the archive state. It also sets the initial width of the forum topics column.
+/// </remarks>
     public ChatsView()
     {
         InitializeComponent();
 
+        var settings = SettingsService.LoadSettings();
+        
         PinnedChatsItemsList = PinnedChatsList;
         ChatsItemsList = ChatsList;
             
@@ -64,6 +74,15 @@ public sealed partial class ChatsView : Page
         FlyoutItemSakuragramNews.Click += (_, _) => OpenChat(-1002187436725);
     }
 
+    /// <summary>
+    /// Process updates from TDLib.
+    /// </summary>
+    /// <param name="update">The update to process.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <remarks>
+    /// This method is called whenever TDLib sends an update to the chat list.
+    /// The update is processed here, and the UI is updated accordingly.
+    /// </remarks>
     private async Task ProcessUpdates(TdApi.Update update)
     {
         switch (update)
@@ -131,7 +150,8 @@ public sealed partial class ChatsView : Page
                 }
 
                 _currentChat._ChatsView = this;
-                ContentFrame.Children.Add(_currentChat);
+                GridChatView.Children.Add(_currentChat);
+                Grid.SetRow(_currentChat, 1);
             });
         }
         catch (Exception e)
@@ -212,7 +232,7 @@ public sealed partial class ChatsView : Page
             _isForumOpened = true;
             ColumnForumTopics.Width = new GridLength(200);
         }
-        ContentFrame.Children.Remove(_currentChat);
+        GridChatView.Children.Remove(_currentChat);
     }
 
     private async Task GenerateChatEntries(TdApi.ChatList chatList, StackPanel pinnedPanel = null, StackPanel chatsPanel = null)
@@ -267,7 +287,7 @@ public sealed partial class ChatsView : Page
                 ChatEntry chatEntry = new()
                 {
                     _ChatsView = this,
-                    ChatPage = ContentFrame,
+                    ChatPage = GridChatView,
                     _chat = chat,
                     ChatId = chat.Id,
                 };

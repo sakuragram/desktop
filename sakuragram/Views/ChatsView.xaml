@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:user="using:sakuragram.Controls.User"
+    xmlns:audio="using:sakuragram.Views.MediaPlayers.Audio"
     mc:Ignorable="d"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Stretch"
@@ -368,7 +369,14 @@
             </Border>
         </Grid>
         
-        <Grid x:Name="ContentFrame" 
-                  Grid.Column="2" />
+        <Grid x:Name="GridChatView" 
+                  Grid.Column="2"
+                  RowDefinitions="Auto, *">
+            <audio:MiniAudioPlayer Grid.Row="0"
+                                   Width="Auto"
+                                   Height="65"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"/>
+        </Grid>
     </Grid>
 </Page>

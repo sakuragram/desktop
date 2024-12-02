@@ -7,7 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using TdLib;
 
-namespace sakuragram.Views.MediaPlayer;
+namespace sakuragram.Views.MediaPlayers;
 
 public partial class MediaPlayer
 {

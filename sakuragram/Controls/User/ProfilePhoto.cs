@@ -9,7 +9,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using sakuragram.Services;
 using sakuragram.Services.Core;
-using sakuragram.Views.MediaPlayer;
+using sakuragram.Views.MediaPlayers;
 using TdLib;
 
 namespace sakuragram.Controls.User;
