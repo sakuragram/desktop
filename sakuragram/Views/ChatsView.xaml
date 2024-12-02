@@ -370,13 +370,7 @@
         </Grid>
         
         <Grid x:Name="GridChatView" 
-                  Grid.Column="2"
-                  RowDefinitions="Auto, *">
-            <audio:MiniAudioPlayer Grid.Row="0"
-                                   Width="Auto"
-                                   Height="65"
-                                   HorizontalAlignment="Stretch"
-                                   VerticalAlignment="Stretch"/>
+                  Grid.Column="2">
         </Grid>
     </Grid>
 </Page>

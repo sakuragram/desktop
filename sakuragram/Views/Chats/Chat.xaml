@@ -189,6 +189,7 @@
                 <StackPanel x:Name="PanelUnreadActions"
                             VerticalAlignment="Bottom"
                             HorizontalAlignment="Right"
+                            Visibility="Collapsed"
                             Grid.Column="1">
                     <Button x:Name="ButtonUnreadReaction"
                             Width="36"
@@ -228,7 +229,7 @@
             </Grid>
             
             <Grid HorizontalAlignment="Stretch" 
-                  VerticalAlignment="Bottom" 
+                  VerticalAlignment="Bottom"
                   Height="45"
                   x:Name="GridUserActions"
                   Grid.Row="2">

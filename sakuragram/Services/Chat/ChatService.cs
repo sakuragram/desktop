@@ -24,6 +24,7 @@ public class ChatService
             _openedChatId = chatId;
             _isChatOpen = true;
             CurrentChat = new Views.Chats.Chat(_openedChatId, false, null);
+            await CurrentChat.UpdateChat();
             return CurrentChat;
         }
         catch (TdException e)

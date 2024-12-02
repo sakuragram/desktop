@@ -82,8 +82,6 @@ public sealed partial class Chat : Page
         _forumTopic = forumTopic;
         _replyService = new ReplyService();
         _messageService = new MessageService();
-
-        Task.Run(async () => await UpdateChat());
         
         #if DEBUG
         {

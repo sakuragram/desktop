@@ -151,7 +151,6 @@ public sealed partial class ChatsView : Page
 
                 _currentChat._ChatsView = this;
                 GridChatView.Children.Add(_currentChat);
-                Grid.SetRow(_currentChat, 1);
             });
         }
         catch (Exception e)
