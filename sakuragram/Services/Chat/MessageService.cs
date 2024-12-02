@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.UI.Text;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 using TdLib;
@@ -41,6 +42,16 @@ public class MessageService
         _selectedMessages.Clear();
     }
     
+    /// <summary>
+    /// Gets a text representation of a message content.
+    /// </summary>
+    /// <param name="message">The message to get the text from.</param>
+    /// <returns>The text representation of the message content.</returns>
+    /// <remarks>
+    /// This method is used to generate a string that represents the content of a
+    /// message in a chat. This string is then used to display the message content
+    /// in a chat log.
+    /// </remarks>
     public static async Task<string> GetTextMessageContent(TdApi.Message message)
     {
         if (message == null ) return null;
@@ -120,143 +131,162 @@ public class MessageService
         }
     }
 
-    public static async Task<Span> GetTextEntities(TdApi.FormattedText formattedText)
+/// <summary>
+/// Parses the given formatted text and returns a <see cref="Span"/> containing the appropriate text entities as inlines.
+/// </summary>
+/// <param name="formattedText">The formatted text containing entities to be parsed.</param>
+/// <returns>A task that represents the asynchronous operation. The task result contains a <see cref="Span"/> with the text entities as inlines.</returns>
+/// <remarks>
+/// This method processes different types of text entities such as URLs, hashtags, and mentions.
+/// It creates hyperlinks for URLs and mentions, and adds them to the resulting span.
+/// </remarks>
+    public static Task<Span> GetTextEntities(TdApi.FormattedText formattedText)
     {
         var inlines = new Span();
-        var text = formattedText.Text;
-        int lastIndex = 0;
-
-        foreach (var textEntity in formattedText.Entities)
-        {
-            switch (textEntity.Type)
-            {
-                case TdApi.TextEntityType.TextEntityTypeUrl:
-                {
-                    var regex = new Regex(@"(https?://[^\s]+)\b");
-                    var match = regex.Match(text, lastIndex);
-
-                    if (match.Success)
-                    {
-                        var link = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri(link),
-                            Foreground = new SolidColorBrush(Colors.Azure),
-                            TextDecorations = TextDecorations.Underline
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = link });
-
-                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        inlines.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-
-                    var regexWithoutHttps = new Regex(@"^(?!https:\/\/)[a-zA-Z0-9\.\-\/]+$");
-                    var matchWithoutHttps = regexWithoutHttps.Match(text, lastIndex);
-                    if (matchWithoutHttps.Success)
-                    {
-                        var link = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri(link),
-                            Foreground = new SolidColorBrush(Colors.Azure),
-                            TextDecorations = TextDecorations.Underline
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = link });
-
-                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        inlines.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeTextUrl url:
-                {
-                    var urlText = text.Substring(textEntity.Offset, textEntity.Length);
-                    var hyperlink = new Hyperlink
-                    {
-                        NavigateUri = new Uri(url.Url),
-                        Foreground = new SolidColorBrush(Colors.Azure),
-                        TextDecorations = TextDecorations.Underline
-                    };
-                    hyperlink.Inlines.Add(new Run { Text = urlText });
-                    if (textEntity.Offset > lastIndex)
-                    {
-                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, textEntity.Offset - lastIndex) });
-                    }
-                    inlines.Inlines.Add(hyperlink);
-                    lastIndex = textEntity.Offset + textEntity.Length;
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeHashtag:
-                {
-                    var regex = new Regex(@"(#\w+)");
-                    var match = regex.Match(text);
-                    
-                    if (match.Success)
-                    {
-                        var hashtag = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri("https://t.me/sakuragram/"),
-                            Foreground = new SolidColorBrush(Colors.Azure)
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = hashtag });
-                        
-                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        inlines.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeMentionName mentionName:
-                {
-                    var regex = new Regex(@"(@\w+)\b");
-                    var match = regex.Match(text);
-                    
-                    if (match.Success)
-                    {
-                        var mention = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri($"https://t.me/{mentionName.UserId}"),
-                            Foreground = new SolidColorBrush(Colors.Azure)
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = mention });
-                        
-                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        inlines.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
-                    }
-                    break;
-                }
-                case TdApi.TextEntityType.TextEntityTypeMention:
-                {
-                    // Измененное регулярное выражение для захвата только корректных упоминаний вида @username
-                    var regex = new Regex(@"(@\w+)\b");
-                    var match = regex.Match(text);
-    
-                    if (match.Success)
-                    {
-                        var mention = match.Value;
-                        var hyperlink = new Hyperlink
-                        {
-                            NavigateUri = new Uri($"https://t.me/{mention.Replace("@", string.Empty)}"),
-                            Foreground = new SolidColorBrush(Colors.Azure)
-                        };
-                        hyperlink.Inlines.Add(new Run { Text = mention });
         
-                        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
-                        inlines.Inlines.Add(hyperlink);
-                        lastIndex = match.Index + match.Length;
+        DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+        {
+            var text = formattedText.Text;
+            int lastIndex = 0;
+
+            foreach (var textEntity in formattedText.Entities)
+            {
+                switch (textEntity.Type)
+                {
+                    case TdApi.TextEntityType.TextEntityTypeUrl:
+                    {
+                        var regex = new Regex(@"(https?://[^\s]+)\b");
+                        var match = regex.Match(text, lastIndex);
+
+                        if (match.Success)
+                        {
+                            var link = match.Value;
+                            var hyperlink = new Hyperlink
+                            {
+                                NavigateUri = new Uri(link),
+                                Foreground = new SolidColorBrush(Colors.Azure),
+                                TextDecorations = TextDecorations.Underline
+                            };
+                            hyperlink.Inlines.Add(new Run { Text = link });
+
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(hyperlink);
+                            lastIndex = match.Index + match.Length;
+                        }
+
+                        var regexWithoutHttps = new Regex(@"^(?!https:\/\/)[a-zA-Z0-9\.\-\/]+$");
+                        var matchWithoutHttps = regexWithoutHttps.Match(text, lastIndex);
+                        if (matchWithoutHttps.Success)
+                        {
+                            var link = match.Value;
+                            var hyperlink = new Hyperlink
+                            {
+                                NavigateUri = new Uri(link),
+                                Foreground = new SolidColorBrush(Colors.Azure),
+                                TextDecorations = TextDecorations.Underline
+                            };
+                            hyperlink.Inlines.Add(new Run { Text = link });
+
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(hyperlink);
+                            lastIndex = match.Index + match.Length;
+                        }
+
+                        break;
                     }
-                    break;
+                    case TdApi.TextEntityType.TextEntityTypeTextUrl url:
+                    {
+                        var urlText = text.Substring(textEntity.Offset, textEntity.Length);
+                        var hyperlink = new Hyperlink
+                        {
+                            NavigateUri = new Uri(url.Url),
+                            Foreground = new SolidColorBrush(Colors.Azure),
+                            TextDecorations = TextDecorations.Underline
+                        };
+                        hyperlink.Inlines.Add(new Run { Text = urlText });
+                        if (textEntity.Offset > lastIndex)
+                        {
+                            inlines.Inlines.Add(new Run
+                                { Text = text.Substring(lastIndex, textEntity.Offset - lastIndex) });
+                        }
+
+                        inlines.Inlines.Add(hyperlink);
+                        lastIndex = textEntity.Offset + textEntity.Length;
+                        break;
+                    }
+                    case TdApi.TextEntityType.TextEntityTypeHashtag:
+                    {
+                        var regex = new Regex(@"(#\w+)");
+                        var match = regex.Match(text);
+
+                        if (match.Success)
+                        {
+                            var hashtag = match.Value;
+                            var hyperlink = new Hyperlink
+                            {
+                                NavigateUri = new Uri("https://t.me/sakuragram/"),
+                                Foreground = new SolidColorBrush(Colors.Azure)
+                            };
+                            hyperlink.Inlines.Add(new Run { Text = hashtag });
+
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(hyperlink);
+                            lastIndex = match.Index + match.Length;
+                        }
+
+                        break;
+                    }
+                    case TdApi.TextEntityType.TextEntityTypeMentionName mentionName:
+                    {
+                        var regex = new Regex(@"(@\w+)\b");
+                        var match = regex.Match(text);
+
+                        if (match.Success)
+                        {
+                            var mention = match.Value;
+                            var hyperlink = new Hyperlink
+                            {
+                                NavigateUri = new Uri($"https://t.me/{mentionName.UserId}"),
+                                Foreground = new SolidColorBrush(Colors.Azure)
+                            };
+                            hyperlink.Inlines.Add(new Run { Text = mention });
+
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(hyperlink);
+                            lastIndex = match.Index + match.Length;
+                        }
+
+                        break;
+                    }
+                    case TdApi.TextEntityType.TextEntityTypeMention:
+                    {
+                        // Измененное регулярное выражение для захвата только корректных упоминаний вида @username
+                        var regex = new Regex(@"(@\w+)\b");
+                        var match = regex.Match(text);
+
+                        if (match.Success)
+                        {
+                            var mention = match.Value;
+                            var hyperlink = new Hyperlink
+                            {
+                                NavigateUri = new Uri($"https://t.me/{mention.Replace("@", string.Empty)}"),
+                                Foreground = new SolidColorBrush(Colors.Azure)
+                            };
+                            hyperlink.Inlines.Add(new Run { Text = mention });
+
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, Math.Abs(match.Index - lastIndex)) });
+                            inlines.Inlines.Add(hyperlink);
+                            lastIndex = match.Index + match.Length;
+                        }
+
+                        break;
+                    }
                 }
             }
-        }
+
+            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex) });
+        });
         
-        inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex) });
-        
-        return inlines;
+        return Task.FromResult(inlines);
     }
 }

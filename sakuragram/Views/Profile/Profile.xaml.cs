@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
+using sakuragram.Controls.Core;
 using sakuragram.Services;
 using sakuragram.Services.Core;
 using TdLib;
@@ -62,7 +63,12 @@ public partial class Profile
             if (!string.IsNullOrEmpty(user.PhoneNumber)) CardMobile.Header = "+" + user.PhoneNumber;
             else CardMobile.Visibility = Visibility.Collapsed;
 
-            if (userFullInfo.Bio != null) CardBio.Header = userFullInfo.Bio.Text;
+            if (userFullInfo.Bio != null)
+            {
+                var textBlock = new SakuraTextBlock();
+                await textBlock.SetFormattedText(userFullInfo.Bio);
+                CardBio.Header = textBlock;
+            }
             else CardBio.Visibility = Visibility.Collapsed;
 
             if (!string.IsNullOrEmpty(user.Usernames.EditableUsername))
@@ -136,7 +142,13 @@ public partial class Profile
                     }
                     else CardUsername.Visibility = Visibility.Collapsed;
 
-                    if (!string.IsNullOrEmpty(fullInfo.Description)) CardBio.Header = fullInfo.Description;
+                    if (!string.IsNullOrEmpty(fullInfo.Description)) 
+                    {
+                        var textBlock = new SakuraTextBlock();
+                        var description = await _client.GetTextEntitiesAsync(fullInfo.Description);
+                        await textBlock.SetFormattedText(new TdApi.FormattedText { Text = fullInfo.Description, Entities = description.Entities });
+                        CardBio.Header = textBlock;
+                    }
                     else CardBio.Visibility = Visibility.Collapsed;
                     
                     if (!typeSupergroup.IsChannel)
