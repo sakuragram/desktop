@@ -22,6 +22,7 @@ using sakuragram.Services;
 using sakuragram.Services.Chat;
 using sakuragram.Services.Core;
 using sakuragram.Views.Calls;
+using sakuragram.Views.ChatList;
 using sakuragram.Views.Chats.Messages;
 using TdLib;
 
@@ -44,7 +45,6 @@ public sealed partial class Chat : Page
     private int _memberCount;
     private int _onlineMemberCount;
     private int _offset;
-    private long _lastMessageId;
     private int _pollOptionsCount = 2;
     private bool _isProfileOpened = false;
     private bool _hasInternetConnection = true;
@@ -69,7 +69,6 @@ public sealed partial class Chat : Page
     private int _currentMediaPage;
     
     private ChatMessage _penultimateChatMessage;
-    private ChatMessage _lastChatMessage;
     
     private List<StorageFile> _mediaFiles = [];
 
@@ -113,17 +112,17 @@ public sealed partial class Chat : Page
                         // For debug
                         if (FeaturesManager._debugMode)
                         {
-                            var message = new ChatDebugMessage();
-                            MessagesList.Children.Add(message);
-                            message.UpdateMessage(updateNewMessage.Message);
+                            // var message = new ChatDebugMessage();
+                            // MessagesList.Children.Add(message);
+                            // message.UpdateMessage(updateNewMessage.Message);
                         }
                         else
                         {
-                            await GenerateMessageByType([updateNewMessage.Message]);
+                            // await GenerateMessageByType([updateNewMessage.Message]);
                         }
 
-                        await DispatcherQueue.EnqueueAsync(() => 
-                            MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight));
+                        // await DispatcherQueue.EnqueueAsync(() => 
+                        //     MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight));
                     });
                 }
                 break;
@@ -317,7 +316,7 @@ public sealed partial class Chat : Page
             {
                 case TdApi.ChatType.ChatTypePrivate typePrivate:
                     var user = await _client.GetUserAsync(typePrivate.UserId);
-                    await DispatcherQueue.EnqueueAsync(() =>
+                    await DispatcherQueue.EnqueueAsync(async () =>
                     {
                         ChatMembers.Text = user.Status switch
                         {
@@ -329,22 +328,76 @@ public sealed partial class Chat : Page
                             TdApi.UserStatus.UserStatusEmpty => "A long time",
                             _ => "Unknown"
                         };
+                        BorderForumTopics.Visibility = Visibility.Collapsed;
+                        await OpenChatList();
                     });
                     break;
                 case TdApi.ChatType.ChatTypeBasicGroup typeBasicGroup:
                     var basicGroupInfo = await _client.GetBasicGroupFullInfoAsync(
                         basicGroupId: typeBasicGroup.BasicGroupId);
-                    await DispatcherQueue.EnqueueAsync(() =>
-                        ChatMembers.Text = basicGroupInfo.Members.Length + " members");
+                    await DispatcherQueue.EnqueueAsync(async () =>
+                    {
+                        ChatMembers.Text = basicGroupInfo.Members.Length + " members";
+                        BorderForumTopics.Visibility = Visibility.Collapsed;
+                        await OpenChatList();
+                    });
                     break;
                 case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
                     try
                     {
+                        var supergroup = await _client.GetSupergroupAsync(typeSupergroup.SupergroupId);
                         var supergroupInfo = await _client.GetSupergroupFullInfoAsync(
                             supergroupId: typeSupergroup.SupergroupId);
                         _linkedChatId = supergroupInfo.LinkedChatId;
 
-                        isChannel = typeSupergroup.IsChannel;
+                        if (supergroup.IsChannel)
+                        {
+                            isChannel = typeSupergroup.IsChannel;
+                            
+                            await DispatcherQueue.EnqueueAsync(async () =>
+                            {
+                                BorderForumTopics.Visibility = Visibility.Collapsed;
+                                await OpenChatList();
+                            });
+                        }
+                        else if (supergroup.IsForum)
+                        {
+                            await DispatcherQueue.EnqueueAsync(async () =>
+                            {
+                                BorderForumTopics.Visibility = Visibility.Visible;
+                                var topics = await _client.ExecuteAsync(new TdApi.GetForumTopics
+                                {
+                                    ChatId = _chat.Id,
+                                    Limit = 100,
+                                    OffsetMessageId = _chat.LastMessage.Id,
+                                    OffsetMessageThreadId = _chat.LastMessage.MessageThreadId
+                                });
+
+                                foreach (var topic in topics.Topics)
+                                {
+                                    var selectorBarTopic = new SelectorBarItem
+                                    {
+                                        FontSize = 12,
+                                        Tag = topic.Info.MessageThreadId,
+                                        Text = topic.Info.Name,
+                                    };
+                                    selectorBarTopic.PointerPressed += async (_, _) => await OpenMessageThread((long)selectorBarTopic.Tag);
+                                    SelectorBarTopics.Items.Add(selectorBarTopic);
+                                }
+                                
+                                SelectorBarTopics.SelectedItem = SelectorBarTopics.Items[0];
+                                await OpenMessageThread((long)SelectorBarTopics.SelectedItem.Tag);
+                            });
+                        }
+                        else
+                        {
+                            await DispatcherQueue.EnqueueAsync(async () =>
+                            {
+                                BorderPinnedMessage.Margin = new Thickness(0, 4, 0, 0);
+                                BorderForumTopics.Visibility = Visibility.Collapsed;
+                                await OpenChatList();
+                            });
+                        }
 
                         await DispatcherQueue.EnqueueAsync(() =>
                             ChatMembers.Text = supergroupInfo.MemberCount + " members");
@@ -416,7 +469,7 @@ public sealed partial class Chat : Page
                             banDialog.ShowAsync();
                             break;
                         case TdApi.ChatMemberStatus.ChatMemberStatusCreator creator:
-                            ButtonFastAction.Visibility = Visibility.Collapsed;
+                            if (ButtonFastAction != null) ButtonFastAction.Visibility = Visibility.Collapsed;
                             UserActionsPanel.Visibility = Visibility.Visible;
                             break;
                     }
@@ -585,12 +638,9 @@ public sealed partial class Chat : Page
             {
                 await DispatcherQueue.EnqueueAsync(() => ButtonUnreadReaction.Visibility = Visibility.Visible);
             }
-
-            if (_chat.UnreadCount == 0)
-                await DispatcherQueue.EnqueueAsync(() => MessagesScrollViewer.ScrollToVerticalOffset(
-                    MessagesScrollViewer.ScrollableHeight));
+            
             _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
-
+    
             var settings = SettingsService.LoadSettings();
             // IconMedia.Glyph = settings.StartMediaPage switch
             // {
@@ -599,83 +649,42 @@ public sealed partial class Chat : Page
             //     "GIFs" => "&#xF4A9;",
             //     _ => string.Empty
             // }; TODO: Fix emojis
-            
-            var messages = await GetMessagesAsync(_chatId, _isForum);
-            await GenerateMessageByType(messages);
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
         }
-    }
 
-    public async Task<List<TdApi.Message>> GetMessagesAsync(long chatId = 0, bool isMessageThread = false, long lastMessageId = 0, int offset = 0)
-    {
-        if (chatId == 0) return new List<TdApi.Message>();
-
-        TdApi.Messages messages;
-        if (!isMessageThread)
+        async Task OpenChatList()
         {
-            messages = await _client.ExecuteAsync(new TdApi.GetChatHistory
+            try
             {
-                ChatId = chatId,
-                FromMessageId = lastMessageId,
-                Limit = 42,
-                OnlyLocal = _hasInternetConnection
-            });
-            return messages.Messages_.Reverse().ToList();
-        }
-        else
-        {
-            messages = await _client.ExecuteAsync(new TdApi.GetMessageThreadHistory
-            {
-                ChatId = chatId,
-                MessageId = lastMessageId,
-                Limit = 30
-            });
-            return messages.Messages_.Reverse().ToList();
-        }
-    }
-    
-    public async Task GenerateMessageByType(List<TdApi.Message> messages, bool clear = false)
-    {
-        List<TdApi.Message> addedMessages = [];
-        
-        await DispatcherQueue.EnqueueAsync(async () =>
-        {
-            if (clear) MessagesList.Children.Clear();
-            
-            foreach (var message in messages.Where(message => !addedMessages.Contains(message)))
-            {
-                if (_lastChatMessage != null)
-                {
-                    var lastMessage = await _client.GetMessageAsync(_chatId, _lastChatMessage._messageId);
-                    var lastMessageReadTime = MathService.CalculateDateTime(lastMessage.Date);
-                    var messageReadTime = MathService.CalculateDateTime(message.Date);
-                    
-                    if (messageReadTime.Day > lastMessageReadTime.Day)
-                    {
-                        var serviceMessage = new ChatServiceMessage();
-                        serviceMessage.UpdateDateMessage(messageReadTime, lastMessageReadTime);
-                        MessagesList.Children.Add(serviceMessage);
-                    }
-                    
-                    if (message.MediaAlbumId != 0 && _lastChatMessage._mediaAlbumId == message.MediaAlbumId) 
-                    {
-                        _lastChatMessage.AddAlbumElement(message);
-                        addedMessages.Add(message);
-                        continue;
-                    }
-                }
-                
-                var messageEntry = new ChatMessage(this, _replyService);
-                _lastChatMessage = messageEntry;
-                messageEntry._messageService = _messageService;
-                await messageEntry.UpdateMessage(message);
-                MessagesList.Children.Add(messageEntry);
-                addedMessages.Add(message);
+                ContentFrame.Navigate(typeof(ChatHistoryList));
+                if (ContentFrame.Content is ChatHistoryList chatHistoryList)
+                    await chatHistoryList.PrepareChatList(this, _chat, _messageService, _replyService);
             }
-        });
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+        
+        async Task OpenMessageThread(long messageThreadId)
+        {
+            try
+            {
+                if (ContentFrame.Content != null) ContentFrame.Content = null;
+                ContentFrame.Navigate(typeof(MessageThreadList));
+                if (ContentFrame.Content is MessageThreadList messageThreadList)
+                    await messageThreadList.PrepareMessageThread(_chat.Id, messageThreadId, this, _messageService, _replyService);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
     }
         
     private async void SendMessage_OnClick(object sender, RoutedEventArgs e)
@@ -829,7 +838,7 @@ public sealed partial class Chat : Page
         
     public void CloseChat()
     {
-        if (MessagesList.Children.Count > 0) MessagesList.Children.Clear();
+        // if (MessagesList.Children.Count > 0) MessagesList.Children.Clear();
         _client.CloseChatAsync(_chatId);
         _ChatsView.CloseChat();
     }
@@ -1424,7 +1433,7 @@ public sealed partial class Chat : Page
 
     private void ButtonUnreadMessages_OnClick(object sender, RoutedEventArgs e)
     {
-        MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
+        // MessagesScrollViewer.ScrollToVerticalOffset(MessagesScrollViewer.ScrollableHeight);
     }
 
     private async void DialogReportChat_OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

@@ -147,11 +147,26 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-                <Border x:Name="BorderPinnedMessage"
+                <Border x:Name="BorderForumTopics"
                         Background="#1a1a1a"
                         CornerRadius="4"
                         Padding="5"
                         Margin="0, 4"
+                        Visibility="Collapsed">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  HorizontalScrollMode="Enabled"
+                                  VerticalScrollMode="Disabled"
+                                  CanBeScrollAnchor="True">
+                        <SelectorBar x:Name="SelectorBarTopics"/>
+                    </ScrollViewer>
+                </Border>
+                
+                <Border x:Name="BorderPinnedMessage"
+                        Background="#1a1a1a"
+                        CornerRadius="4"
+                        Padding="5"
+                        Margin="0, 0, 0, 4"
                         Visibility="Visible">
                     <StackPanel>
                         <TextBlock Text="Pinned message" 
@@ -180,12 +195,14 @@
                                       x:Name="ColumnUnreadActions" />
                 </Grid.ColumnDefinitions>
                 
-                <ScrollViewer x:Name="MessagesScrollViewer" 
-                              HorizontalAlignment="Stretch"
-                              VerticalAlignment="Bottom"
-                              Grid.Column="0">
-                    <StackPanel x:Name="MessagesList" />
-                </ScrollViewer>
+                <Frame Grid.Column="0"
+                       x:Name="ContentFrame"
+                       IsNavigationStackEnabled="False"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Stretch"
+                       Width="Auto"
+                       Height="Auto"/>
+                
                 <StackPanel x:Name="PanelUnreadActions"
                             VerticalAlignment="Bottom"
                             HorizontalAlignment="Right"

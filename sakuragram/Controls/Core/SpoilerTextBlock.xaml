@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RelativePanel
+    x:Class="sakuragram.Controls.Core.SpoilerTextBlock"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:core="using:sakuragram.Controls.Core"
+    mc:Ignorable="d">
+    
+    <core:SakuraTextBlock x:Name="TextBlock"
+                          PointerPressed="TextBlock_OnPointerPressed"/>
+    <Border x:Name="BorderSpoiler"
+            PointerPressed="BorderSpoiler_OnPointerPressed"/>
+    
+</RelativePanel>

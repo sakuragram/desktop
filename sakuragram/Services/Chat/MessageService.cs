@@ -9,6 +9,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
+using sakuragram.Controls.Core;
 using TdLib;
 
 namespace sakuragram.Services;
@@ -172,7 +173,7 @@ public class MessageService
                             };
                             hyperlink.Inlines.Add(new Run { Text = link });
 
-                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, Math.Abs(match.Index - lastIndex)) });
                             inlines.Inlines.Add(hyperlink);
                             lastIndex = match.Index + match.Length;
                         }
@@ -190,7 +191,7 @@ public class MessageService
                             };
                             hyperlink.Inlines.Add(new Run { Text = link });
 
-                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, Math.Abs(match.Index - lastIndex)) });
                             inlines.Inlines.Add(hyperlink);
                             lastIndex = match.Index + match.Length;
                         }
@@ -210,7 +211,7 @@ public class MessageService
                         if (textEntity.Offset > lastIndex)
                         {
                             inlines.Inlines.Add(new Run
-                                { Text = text.Substring(lastIndex, textEntity.Offset - lastIndex) });
+                                { Text = text.Substring(lastIndex, Math.Abs(textEntity.Offset - lastIndex)) });
                         }
 
                         inlines.Inlines.Add(hyperlink);
@@ -219,7 +220,7 @@ public class MessageService
                     }
                     case TdApi.TextEntityType.TextEntityTypeHashtag:
                     {
-                        var regex = new Regex(@"(#\w+)");
+                        var regex = new Regex(@"#\w+(?!\S*@)");
                         var match = regex.Match(text);
 
                         if (match.Success)
@@ -232,7 +233,7 @@ public class MessageService
                             };
                             hyperlink.Inlines.Add(new Run { Text = hashtag });
 
-                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, Math.Abs(match.Index - lastIndex)) });
                             inlines.Inlines.Add(hyperlink);
                             lastIndex = match.Index + match.Length;
                         }
@@ -254,7 +255,7 @@ public class MessageService
                             };
                             hyperlink.Inlines.Add(new Run { Text = mention });
 
-                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, match.Index - lastIndex) });
+                            inlines.Inlines.Add(new Run { Text = text.Substring(lastIndex, Math.Abs(match.Index - lastIndex)) });
                             inlines.Inlines.Add(hyperlink);
                             lastIndex = match.Index + match.Length;
                         }
@@ -263,7 +264,7 @@ public class MessageService
                     }
                     case TdApi.TextEntityType.TextEntityTypeMention:
                     {
-                        var regex = new Regex(@"(@\w+)\b");
+                        var regex = new Regex(@"(@[\w\d_]+)\b");
                         var match = regex.Match(text);
 
                         if (match.Success)

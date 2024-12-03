@@ -456,39 +456,40 @@ public sealed partial class ChatEntry
     private async void Button_OnClick(object sender, RoutedEventArgs e)
     {
         _ChatsView.CloseChat();
-        switch (_chat.Type)
+        await DispatcherQueue.EnqueueAsync(async () =>
         {
-            case TdApi.ChatType.ChatTypePrivate 
-                or TdApi.ChatType.ChatTypeSecret 
-                or TdApi.ChatType.ChatTypeBasicGroup:
-                await DispatcherQueue.EnqueueAsync(async () =>
-                {
-                    _chatWidget = await _chatService.OpenChat(_chat.Id);
-                    _chatWidget._ChatsView = _ChatsView;
-                    _ChatsView._currentChat = _chatWidget;
-                    ChatPage.Children.Add(_chatWidget);
-                });
-                break;
-            case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
-                var supergroup = _client.GetSupergroupAsync(typeSupergroup.SupergroupId).Result;
-                if (supergroup.IsForum)
-                {
-                    _ChatsView.OpenForum(supergroup, _chat);
-                }
-                else
-                {
-                    await DispatcherQueue.EnqueueAsync(async () =>
-                    {
-                        _chatWidget = await _chatService.OpenChat(_chat.Id);
-                        _chatWidget._ChatsView = _ChatsView;
-                        _ChatsView._currentChat = _chatWidget;
-                        ChatPage.Children.Add(_chatWidget);
-                    });
-                }
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+            _chatWidget = await _chatService.OpenChat(_chat.Id);
+            _chatWidget._ChatsView = _ChatsView;
+            _ChatsView._currentChat = _chatWidget;
+            ChatPage.Children.Add(_chatWidget);
+        });
+        // switch (_chat.Type)
+        // {
+        //     case TdApi.ChatType.ChatTypePrivate 
+        //         or TdApi.ChatType.ChatTypeSecret 
+        //         or TdApi.ChatType.ChatTypeBasicGroup:
+        //         
+        //         break;
+        //     case TdApi.ChatType.ChatTypeSupergroup typeSupergroup:
+        //         var supergroup = _client.GetSupergroupAsync(typeSupergroup.SupergroupId).Result;
+        //         if (supergroup.IsForum)
+        //         {
+        //             _ChatsView.OpenForum(supergroup, _chat);
+        //         }
+        //         else
+        //         {
+        //             await DispatcherQueue.EnqueueAsync(async () =>
+        //             {
+        //                 _chatWidget = await _chatService.OpenChat(_chat.Id);
+        //                 _chatWidget._ChatsView = _ChatsView;
+        //                 _ChatsView._currentChat = _chatWidget;
+        //                 ChatPage.Children.Add(_chatWidget);
+        //             });
+        //         }
+        //         break;
+        //     default:
+        //         throw new ArgumentOutOfRangeException();
+        // }
     }
 
     private void ContextMenuMarkAs_OnClick(object sender, RoutedEventArgs e)

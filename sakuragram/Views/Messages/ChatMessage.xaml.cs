@@ -366,9 +366,13 @@ public partial class ChatMessage : Page
                 GeneratePhotoMessage(messagePhoto);
                 break;
             case TdApi.MessageContent.MessageDocument messageDocument:
-                DocumentType documentType = new(messageDocument.Document);
-                if (_mediaElementsCount > 0) PanelMessageContent.Children.Insert(_mediaElementsCount + 1, documentType);
-                else PanelMessageContent.Children.Add(documentType);
+                DispatcherQueue.EnqueueAsync(() =>
+                {
+                    DocumentType documentType = new(messageDocument.Document);
+                    if (_mediaElementsCount > 1)
+                        PanelMessageContent.Children.Insert(0, documentType);
+                    else PanelMessageContent.Children.Add(documentType);
+                });
                 _mediaElementsCount++;
                 
                 if (!string.IsNullOrEmpty(messageDocument.Caption.Text))
@@ -706,7 +710,7 @@ public partial class ChatMessage : Page
             _client.ExecuteAsync(new TdApi.DeleteMessages
             {
                 ChatId = _chatId,
-                MessageIds = new long[] { _messageId },
+                MessageIds = [_messageId],
                 Revoke = Revoke.IsChecked.Value
             });
     }
@@ -718,8 +722,8 @@ public partial class ChatMessage : Page
 
     private async void ButtonReply_OnClick(object sender, RoutedEventArgs e)
     {
-        var replies = await _chat.GetMessagesAsync(_chatId, true, _messageId, 0);
-        await _chat.GenerateMessageByType(replies, true);
+        // var replies = await _chat.GetMessagesAsync(_chatId, true, _messageId, 0);
+        // await _chat.GenerateMessageByType(replies, true);
     }
 
     private async void DisplayName_OnTapped(object sender, TappedRoutedEventArgs e)
