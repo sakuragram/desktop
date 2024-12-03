@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Windows.UI;
 using Windows.UI.Text;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 using TdLib;
@@ -16,6 +18,7 @@ public class MessageService
     private static TdClient _client = App._client;
     private List<long> _selectedMessages = [];
     public bool _isMessageSelected = false;
+    private static Brush _urlColor = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"];
 
     public long[] GetSelectedMessages()
     {
@@ -164,7 +167,7 @@ public class MessageService
                             var hyperlink = new Hyperlink
                             {
                                 NavigateUri = new Uri(link),
-                                Foreground = new SolidColorBrush(Colors.Azure),
+                                Foreground = _urlColor,
                                 TextDecorations = TextDecorations.Underline
                             };
                             hyperlink.Inlines.Add(new Run { Text = link });
@@ -182,7 +185,7 @@ public class MessageService
                             var hyperlink = new Hyperlink
                             {
                                 NavigateUri = new Uri(link),
-                                Foreground = new SolidColorBrush(Colors.Azure),
+                                Foreground = _urlColor,
                                 TextDecorations = TextDecorations.Underline
                             };
                             hyperlink.Inlines.Add(new Run { Text = link });
@@ -200,7 +203,7 @@ public class MessageService
                         var hyperlink = new Hyperlink
                         {
                             NavigateUri = new Uri(url.Url),
-                            Foreground = new SolidColorBrush(Colors.Azure),
+                            Foreground = _urlColor,
                             TextDecorations = TextDecorations.Underline
                         };
                         hyperlink.Inlines.Add(new Run { Text = urlText });
@@ -225,7 +228,7 @@ public class MessageService
                             var hyperlink = new Hyperlink
                             {
                                 NavigateUri = new Uri("https://t.me/sakuragram/"),
-                                Foreground = new SolidColorBrush(Colors.Azure)
+                                Foreground = _urlColor
                             };
                             hyperlink.Inlines.Add(new Run { Text = hashtag });
 
@@ -247,7 +250,7 @@ public class MessageService
                             var hyperlink = new Hyperlink
                             {
                                 NavigateUri = new Uri($"https://t.me/{mentionName.UserId}"),
-                                Foreground = new SolidColorBrush(Colors.Azure)
+                                Foreground = _urlColor
                             };
                             hyperlink.Inlines.Add(new Run { Text = mention });
 
@@ -260,7 +263,6 @@ public class MessageService
                     }
                     case TdApi.TextEntityType.TextEntityTypeMention:
                     {
-                        // Измененное регулярное выражение для захвата только корректных упоминаний вида @username
                         var regex = new Regex(@"(@\w+)\b");
                         var match = regex.Match(text);
 
@@ -270,7 +272,7 @@ public class MessageService
                             var hyperlink = new Hyperlink
                             {
                                 NavigateUri = new Uri($"https://t.me/{mention.Replace("@", string.Empty)}"),
-                                Foreground = new SolidColorBrush(Colors.Azure)
+                                Foreground = _urlColor
                             };
                             hyperlink.Inlines.Add(new Run { Text = mention });
 
