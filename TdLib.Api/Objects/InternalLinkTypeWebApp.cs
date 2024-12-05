@@ -53,11 +53,11 @@ namespace TdLib
                 public string StartParameter { get; set; }
 
                 /// <summary>
-                /// True, if the Web App must be opened in the compact mode instead of the full-size mode
+                /// The mode in which the Web App must be opened
                 /// </summary>
                 [JsonConverter(typeof(Converter))]
-                [JsonProperty("is_compact")]
-                public bool IsCompact { get; set; }
+                [JsonProperty("mode")]
+                public WebAppOpenMode Mode { get; set; }
             }
         }
     }

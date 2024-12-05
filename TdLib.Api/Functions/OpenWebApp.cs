@@ -50,20 +50,6 @@ namespace TdLib
             public string Url { get; set; }
 
             /// <summary>
-            /// Preferred Web App theme; pass null to use the default theme
-            /// </summary>
-            [JsonConverter(typeof(Converter))]
-            [JsonProperty("theme")]
-            public ThemeParameters Theme { get; set; }
-
-            /// <summary>
-            /// Short name of the current application; 0-64 English letters, digits, and underscores
-            /// </summary>
-            [JsonConverter(typeof(Converter))]
-            [JsonProperty("application_name")]
-            public string ApplicationName { get; set; }
-
-            /// <summary>
             /// If not 0, the message thread identifier in which the message will be sent
             /// </summary>
             [JsonConverter(typeof(Converter))]
@@ -76,6 +62,13 @@ namespace TdLib
             [JsonConverter(typeof(Converter))]
             [JsonProperty("reply_to")]
             public InputMessageReplyTo ReplyTo { get; set; }
+
+            /// <summary>
+            /// Parameters to use to open the Web App
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("parameters")]
+            public WebAppOpenParameters Parameters { get; set; }
         }
 
         /// <summary>
@@ -83,11 +76,11 @@ namespace TdLib
         /// For each bot, a confirmation alert about data sent to the bot must be shown once
         /// </summary>
         public static Task<WebAppInfo> OpenWebAppAsync(
-            this Client client, long chatId = default, long botUserId = default, string url = default, ThemeParameters theme = default, string applicationName = default, long messageThreadId = default, InputMessageReplyTo replyTo = default)
+            this Client client, long chatId = default, long botUserId = default, string url = default, long messageThreadId = default, InputMessageReplyTo replyTo = default, WebAppOpenParameters parameters = default)
         {
             return client.ExecuteAsync(new OpenWebApp
             {
-                ChatId = chatId, BotUserId = botUserId, Url = url, Theme = theme, ApplicationName = applicationName, MessageThreadId = messageThreadId, ReplyTo = replyTo
+                ChatId = chatId, BotUserId = botUserId, Url = url, MessageThreadId = messageThreadId, ReplyTo = replyTo, Parameters = parameters
             });
         }
     }

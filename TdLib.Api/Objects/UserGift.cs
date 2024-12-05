@@ -76,7 +76,7 @@ namespace TdLib
             public long MessageId { get; set; }
 
             /// <summary>
-            /// Number of Telegram Stars that can be claimed by the receiver instead of the gift; only for the gift receiver
+            /// Number of Telegram Stars that can be claimed by the receiver instead of the gift; 0 if the gift can't be sold by the current user
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("sell_star_count")]

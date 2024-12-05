@@ -41,6 +41,13 @@ namespace TdLib
             public long Amount { get; set; }
 
             /// <summary>
+            /// The discount associated with this option, as a percentage
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("discount_percentage")]
+            public int DiscountPercentage { get; set; }
+
+            /// <summary>
             /// Number of users which will be able to activate the gift codes
             /// </summary>
             [JsonConverter(typeof(Converter))]
@@ -67,6 +74,13 @@ namespace TdLib
             [JsonConverter(typeof(Converter))]
             [JsonProperty("store_product_quantity")]
             public int StoreProductQuantity { get; set; }
+
+            /// <summary>
+            /// A sticker to be shown along with the gift code; may be null if unknown
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("sticker")]
+            public Sticker Sticker { get; set; }
         }
     }
 }

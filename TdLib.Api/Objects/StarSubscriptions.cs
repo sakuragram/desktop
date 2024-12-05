@@ -30,8 +30,8 @@ namespace TdLib
             /// The amount of owned Telegram Stars
             /// </summary>
             [JsonConverter(typeof(Converter))]
-            [JsonProperty("star_count")]
-            public long StarCount { get; set; }
+            [JsonProperty("star_amount")]
+            public StarAmount StarAmount { get; set; }
 
             /// <summary>
             /// List of subscriptions for Telegram Stars

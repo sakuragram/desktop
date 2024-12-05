@@ -27,25 +27,25 @@ namespace TdLib
             public override string Extra { get; set; }
 
             /// <summary>
-            /// Total number of Telegram Stars earned
+            /// Total amount of Telegram Stars earned
             /// </summary>
             [JsonConverter(typeof(Converter))]
-            [JsonProperty("total_count")]
-            public long TotalCount { get; set; }
+            [JsonProperty("total_amount")]
+            public StarAmount TotalAmount { get; set; }
 
             /// <summary>
-            /// The number of Telegram Stars that aren't withdrawn yet
+            /// The amount of Telegram Stars that aren't withdrawn yet
             /// </summary>
             [JsonConverter(typeof(Converter))]
-            [JsonProperty("current_count")]
-            public long CurrentCount { get; set; }
+            [JsonProperty("current_amount")]
+            public StarAmount CurrentAmount { get; set; }
 
             /// <summary>
-            /// The number of Telegram Stars that are available for withdrawal
+            /// The amount of Telegram Stars that are available for withdrawal
             /// </summary>
             [JsonConverter(typeof(Converter))]
-            [JsonProperty("available_count")]
-            public long AvailableCount { get; set; }
+            [JsonProperty("available_amount")]
+            public StarAmount AvailableAmount { get; set; }
 
             /// <summary>
             /// True, if Telegram Stars can be withdrawn now or later

@@ -139,12 +139,6 @@ namespace TdLib
             public long PersonalChatId { get; set; }
 
             /// <summary>
-            /// The list of available options for gifting Telegram Premium to the user
-            /// </summary>
-            [JsonProperty("premium_gift_options", ItemConverterType = typeof(Converter))]
-            public PremiumPaymentOption[] PremiumGiftOptions { get; set; }
-
-            /// <summary>
             /// Number of gifts saved to profile by the user
             /// </summary>
             [JsonConverter(typeof(Converter))]

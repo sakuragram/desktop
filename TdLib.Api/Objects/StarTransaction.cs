@@ -37,8 +37,8 @@ namespace TdLib
             /// The amount of added owned Telegram Stars; negative for outgoing transactions
             /// </summary>
             [JsonConverter(typeof(Converter))]
-            [JsonProperty("star_count")]
-            public long StarCount { get; set; }
+            [JsonProperty("star_amount")]
+            public StarAmount StarAmount { get; set; }
 
             /// <summary>
             /// True, if the transaction is a refund of a previous transaction
@@ -55,11 +55,11 @@ namespace TdLib
             public int Date { get; set; }
 
             /// <summary>
-            /// Source of the incoming transaction, or its recipient for outgoing transactions
+            /// Type of the transaction
             /// </summary>
             [JsonConverter(typeof(Converter))]
-            [JsonProperty("partner")]
-            public StarTransactionPartner Partner { get; set; }
+            [JsonProperty("type")]
+            public StarTransactionType Type { get; set; }
         }
     }
 }

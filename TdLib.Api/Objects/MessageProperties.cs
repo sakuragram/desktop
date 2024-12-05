@@ -48,7 +48,7 @@ namespace TdLib
             public bool CanBeDeletedForAllUsers { get; set; }
 
             /// <summary>
-            /// True, if the message can be edited using the methods editMessageText, editMessageMedia, editMessageCaption, or editMessageReplyMarkup.
+            /// True, if the message can be edited using the methods editMessageText, editMessageCaption, or editMessageReplyMarkup.
             /// For live location and poll messages this fields shows whether editMessageLiveLocation or stopPoll can be used with this message
             /// </summary>
             [JsonConverter(typeof(Converter))]
@@ -103,6 +103,13 @@ namespace TdLib
             [JsonConverter(typeof(Converter))]
             [JsonProperty("can_be_shared_in_story")]
             public bool CanBeSharedInStory { get; set; }
+
+            /// <summary>
+            /// True, if the message can be edited using the method editMessageMedia
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("can_edit_media")]
+            public bool CanEditMedia { get; set; }
 
             /// <summary>
             /// True, if scheduling state of the message can be edited

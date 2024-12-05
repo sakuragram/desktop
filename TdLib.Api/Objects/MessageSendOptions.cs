@@ -48,6 +48,13 @@ namespace TdLib
             public bool ProtectContent { get; set; }
 
             /// <summary>
+            /// Pass true to allow the message to ignore regular broadcast limits for a small fee; for bots only
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("allow_paid_broadcast")]
+            public bool AllowPaidBroadcast { get; set; }
+
+            /// <summary>
             /// Pass true if the user explicitly chosen a sticker or a custom emoji from an installed sticker set; applicable only to sendMessage and sendMessageAlbum
             /// </summary>
             [JsonConverter(typeof(Converter))]

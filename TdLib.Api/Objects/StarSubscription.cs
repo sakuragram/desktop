@@ -10,7 +10,7 @@ namespace TdLib
     public static partial class TdApi
     {
         /// <summary>
-        /// Contains information about subscription to a channel chat paid in Telegram Stars
+        /// Contains information about subscription to a channel chat, a bot, or a business account that was paid in Telegram Stars
         /// </summary>
         public partial class StarSubscription : Object
         {
@@ -34,7 +34,7 @@ namespace TdLib
             public string Id { get; set; }
 
             /// <summary>
-            /// Identifier of the channel chat that is subscribed
+            /// Identifier of the chat that is subscribed
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("chat_id")]
@@ -46,13 +46,6 @@ namespace TdLib
             [JsonConverter(typeof(Converter))]
             [JsonProperty("expiration_date")]
             public int ExpirationDate { get; set; }
-
-            /// <summary>
-            /// True, if the subscription is active and the user can use the method reuseStarSubscription to join the subscribed chat again
-            /// </summary>
-            [JsonConverter(typeof(Converter))]
-            [JsonProperty("can_reuse")]
-            public bool CanReuse { get; set; }
 
             /// <summary>
             /// True, if the subscription was canceled
@@ -69,18 +62,18 @@ namespace TdLib
             public bool IsExpiring { get; set; }
 
             /// <summary>
-            /// The invite link that can be used to renew the subscription if it has been expired; may be empty, if the link isn't available anymore
-            /// </summary>
-            [JsonConverter(typeof(Converter))]
-            [JsonProperty("invite_link")]
-            public string InviteLink { get; set; }
-
-            /// <summary>
             /// The subscription plan
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("pricing")]
             public StarSubscriptionPricing Pricing { get; set; }
+
+            /// <summary>
+            /// Type of the subscription
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("type")]
+            public StarSubscriptionType Type { get; set; }
         }
     }
 }

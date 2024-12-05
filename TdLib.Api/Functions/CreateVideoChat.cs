@@ -49,7 +49,7 @@ namespace TdLib
             public int StartDate { get; set; }
 
             /// <summary>
-            /// Pass true to create an RTMP stream instead of an ordinary video chat; requires owner privileges
+            /// Pass true to create an RTMP stream instead of an ordinary video chat
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("is_rtmp_stream")]

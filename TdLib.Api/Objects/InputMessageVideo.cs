@@ -29,7 +29,7 @@ namespace TdLib
                 public override string Extra { get; set; }
 
                 /// <summary>
-                /// Video to be sent. The video is expected to be reencoded to MPEG4 format with H.264 codec by the sender
+                /// Video to be sent. The video is expected to be re-encoded to MPEG4 format with H.264 codec by the sender
                 /// </summary>
                 [JsonConverter(typeof(Converter))]
                 [JsonProperty("video")]

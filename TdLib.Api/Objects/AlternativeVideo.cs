@@ -10,7 +10,7 @@ namespace TdLib
     public static partial class TdApi
     {
         /// <summary>
-        /// Describes an alternative reencoded quality of a video file
+        /// Describes an alternative re-encoded quality of a video file
         /// </summary>
         public partial class AlternativeVideo : Object
         {

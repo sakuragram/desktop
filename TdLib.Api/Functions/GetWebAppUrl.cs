@@ -42,29 +42,22 @@ namespace TdLib
             public string Url { get; set; }
 
             /// <summary>
-            /// Preferred Web App theme; pass null to use the default theme
+            /// Parameters to use to open the Web App
             /// </summary>
             [JsonConverter(typeof(Converter))]
-            [JsonProperty("theme")]
-            public ThemeParameters Theme { get; set; }
-
-            /// <summary>
-            /// Short name of the current application; 0-64 English letters, digits, and underscores
-            /// </summary>
-            [JsonConverter(typeof(Converter))]
-            [JsonProperty("application_name")]
-            public string ApplicationName { get; set; }
+            [JsonProperty("parameters")]
+            public WebAppOpenParameters Parameters { get; set; }
         }
 
         /// <summary>
         /// Returns an HTTPS URL of a Web App to open from the side menu, a keyboardButtonTypeWebApp button, or an inlineQueryResultsButtonTypeWebApp button
         /// </summary>
         public static Task<HttpUrl> GetWebAppUrlAsync(
-            this Client client, long botUserId = default, string url = default, ThemeParameters theme = default, string applicationName = default)
+            this Client client, long botUserId = default, string url = default, WebAppOpenParameters parameters = default)
         {
             return client.ExecuteAsync(new GetWebAppUrl
             {
-                BotUserId = botUserId, Url = url, Theme = theme, ApplicationName = applicationName
+                BotUserId = botUserId, Url = url, Parameters = parameters
             });
         }
     }

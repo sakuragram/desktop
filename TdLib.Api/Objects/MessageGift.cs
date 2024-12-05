@@ -43,7 +43,7 @@ namespace TdLib
                 public FormattedText Text { get; set; }
 
                 /// <summary>
-                /// Number of Telegram Stars that can be claimed by the receiver instead of the gift
+                /// Number of Telegram Stars that can be claimed by the receiver instead of the gift; 0 if the gift can't be sold by the receiver
                 /// </summary>
                 [JsonConverter(typeof(Converter))]
                 [JsonProperty("sell_star_count")]

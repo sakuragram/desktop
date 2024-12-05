@@ -42,7 +42,7 @@ namespace TdLib
             public long MessageId { get; set; }
 
             /// <summary>
-            /// The new message scheduling state; pass null to send the message immediately
+            /// The new message scheduling state; pass null to send the message immediately. Must be null for messages in the state messageSchedulingStateSendWhenVideoProcessed
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("scheduling_state")]

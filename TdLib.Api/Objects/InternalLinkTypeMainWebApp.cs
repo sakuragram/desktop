@@ -16,7 +16,7 @@ namespace TdLib
             /// If the bot can be added to attachment menu, then use getAttachmentMenuBot to receive information about the bot, then if the bot isn't added to side menu,
             /// show a disclaimer about Mini Apps being third-party applications, ask the user to accept their Terms of service and confirm adding the bot to side and attachment menu,
             /// then if the user accepts the terms and confirms adding, use toggleBotIsAddedToAttachmentMenu to add the bot.
-            /// Then, use getMainWebApp with the given start parameter and open the returned URL as a Web App
+            /// Then, use getMainWebApp with the given start parameter and mode and open the returned URL as a Web App
             /// </summary>
             public class InternalLinkTypeMainWebApp : InternalLinkType
             {
@@ -47,11 +47,11 @@ namespace TdLib
                 public string StartParameter { get; set; }
 
                 /// <summary>
-                /// True, if the Web App must be opened in the compact mode instead of the full-size mode
+                /// The mode to be passed to getMainWebApp
                 /// </summary>
                 [JsonConverter(typeof(Converter))]
-                [JsonProperty("is_compact")]
-                public bool IsCompact { get; set; }
+                [JsonProperty("mode")]
+                public WebAppOpenMode Mode { get; set; }
             }
         }
     }

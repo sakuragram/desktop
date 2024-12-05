@@ -29,11 +29,11 @@ namespace TdLib
                 public override string Extra { get; set; }
 
                 /// <summary>
-                /// The new number of Telegram Stars owned
+                /// The new amount of owned Telegram Stars
                 /// </summary>
                 [JsonConverter(typeof(Converter))]
-                [JsonProperty("star_count")]
-                public long StarCount { get; set; }
+                [JsonProperty("star_amount")]
+                public StarAmount StarAmount { get; set; }
             }
         }
     }

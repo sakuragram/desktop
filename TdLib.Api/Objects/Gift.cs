@@ -55,6 +55,13 @@ namespace TdLib
             public long DefaultSellStarCount { get; set; }
 
             /// <summary>
+            /// True, if the gift is a birthday gift
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("is_for_birthday")]
+            public bool IsForBirthday { get; set; }
+
+            /// <summary>
             /// Number of remaining times the gift can be purchased by all users; 0 if not limited or the gift was sold out
             /// </summary>
             [JsonConverter(typeof(Converter))]
@@ -67,6 +74,20 @@ namespace TdLib
             [JsonConverter(typeof(Converter))]
             [JsonProperty("total_count")]
             public int TotalCount { get; set; }
+
+            /// <summary>
+            /// Point in time (Unix timestamp) when the gift was send for the first time; for sold out gifts only
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("first_send_date")]
+            public int FirstSendDate { get; set; }
+
+            /// <summary>
+            /// Point in time (Unix timestamp) when the gift was send for the last time; for sold out gifts only
+            /// </summary>
+            [JsonConverter(typeof(Converter))]
+            [JsonProperty("last_send_date")]
+            public int LastSendDate { get; set; }
         }
     }
 }

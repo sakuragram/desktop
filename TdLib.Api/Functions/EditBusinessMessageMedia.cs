@@ -11,7 +11,7 @@ namespace TdLib
     public static partial class TdApi
     {
         /// <summary>
-        /// Edits the content of a message with an animation, an audio, a document, a photo or a video in a message sent on behalf of a business account; for bots only
+        /// Edits the media content of a message with a text, an animation, an audio, a document, a photo or a video in a message sent on behalf of a business account; for bots only
         /// </summary>
         public class EditBusinessMessageMedia : Function<BusinessMessage>
         {
@@ -64,7 +64,7 @@ namespace TdLib
         }
 
         /// <summary>
-        /// Edits the content of a message with an animation, an audio, a document, a photo or a video in a message sent on behalf of a business account; for bots only
+        /// Edits the media content of a message with a text, an animation, an audio, a document, a photo or a video in a message sent on behalf of a business account; for bots only
         /// </summary>
         public static Task<BusinessMessage> EditBusinessMessageMediaAsync(
             this Client client, string businessConnectionId = default, long chatId = default, long messageId = default, ReplyMarkup replyMarkup = default, InputMessageContent inputMessageContent = default)

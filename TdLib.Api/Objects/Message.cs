@@ -118,14 +118,14 @@ namespace TdLib
             public bool ContainsUnreadMention { get; set; }
 
             /// <summary>
-            /// Point in time (Unix timestamp) when the message was sent
+            /// Point in time (Unix timestamp) when the message was sent; 0 for scheduled messages
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("date")]
             public int Date { get; set; }
 
             /// <summary>
-            /// Point in time (Unix timestamp) when the message was last edited
+            /// Point in time (Unix timestamp) when the message was last edited; 0 for scheduled messages
             /// </summary>
             [JsonConverter(typeof(Converter))]
             [JsonProperty("edit_date")]

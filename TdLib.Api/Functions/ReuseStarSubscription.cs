@@ -11,7 +11,7 @@ namespace TdLib
     public static partial class TdApi
     {
         /// <summary>
-        /// Reuses an active subscription and joins the subscribed chat again
+        /// Reuses an active Telegram Star subscription to a channel chat and joins the chat again
         /// </summary>
         public class ReuseStarSubscription : Function<Ok>
         {
@@ -36,7 +36,7 @@ namespace TdLib
         }
 
         /// <summary>
-        /// Reuses an active subscription and joins the subscribed chat again
+        /// Reuses an active Telegram Star subscription to a channel chat and joins the chat again
         /// </summary>
         public static Task<Ok> ReuseStarSubscriptionAsync(
             this Client client, string subscriptionId = default)
