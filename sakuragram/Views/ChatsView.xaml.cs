@@ -142,7 +142,7 @@ public sealed partial class ChatsView : Page
                 }
                 else
                 {
-                    _currentChat = await _chatService.OpenChat(chatId);
+                    _currentChat = await _chatService.OpenChat(chatId, XamlRoot);
                     if (_isForumOpened && _isForumTopicOpened) ColumnForumTopics.Width = new GridLength(0);
                     _isForumOpened = false;
                     _isForumTopicOpened = false;
@@ -579,17 +579,14 @@ public sealed partial class ChatsView : Page
     {
         int currentIndex = 0;
         string lastArchiveChannels = string.Empty;
-        
-        GenerateUsers();
-        await GenerateFolders();
 
         await DispatcherQueue.EnqueueAsync(async () =>
         {
+            var currentUser = await _client.GetMeAsync();
+            var archive = await _client.GetChatsAsync(new TdApi.ChatList.ChatListArchive(), 100);
+
             try
             {
-                var currentUser = await _client.GetMeAsync();
-                var archive = await _client.GetChatsAsync(new TdApi.ChatList.ChatListArchive(), 100);
-                
                 await CurrentUserPicture.InitializeProfilePhoto(currentUser, sizes: 42);
                 FlyoutItemCurrentUser.Text = currentUser.FirstName + " " + currentUser.LastName;
                 FlyoutItemCurrentUser.Icon = new BitmapIcon
@@ -599,46 +596,47 @@ public sealed partial class ChatsView : Page
                     Width = 32,
                     Height = 32
                 };
-                
-                if (archive.ChatIds.Length > 0)
-                {
-                    ButtonArchive.Visibility = Visibility.Visible;
-                    SeparatorArchive.Visibility = Visibility.Visible;
-                    int totalUnreadCount = 0;
-            
-                    foreach (var chatId in archive.ChatIds)
-                    {
-                        var chat = await _client.GetChatAsync(chatId);
-                        totalUnreadCount += chat.UnreadCount;
-
-                        if (currentIndex != 3 && _isArchiveState)
-                        {
-                            lastArchiveChannels += chat.Title + ", ";
-                            currentIndex++;
-                        }
-                    }
-            
-                    BadgeArchiveUnreadCount.Value = totalUnreadCount;
-                    TextBlockLastChat.Text = lastArchiveChannels;
-                }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                throw;
+            }
+
+            if (archive.ChatIds.Length > 0)
+            {
+                ButtonArchive.Visibility = Visibility.Visible;
+                SeparatorArchive.Visibility = Visibility.Visible;
+                int totalUnreadCount = 0;
+
+                foreach (var chatId in archive.ChatIds)
+                {
+                    var chat = await _client.GetChatAsync(chatId);
+                    totalUnreadCount += chat.UnreadCount;
+
+                    if (currentIndex != 3 && _isArchiveState)
+                    {
+                        lastArchiveChannels += chat.Title + ", ";
+                        currentIndex++;
+                    }
+                }
+
+                BadgeArchiveUnreadCount.Value = totalUnreadCount;
+                TextBlockLastChat.Text = lastArchiveChannels;
             }
         });
         
+        GenerateUsers();
+        await GenerateFolders();
         UpdateArchiveState();
         _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); }; 
         
         if (App._folderId != -1)
         {
-            GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});
+            await GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = App._folderId});
         }
         else
         { 
-            GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+            await GenerateChatEntries(new TdApi.ChatList.ChatListMain());
             App._folderId = -1;
         }
     }

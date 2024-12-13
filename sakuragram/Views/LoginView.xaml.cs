@@ -145,7 +145,7 @@ namespace sakuragram.Views
 						_loginState++;
 						TextBoxPassword.Visibility = Visibility.Visible;
 						ForgotPassword.Visibility = Visibility.Visible;
-						TextBlockCurrentAuthState.Text = "Password";
+						TextBlockCurrentAuthState.Text = "2FA Password";
 						TextBlockCurrentAuthStateDescription.Text = 
 							"You have Two-Step Verification enabled, so your account is protected with an additional password.";
 						TextBoxPassword.PlaceholderText = $"Hint: {_passwordHint}";
@@ -156,7 +156,7 @@ namespace sakuragram.Views
 						{
 							_contentFrame = _window.RootFrame;
 							_window.TopBarContent.Visibility = Visibility.Visible;
-							_window.OpenChatsView();
+							await _window.OpenChatsView();
 						}
 					}
 					break;
@@ -188,7 +188,7 @@ namespace sakuragram.Views
 					{
 						_contentFrame = _window.RootFrame;
 						_window.TopBarContent.Visibility = Visibility.Visible;
-						_window.OpenChatsView();
+						await _window.OpenChatsView();
 					}
 					break;
 			}

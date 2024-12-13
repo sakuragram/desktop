@@ -14,7 +14,8 @@
 	            Height="Auto"
 	            KeyDown="UIElement_OnKeyDown">
 		<TextBlock x:Name="TextBlockCurrentAuthState" FontSize="28" TextAlignment="Center" />
-		<TextBlock x:Name="TextBlockCurrentAuthStateDescription" FontSize="16" TextWrapping="Wrap" 
+		<TextBlock x:Name="TextBlockCurrentAuthStateDescription" FontSize="16" TextWrapping="Wrap"
+		           Foreground="{StaticResource TextFillColorSecondaryBrush}"
 		           TextAlignment="Center"
 		           Margin="0, 0, 0, 8" />
 		<TextBox x:Name="TextBoxPhoneNumber" PlaceholderText="Phone number" Width="200" Margin="0, 0, 0, 4" />

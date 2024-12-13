@@ -105,12 +105,11 @@ public sealed partial class MainWindow : Window
 		}
 		else
 		{
-			OpenChatsView();
 			CheckForUpdates();
 	            
 			DispatcherQueue.EnqueueAsync(async () =>
 			{
-				if (ContentFrame.Content is ChatsView chatsView) await chatsView.PrepareChatsView();
+				await OpenChatsView();
 				var user = await _client.GetMeAsync();
 				
 				Title = user.FirstName + " " + user.LastName + " (" + _totalUnreadCount + ")";
@@ -442,18 +441,20 @@ public sealed partial class MainWindow : Window
 		});
 	}
 
-	public void OpenChatsView()
+	public async Task OpenChatsView()
 	{
 		ContentFrame.Navigate(typeof(ChatsView), null, 
 			new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromLeft });
 		
 		if (ContentFrame.Content is ChatsView chatsView)
 		{
+			chatsView._client = App._client;
 			chatsView.MainWindow = this;
 			chatsView.MainWindowFrame = ContentFrame;
 			chatsView.MainWindowTitleBar = TitleBar;
 			chatsView.MainWindowTitleBarContent = TopBarContent;
 			ChatsView = chatsView;
+			await ChatsView.PrepareChatsView();
 		}
 	}
 
@@ -461,15 +462,11 @@ public sealed partial class MainWindow : Window
 	{
 		_client = client;
 		ContentFrame.Content = null;
-		OpenChatsView();
+		await OpenChatsView();
 		
 		if (ContentFrame.Content is ChatsView chatsView)
 		{
 			chatsView._client = client;
-			
-			chatsView.PinnedChatsItemsList.Items.Clear();
-			chatsView.ChatsItemsList.Items.Clear();
-			await chatsView.PrepareChatsView();
 		}
 		
 		PanelStories.Children.Clear();
