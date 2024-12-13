@@ -5,7 +5,7 @@ Custom Telegram Desktop client based on TDLib ([tdsharp](https://github.com/egra
 [Telegram channel](https://t.me/sakuragram), [Telegram forum](https://t.me/sakuragramchat)
 
 ## Compilation Guide
-1. Clone **sakuragram** source code (`git clone https://github.com/sakuragram/desktop.git`)
+1. Clone **sakuragram** source code (`git clone -b v1.4-chat_update https://github.com/sakuragram/desktop.git`)
 2. Open **sakuraglam.sln**
 3. Find **Config_Example** and rename it to **Config**
 4. Open **Config** and fill it in according to the comments
