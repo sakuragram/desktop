@@ -19,6 +19,35 @@ public partial class ChatHistoryList
     private ReplyService _replyService;
     private Chat _openedChat;
     private ChatMessage _lastChatMessage;
+    private readonly List<TdApi.MessageContent> _serviceMessageContent = [
+        new TdApi.MessageContent.MessageBasicGroupChatCreate(),
+        new TdApi.MessageContent.MessageBotWriteAccessAllowed(), 
+        new TdApi.MessageContent.MessageChatAddMembers(),
+        new TdApi.MessageContent.MessageChatBoost(),
+        new TdApi.MessageContent.MessageChatChangeTitle(),
+        new TdApi.MessageContent.MessageChatDeleteMember(),
+        new TdApi.MessageContent.MessageChatDeletePhoto(),
+        new TdApi.MessageContent.MessageChatJoinByLink(),
+        new TdApi.MessageContent.MessageChatJoinByRequest(),
+        new TdApi.MessageContent.MessageChatSetBackground(),
+        new TdApi.MessageContent.MessageChatSetTheme(),
+        new TdApi.MessageContent.MessageChatUpgradeFrom(),
+        new TdApi.MessageContent.MessageChatUpgradeTo(),
+        new TdApi.MessageContent.MessageContactRegistered(),
+        new TdApi.MessageContent.MessageCustomServiceAction(),
+        new TdApi.MessageContent.MessageForumTopicCreated(),
+        new TdApi.MessageContent.MessageForumTopicEdited(),
+        new TdApi.MessageContent.MessageForumTopicIsClosedToggled(),
+        new TdApi.MessageContent.MessageForumTopicIsHiddenToggled(),
+        new TdApi.MessageContent.MessageGameScore(),
+        new TdApi.MessageContent.MessageInviteVideoChatParticipants(),
+        new TdApi.MessageContent.MessagePassportDataReceived(),
+        new TdApi.MessageContent.MessagePassportDataSent(),
+        new TdApi.MessageContent.MessageVideoChatEnded(),
+        new TdApi.MessageContent.MessageVideoChatScheduled(),
+        new TdApi.MessageContent.MessageVideoChatStarted(),
+        new TdApi.MessageContent.MessageSupergroupChatCreate()
+    ];
     
     /// <summary>
     /// A list of chat entries that represents a chat history.
@@ -88,7 +117,20 @@ public partial class ChatHistoryList
                         continue;
                     }
                 }
+
+                for (var i = 0; i != _serviceMessageContent.Count; i++)
+                {
+                    if (message.Content.ToString() == _serviceMessageContent[i].ToString())
+                    {
+                        var serviceMessage = new ChatServiceMessage();
+                        serviceMessage.UpdateMessage(message);
+                        MessagesList.Children.Add(serviceMessage);
+                        addedMessages.Add(message);
+                        break;
+                    }
+                }
                 
+                if (addedMessages.Contains(message)) continue;
                 var messageEntry = new ChatMessage(_openedChat, _replyService);
                 _lastChatMessage = messageEntry;
                 messageEntry._messageService = _messageService;

@@ -463,9 +463,9 @@ public sealed partial class Chat : Page
                             {
                                 Title = "You have been banned",
                                 Content = "You have been banned from this group.",
-                                CloseButtonText = "Close"
+                                CloseButtonText = "Close",
+                                XamlRoot = this.XamlRoot
                             };
-                            banDialog.XamlRoot = XamlRoot;
                             banDialog.ShowAsync();
                             break;
                         case TdApi.ChatMemberStatus.ChatMemberStatusCreator creator:
