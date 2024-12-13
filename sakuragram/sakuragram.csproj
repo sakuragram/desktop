@@ -107,6 +107,8 @@
     <PackageIcon>Assets\icons\app\White Icon (Circle).ico</PackageIcon>
     <PackageOutputPath />
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <PackageCertificateThumbprint>908EA968CA5AC992EB66C4E451AF9BB2791177B2</PackageCertificateThumbprint>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
   </PropertyGroup>
 
   <!--
