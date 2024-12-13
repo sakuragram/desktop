@@ -6,6 +6,7 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+	xmlns:tb="using:H.NotifyIcon"
 	mc:Ignorable="d">
 	
 	<Window.SystemBackdrop>
@@ -18,7 +19,30 @@
 			<RowDefinition Height="*" />
 		</Grid.RowDefinitions>
 		
-		<controls:TitleBar x:Name="TitleBar"
+        <tb:TaskbarIcon 
+	        x:Name="TrayIcon"
+	        x:FieldModifier="protected"
+	        ContextMenuMode="SecondWindow"
+	        NoLeftClickDelay="True"
+	        IconSource="Assets/icons/app/White Icon (Circle).ico"
+	        ToolTipText="sakuragram">
+	        <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout AreOpenCloseAnimationsEnabled="False">
+                    <MenuFlyoutItem Text="Show/Hide sakuragram"
+                                    x:Name="FlyoutItemWindowVisibility"
+                                    Click="FlyoutItemWindowVisibility_OnClick"/>
+                    <MenuFlyoutItem Text="Disable notifications"
+                                    x:Name="FlyoutItemNotifications"
+                                    Click="FlyoutItemNotifications_OnClick"/>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="Quit"
+                                    x:Name="FlyoutItemQuit"
+                                    Click="FlyoutItemQuit_OnClick"/>
+                </MenuFlyout>
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>
+
+        <controls:TitleBar x:Name="TitleBar"
 		                   AutoConfigureCustomTitleBar="True"
 		                   DisplayMode="Tall"
 		                   IsBackButtonVisible="false"

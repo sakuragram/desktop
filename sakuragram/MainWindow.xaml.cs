@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
 using CommunityToolkit.WinUI;
+using H.NotifyIcon;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Navigation;
 using Octokit;
 using sakuragram.Controls.Messages;
 using sakuragram.Controls.User;
@@ -17,7 +16,6 @@ using sakuragram.Services.Core;
 using sakuragram.Views;
 using sakuragram.Views.MainWindowElements;
 using TdLib;
-using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 using Size = Windows.Foundation.Size;
 
 namespace sakuragram;
@@ -47,20 +45,20 @@ public sealed partial class MainWindow : Window
 	private bool _isChannelsMuted;
 	private bool _isGroupsMuted;
 	private bool _isPrivateChatsMuted;
-		
+
 	public MainWindow()
 	{
 		InitializeComponent();
-			
+
 		RootFrame = ContentFrame;
 		TopBarContent = PanelContent;
-		
+
 		#region TitleBar
 
 		TitleBar.Title = Config.AppName;
-		TitleBar.Icon = new BitmapIcon 
+		TitleBar.Icon = new BitmapIcon
 		{
-			UriSource = new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"), 
+			UriSource = new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"),
 			ShowAsMonochrome = false
 		};
 		ExtendsContentIntoTitleBar = true;
@@ -69,6 +67,7 @@ public sealed partial class MainWindow : Window
 		#endregion
 
 		#region App title
+
 // #if DEBUG
 // 		{
 // 			Title = $"{Config.AppName} debug";
@@ -90,10 +89,11 @@ public sealed partial class MainWindow : Window
 // 				TitleBar.Subtitle = "UNTITLED CONFIGURATION";
 // 			}
 // #endif
+
 		#endregion
-			
+
 		TrySetDesktopAcrylicBackdrop();
-		
+
 		ApplicationView.PreferredLaunchViewSize = new Size(980, 800); 
 		ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
 		
@@ -470,5 +470,31 @@ public sealed partial class MainWindow : Window
 		}
 		
 		PanelStories.Children.Clear();
+	}
+
+	private bool _isWindowVisible = true;
+	private void FlyoutItemWindowVisibility_OnClick(object sender, RoutedEventArgs e)
+	{
+		if (_isWindowVisible)
+		{
+			this.Hide();
+			_isWindowVisible = false;
+		}
+		else
+		{
+			this.Show();
+			_isWindowVisible = true;
+		}
+	}
+
+	private void FlyoutItemNotifications_OnClick(object sender, RoutedEventArgs e)
+	{
+		Console.WriteLine("sosal?");
+	}
+
+	private void FlyoutItemQuit_OnClick(object sender, RoutedEventArgs e)
+	{
+		TrayIcon.Dispose();
+		Close();
 	}
 }

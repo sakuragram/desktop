@@ -3,13 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
-using Windows.UI.Core;
 using CommunityToolkit.WinUI;
-using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -19,6 +16,7 @@ using sakuragram.Services;
 using sakuragram.Services.Core;
 using sakuragram.Views.Chats;
 using TdLib;
+using TitleBar = CommunityToolkit.WinUI.Controls.TitleBar;
 
 namespace sakuragram.Views;
 
