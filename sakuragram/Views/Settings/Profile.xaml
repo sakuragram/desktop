@@ -104,7 +104,9 @@
                 
                 <controls:SettingsCard x:Name="CardConnectedChannel"
                                        Header="Your channel"
-                                       IsEnabled="True">
+                                       IsEnabled="True"
+                                       IsClickEnabled="True"
+                                       Click="CardConnectedChannel_OnClick">
                     <controls:SettingsCard.Description>
                         <Grid HorizontalAlignment="Left">
                             <TextBlock x:Name="TextBlockConnectedChannel" 
@@ -114,16 +116,6 @@
                                            Width="200"/>
                         </Grid>
                     </controls:SettingsCard.Description>
-                    <StackPanel Orientation="Horizontal">
-                        <Button x:Name="ButtonRemoveConnectedChannel"
-                                Content="Remove"
-                                IsEnabled="False"
-                                Margin="0, 0, 4, 0"
-                                Click="ButtonRemoveConnectedChannel_OnClick"/>
-                        <Button x:Name="ButtonChangeConnectedChannel"
-                                Content="Change"
-                                Click="ButtonChangeConnectedChannel_OnClick"/>
-                    </StackPanel>
                 </controls:SettingsCard>
                 
                 <controls:SettingsCard Description="You can add add a few lines about yourself."
@@ -200,6 +192,8 @@
             <ContentDialog x:Name="ContentDialogChangeConnectedChannel"
                            Opened="ContentDialogChangeConnectedChannel_OnOpened"
                            Closed="ContentDialogChangeConnectedChannel_OnClosed"
+                           PrimaryButtonText="Change"
+                           SecondaryButtonText="Remove"
                            CloseButtonText="Cancel">
                 <ContentDialog.TitleTemplate>
                     <DataTemplate>

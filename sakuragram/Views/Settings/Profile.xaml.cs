@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage.Pickers;
+using CommunityToolkit.WinUI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -29,17 +30,16 @@ public partial class Profile : Page
     public Profile()
     {
         InitializeComponent();
-        UpdateCurrentUser();
+        DispatcherQueue.EnqueueAsync(async () => await UpdateCurrentUser());
     }
 
-    private async void UpdateCurrentUser()
+    private async Task UpdateCurrentUser()
     {
         _currentUser = await _client.GetMeAsync();
         _currentUserFullInfo = await _client.GetUserFullInfoAsync(userId: _currentUser.Id);
         if (_currentUserFullInfo.PersonalChatId != 0)
         {
             _personalChat = await _client.GetChatAsync(chatId: _currentUserFullInfo.PersonalChatId);
-            ButtonRemoveConnectedChannel.IsEnabled = true;
             TextBlockConnectedChannel.Text = $"Connected channel: {_personalChat.Title}";
             TextBlockConnectedChannel.Visibility = Visibility.Visible;
         }
@@ -50,7 +50,6 @@ public partial class Profile : Page
         }
         _personalChats = await _client.GetSuitablePersonalChatsAsync();
         
-        await PersonPicture.InitializeProfilePhoto(_currentUser, sizes: 100);
         await PersonPicture.InitializeProfilePhoto(_currentUser, sizes: 100, canOpenProfilePhoto: true);
         
         TextBlockId.Text = $"ID: {_currentUser.Id}";
@@ -258,11 +257,7 @@ public partial class Profile : Page
         var chat = await _client.GetChatAsync(chatId);
         
         var button = new Button();
-        button.Click += async (_, _) =>
-        {
-            await _client.SetPersonalChatAsync(chat.Id);
-            ContentDialogChangeConnectedChannel.Hide();
-        };
+        button.Click += async (_, _) => await _client.SetPersonalChatAsync(chat.Id);
         button.Margin = new Thickness(0, 4, 0, 4);
         button.Width = 350;
         button.Height = 60;
@@ -310,6 +305,7 @@ public partial class Profile : Page
         
         stackPanel.Children.Add(verticalStackPanel);
         button.Content = stackPanel;
+        button.IsEnabled = _currentUserFullInfo.PersonalChatId != chatId;
         StackPanelChats.Children.Add(button);
     }
     
@@ -327,4 +323,9 @@ public partial class Profile : Page
         Visibility.Visible => Visibility.Collapsed,
         _ => throw new Exception()
     };
+
+    private void CardConnectedChannel_OnClick(object sender, RoutedEventArgs e)
+    {
+        ContentDialogChangeConnectedChannel.ShowAsync();
+    }
 }
