@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using sakuragram.Views.Chats;
 using TdLib;
 
@@ -17,11 +19,12 @@ public class ChatService
     public bool _isChatOpen;
     public bool _isMediaOpen;
     
-    public async Task<Views.Chats.Chat> OpenChat(long chatId)
+    public async Task<Views.Chats.Chat> OpenChat(long chatId, XamlRoot xamlRoot = null)
     {
         try
         {
-            _openedChatId = chatId;
+            var chat = await _client.GetChatAsync(chatId);
+            _openedChatId = chat.Id;
             _isChatOpen = true;
             CurrentChat = new Views.Chats.Chat(_openedChatId, false, null);
             await CurrentChat.UpdateChat();
@@ -29,6 +32,17 @@ public class ChatService
         }
         catch (TdException e)
         {
+            if (xamlRoot != null)
+            {
+                var ec = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = e.Message,
+                    PrimaryButtonText = "Ok",
+                    XamlRoot = xamlRoot
+                };
+                ec.ShowAsync();
+            }
             Debug.WriteLine(e);
             throw;
         }

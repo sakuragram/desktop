@@ -458,7 +458,7 @@ public sealed partial class ChatEntry
         _ChatsView.CloseChat();
         await DispatcherQueue.EnqueueAsync(async () =>
         {
-            _chatWidget = await _chatService.OpenChat(_chat.Id);
+            _chatWidget = await _chatService.OpenChat(_chat.Id, XamlRoot);
             _chatWidget._ChatsView = _ChatsView;
             _ChatsView._currentChat = _chatWidget;
             ChatPage.Children.Add(_chatWidget);
