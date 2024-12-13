@@ -14,7 +14,7 @@
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
 	<WindowsSdkPackageVersion>10.0.26100.38</WindowsSdkPackageVersion>
-	<ApplicationIcon>Assets\icons\app\White Icon (Circle).ico</ApplicationIcon>
+	<ApplicationIcon>Assets\icons\app\ico\White Icon (Circle).ico</ApplicationIcon>
 	<Title>sakuragram</Title>
 	<Authors>cherrymerry</Authors>
 	<PackageProjectUrl>https://github.com/sakuragram/desktop</PackageProjectUrl>

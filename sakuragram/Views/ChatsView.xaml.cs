@@ -554,6 +554,7 @@ public sealed partial class ChatsView : Page
         selectorBarItemAllChats.Text = "All chats";
         selectorBarItemAllChats.PointerPressed += async (_, _) => await GenerateChatEntries(new TdApi.ChatList.ChatListMain());
         SelectorBarFolders.Items.Add(selectorBarItemAllChats);
+        SelectorBarFolders.SelectedItem = selectorBarItemAllChats;
         
         foreach (var folder in localAccountSettings.ChatFolders)
         {
@@ -565,7 +566,6 @@ public sealed partial class ChatsView : Page
             {
                 App._folderId = folder.Id;
                 await GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});
-                selectorBarItem.IsSelected = true;
             };
             SelectorBarFolders.Items.Add(selectorBarItem);
         }

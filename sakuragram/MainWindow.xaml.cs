@@ -460,6 +460,7 @@ public sealed partial class MainWindow : Window
 
 	public async Task UpdateWindow(TdClient client)
 	{
+		_client.UpdateReceived -= async (_, update) => { await ProcessUpdates(update); };
 		_client = client;
 		ContentFrame.Content = null;
 		await OpenChatsView();
@@ -470,6 +471,7 @@ public sealed partial class MainWindow : Window
 		}
 		
 		PanelStories.Children.Clear();
+		_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
 	}
 
 	private bool _isWindowVisible = true;

@@ -200,7 +200,7 @@ public partial class App : Application
 		// TODO: Load all chat folders before starting the app and save it to user database
 		if (DevelopmentConfig.ChatListVersion == 2)
 		{
-			if (_mWindow.ChatsView != null) await _mWindow.ChatsView.PrepareChatFolders();
+			await _mWindow.UpdateWindow(_client);
 		}
 		_mWindow.Activate();
 	}
