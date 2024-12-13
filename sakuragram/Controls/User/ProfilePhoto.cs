@@ -26,7 +26,7 @@ public class ProfilePhoto : RelativePanel
     private TdApi.ChatActiveStories _stories;
     
     public async Task InitializeProfilePhoto(TdApi.User user = null, TdApi.Chat chat = null, int sizes = 32, 
-        bool canOpenProfile = false)
+        bool canOpenProfile = false, bool canOpenProfilePhoto = false)
     {
         if (user != null)
         {
