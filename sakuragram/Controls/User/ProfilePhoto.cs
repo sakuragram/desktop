@@ -58,6 +58,11 @@ public class ProfilePhoto : RelativePanel
             Children.Add(_statusBorder);
         });
         
+        if (user != null) 
+            await DispatcherQueue.EnqueueAsync(async () => await MediaService.GetUserPhoto(user, this));
+        else if (chat != null)
+            await DispatcherQueue.EnqueueAsync(async () => await MediaService.GetChatPhoto(chat, this));
+        
         var stories = App._stories;
         if (stories != null)
         {
@@ -93,11 +98,6 @@ public class ProfilePhoto : RelativePanel
                 var mediaPlayer = new MediaPlayer(_stories);
             }
         }
-        
-        if (user != null) 
-            await DispatcherQueue.EnqueueAsync(async () => await MediaService.GetUserPhoto(user, this));
-        else if (chat != null)
-            await DispatcherQueue.EnqueueAsync(async () => await MediaService.GetChatPhoto(chat, this));
 
         PointerPressed += async (_, _) =>
         {
