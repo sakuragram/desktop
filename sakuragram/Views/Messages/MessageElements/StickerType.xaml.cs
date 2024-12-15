@@ -6,6 +6,7 @@ using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
+using sakuragram.Controls.Core;
 using sakuragram.Controls.Messages;
 using TdLib;
 
@@ -15,7 +16,8 @@ public partial class StickerType
 {
     private readonly TdClient _client = App._client;
     
-    public StickerType(TdApi.Sticker sticker)
+    public StickerType(TdApi.Sticker sticker = null, int sizes = -1, bool canOpenStickerSet = true, bool isClickable = false,
+        bool isForSet = false)
     {
         InitializeComponent();
 
@@ -23,8 +25,18 @@ public partial class StickerType
 
         DispatcherQueue.EnqueueAsync(async () =>
         {
-            Width = sticker.Width / 3.0;
-            Height = sticker.Height / 3.0;
+            if (sizes == -1)
+            {
+                Width = sticker.Width / 3.0;
+                Height = sticker.Height / 3.0;
+            }
+            else
+            {
+                Width = sizes;
+                Height = sizes;
+            }
+            
+            if (isForSet) Margin = new Thickness(5);
             
             if (sticker.Sticker_.Local.IsDownloadingCompleted) SetSticker(sticker.Sticker_.Local, sticker.Format);
             else
@@ -43,22 +55,36 @@ public partial class StickerType
                 case TdApi.StickerFormat.StickerFormatWebp:
                 {
                     StaticSticker.Source = new BitmapImage(new Uri(file.Path));
-                    StaticSticker.PointerPressed += async (_, _) => await OpenStickerSet(sticker);
+                    if (canOpenStickerSet)
+                        StaticSticker.PointerPressed += async (_, _) => await OpenStickerSet(sticker);
+                    else if (isClickable) StaticSticker.PointerPressed += async (_, _) => await SendSticker(sticker);
                     StaticSticker.Visibility = Visibility.Visible;
                     break;
                 }
-                case TdApi.StickerFormat.StickerFormatTgs or TdApi.StickerFormat.StickerFormatWebm:
+                case TdApi.StickerFormat.StickerFormatWebm:
                 {
                     AnimatedSticker.Source = MediaSource.CreateFromUri(new Uri(file.Path));
                     AnimatedSticker.MediaPlayer.AutoPlay = true;
                     AnimatedSticker.MediaPlayer.IsLoopingEnabled = true;
                     AnimatedSticker.MediaPlayer.Play();
-                    AnimatedSticker.PointerPressed += async (_, _) => await OpenStickerSet(sticker);
+                    if (canOpenStickerSet) AnimatedSticker.PointerPressed += async (_, _) => await OpenStickerSet(sticker);
+                    else if (isClickable) AnimatedSticker.PointerPressed += async (_, _) => await SendSticker(sticker);
                     AnimatedSticker.Visibility = Visibility.Visible;
+                    break;
+                }
+                case TdApi.StickerFormat.StickerFormatTgs:
+                {
+                    TextBlockRofl.Visibility = Visibility.Visible;
                     break;
                 }
             }
         }
+    }
+
+    private async Task SendSticker(TdApi.Sticker sticker)
+    {
+        await _client.SendMessageAsync(App.ChatService._openedChatId, inputMessageContent: new TdApi.InputMessageContent.InputMessageSticker
+        { Sticker = new TdApi.InputFile.InputFileRemote { Id = sticker.Sticker_.Remote.Id } });
     }
 
     private async Task OpenStickerSet(TdApi.Sticker sticker)
@@ -71,6 +97,10 @@ public partial class StickerType
             DefaultButton = ContentDialogButton.Primary };
         var gridStickers = new Grid();
         var scrollViewer = new ScrollViewer { Content = gridStickers, MaxHeight = 250};
+        var title = new SakuraTextBlock();
+        var text = _client.GetTextEntitiesAsync(stickerSet.Title).Result;
+        await title.SetFormattedText(new TdApi.FormattedText { Text = stickerSet.Title, Entities = text.Entities });
+        stickerSetDialog.Title = title;
 
         if (!stickerSet.IsInstalled)
             stickerSetDialog.PrimaryButtonClick += async (_, _) => await _client.ChangeStickerSetAsync(stickerSet.Id, true);
@@ -80,7 +110,7 @@ public partial class StickerType
         
         foreach (var stickerFromSet in stickerSet.Stickers)
         {
-            var newSticker = new Sticker(stickerFromSet);
+            var newSticker = new StickerType(stickerFromSet, canOpenStickerSet: false, sizes: 64, isForSet: true, isClickable: true);
 
             if (favoriteCol == 5)
             {

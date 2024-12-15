@@ -17,6 +17,11 @@
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         Visibility="Collapsed"/>
+    <TextBlock x:Name="TextBlockRofl"
+               Text="tgs sticker idk"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch"
+               Visibility="Collapsed"/>
     
     <messageElements:MediaLoading x:Name="MediaLoading"
                                   Visibility="Collapsed"

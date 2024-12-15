@@ -367,6 +367,9 @@ public partial class ChatMessage : Page
             case TdApi.MessageContent.MessageVideo messageVideo:
                 GenerateVideoMessage(messageVideo);
                 break;
+            case TdApi.MessageContent.MessageVideoNote messageVideoNote:
+                GenerateVideoNoteMessage(messageVideoNote);
+                break;
             case TdApi.MessageContent.MessageDocument messageDocument:
                 DispatcherQueue.EnqueueAsync(() =>
                 {
@@ -395,6 +398,14 @@ public partial class ChatMessage : Page
                 PanelMessageContent.Children.Add(textNotFound);
                 break;
         }
+    }
+
+    private void GenerateVideoNoteMessage(TdApi.MessageContent.MessageVideoNote messageVideoNote)
+    {
+        var videoNote = new VideoNoteType(messageVideoNote.VideoNote);
+        PanelMessageContent.Children.Add(videoNote);
+        MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
+        GridUserInfo.Visibility = Visibility.Collapsed;
     }
 
     private void GenerateVideoMessage(TdApi.MessageContent.MessageVideo messageVideo)
