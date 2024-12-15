@@ -16,104 +16,82 @@ namespace sakuragram.Controls.Messages;
 public class Sticker : Button
 {
     private static readonly TdClient _client = App._client;
-    private TdApi.Sticker _sticker;
-    private static ChatService _chatService = App.ChatService;
-    private Image StickerImage { get; }
-    private MediaPlayerElement StickerVideo { get; }
+    private readonly TdApi.Sticker _sticker;
+    private static readonly ChatService _chatService = App.ChatService;
+    private Image StickerImage { get; set; }
+    private MediaPlayerElement StickerVideo { get; set; }
 
-    private int ButtonWidthAndHeight = 64;
-    private int StickerWidthAndHeight = 58;
-    
+    private const int ButtonWidthAndHeight = 64;
+    private const int StickerWidthAndHeight = 58;
+
     public Sticker(TdApi.Sticker sticker)
     {
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+        if (sticker == null) return;
+        
         _sticker = sticker;
-        
-        Background = new SolidColorBrush(Colors.Transparent);
-        Style = null;
-        Margin = new Thickness(3);
-        Padding = new Thickness(0);
-        Width = ButtonWidthAndHeight;
-        Height = ButtonWidthAndHeight;
 
-        switch (sticker.Format)
+        DispatcherQueue.EnqueueAsync(async () =>
         {
-            case TdApi.StickerFormat.StickerFormatWebp:
-                StickerImage = new();
-                if (sticker.Sticker_.Local.IsDownloadingCompleted)
-                    StickerImage.Source = new BitmapImage(new Uri(sticker.Sticker_.Local.Path));
-                else
-                    Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
-                StickerImage.HorizontalAlignment = HorizontalAlignment.Stretch;
-                StickerImage.VerticalAlignment = VerticalAlignment.Stretch;
-                StickerImage.Width = StickerWidthAndHeight;
-                StickerImage.Height = StickerWidthAndHeight;
-                Content = StickerImage;
-                break;
-            case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
-                StickerVideo = new();
-                if (sticker.Sticker_.Local.IsDownloadingCompleted)
-                {
-                    StickerVideo.Source = MediaSource.CreateFromUri(new Uri(sticker.Sticker_.Local.Path));
-                    StickerVideo.MediaPlayer.IsLoopingEnabled = true;
-                    StickerVideo.MediaPlayer.Position = TimeSpan.Zero;
-                    StickerVideo.MediaPlayer.AutoPlay = true;
-                    StickerVideo.MediaPlayer.Play();
-                }
-                else
-                    Task.Run(async () => await _client.DownloadFileAsync(fileId: sticker.Sticker_.Id, priority: 10));
-                StickerVideo.HorizontalAlignment = HorizontalAlignment.Stretch;
-                StickerVideo.VerticalAlignment = VerticalAlignment.Stretch;
-                StickerVideo.Width = StickerWidthAndHeight;
-                StickerVideo.Height = StickerWidthAndHeight;
-                Content = StickerVideo;
-                break;
-        }
-        
-        // TextBlock debug = new();
-        // debug.Text = sticker.Id.ToString();
-        // Content = debug;
-        
-        Click += OnClick;
-    }
+            Background = new SolidColorBrush(Colors.Transparent);
+            Style = null;
+            Margin = new Thickness(3);
+            Padding = new Thickness(0);
+            Width = ButtonWidthAndHeight;
+            Height = ButtonWidthAndHeight;
 
-    private Task ProcessUpdates(TdApi.Update update)
-    {
-        switch (update)
+            if (sticker.Sticker_.Local.IsDownloadingCompleted) await SetSticker(sticker.Sticker_.Local, sticker.Format);
+            else
+            {
+                var file = await _client.DownloadFileAsync(sticker.Sticker_.Id, Constants.MediaPriority,
+                    synchronous: true);
+                await SetSticker(file.Local, sticker.Format);
+            }
+            
+            Click += OnClick;
+        });
+        return;
+
+        async Task SetSticker(TdApi.LocalFile file, TdApi.StickerFormat format)
         {
-            case TdApi.Update.UpdateFile updateFile:
-                if (updateFile.File.Id != _sticker.Sticker_.Id) return Task.CompletedTask;
-                switch (_sticker.Format)
-                {
-                    case TdApi.StickerFormat.StickerFormatWebp:
-                        if (updateFile.File.Local.IsDownloadingCompleted)
-                            DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                StickerImage.Source = updateFile.File.Local.IsDownloadingCompleted
-                                    ? new BitmapImage(new Uri(updateFile.File.Local.Path))
-                                    : new BitmapImage(new Uri(_sticker.Sticker_.Local.Path));
-                            });
-                        break;
-                    case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
-                        if (updateFile.File.Local.IsDownloadingCompleted)
+            switch (format)
+            {
+                case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        StickerVideo = new MediaPlayerElement
                         {
-                            DispatcherQueue.EnqueueAsync(() =>
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            VerticalAlignment = VerticalAlignment.Stretch,
+                            Width = StickerWidthAndHeight,
+                            Height = StickerWidthAndHeight,
+                            Source = MediaSource.CreateFromUri(new Uri(file.Path)),
+                            MediaPlayer =
                             {
-                                StickerVideo.Source = MediaSource.CreateFromUri(
-                                    new Uri(updateFile.File.Local.IsDownloadingCompleted
-                                        ? updateFile.File.Local.Path
-                                        : _sticker.Sticker_.Local.Path));
-                                StickerVideo.MediaPlayer.IsLoopingEnabled = true;
-                                StickerVideo.MediaPlayer.Position = TimeSpan.Zero;
-                                StickerVideo.MediaPlayer.AutoPlay = true;
-                                StickerVideo.MediaPlayer.Play();
-                            });
-                        }
-                        break;
-                }
-                break;
+                                IsLoopingEnabled = true,
+                                Position = TimeSpan.Zero,
+                                AutoPlay = true
+                            }
+                        };
+                        StickerVideo.MediaPlayer.Play();
+                        Content = StickerVideo;
+                    });
+                    break;
+                case TdApi.StickerFormat.StickerFormatWebp:
+                    await DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        StickerImage = new Image
+                        {
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            VerticalAlignment = VerticalAlignment.Stretch,
+                            Width = StickerWidthAndHeight,
+                            Height = StickerWidthAndHeight,
+                            Source = new BitmapImage(new Uri(file.Path))
+                        };
+                        Content = StickerImage;
+                    });
+                    break;
+            }
         }
-        return Task.CompletedTask;
     }
 
     private void OnClick(object sender, RoutedEventArgs e)
