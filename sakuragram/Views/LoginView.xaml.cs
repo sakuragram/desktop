@@ -29,16 +29,20 @@ namespace sakuragram.Views
 
 			// TdException.Visibility = Visibility.Visible;
 			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
-			
-			TextBlockCurrentAuthState.Text = "Your phone";
-			TextBlockCurrentAuthStateDescription.Text = "Please confirm your country code and enter your phone number.";
+
+			DispatcherQueue.EnqueueAsync(() =>
+			{
+				TextBlockCurrentAuthState.Text = "Your phone";
+				TextBlockCurrentAuthStateDescription.Text =
+					"Please confirm your country code and enter your phone number.";
+			});
 		}
 
 		private async Task ProcessUpdates(TdApi.Update update)
 		{
 			await DispatcherQueue.EnqueueAsync(() => TdException.Text = update.ToString());
 			await DispatcherQueue.EnqueueAsync(() => _isTestDc = SwitchTestBackend.IsOn);
-			
+
 			switch (update)
 			{
 				case TdApi.Update.UpdateAuthorizationState updateAuthorizationState:
@@ -59,8 +63,10 @@ namespace sakuragram.Views
 								DeviceModel = "Desktop",
 								SystemLanguageCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName,
 								ApplicationVersion = Config.AppVersion,
-								DatabaseDirectory = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\u_test_0"),
-								FilesDirectory = Path.Combine(AppContext.BaseDirectory, @$"{Config.BaseLocation}\files\"),
+								DatabaseDirectory = Path.Combine(AppContext.BaseDirectory,
+									@$"{Config.BaseLocation}\u_test_0"),
+								FilesDirectory = Path.Combine(AppContext.BaseDirectory,
+									@$"{Config.BaseLocation}\files\"),
 							});
 							break;
 						}
@@ -70,6 +76,7 @@ namespace sakuragram.Views
 							break;
 						}
 					}
+
 					break;
 				}
 				case TdApi.Update.UpdateChatFolders updateChatFolders:

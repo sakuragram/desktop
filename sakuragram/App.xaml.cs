@@ -69,7 +69,7 @@ public partial class App : Application
 
 		#region Telegram Client
 		
-		CreateClient();
+		await CreateClient();
 
 		#endregion
 
@@ -146,12 +146,6 @@ public partial class App : Application
 			case TdApi.Update.UpdateChatActiveStories updateChatActiveStories:
 				_stories.Add(updateChatActiveStories.ActiveStories);
 				break;
-			case TdApi.Update.UpdateConnectionState { State: TdApi.ConnectionState.ConnectionStateReady }:
-				_authNeeded = false;
-				_passwordNeeded = false;
-				_hasInternetConnection = true;
-				ReadyToAuthenticate.Set();
-				break;
 			case TdApi.Update.UpdateConnectionState updateConnectionState:
 			{
 				_hasInternetConnection = updateConnectionState.State switch
@@ -198,10 +192,10 @@ public partial class App : Application
 
 		_mWindow = new MainWindow();
 		// TODO: Load all chat folders before starting the app and save it to user database
+		_mWindow.Activate();
 		if (DevelopmentConfig.ChatListVersion == 2)
 		{
 			await _mWindow.UpdateWindow(_client);
 		}
-		_mWindow.Activate();
 	}
 }

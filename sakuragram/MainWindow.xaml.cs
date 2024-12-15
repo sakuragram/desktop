@@ -52,7 +52,7 @@ public sealed partial class MainWindow : Window
 
 		RootFrame = ContentFrame;
 		TopBarContent = PanelContent;
-
+		
 		#region TitleBar
 
 		TitleBar.Title = Config.AppName;
@@ -96,55 +96,6 @@ public sealed partial class MainWindow : Window
 
 		ApplicationView.PreferredLaunchViewSize = new Size(980, 800); 
 		ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
-		
-		if (App._authNeeded)
-		{
-			PanelContent.Visibility = Visibility.Collapsed;
-			ContentFrame.Navigate(typeof(LoginView));
-			if (ContentFrame.Content is LoginView login) login._window = this;
-		}
-		else
-		{
-			CheckForUpdates();
-	            
-			DispatcherQueue.EnqueueAsync(async () =>
-			{
-				await OpenChatsView();
-				var user = await _client.GetMeAsync();
-				
-				Title = user.FirstName + " " + user.LastName + " (" + _totalUnreadCount + ")";
-				
-				foreach (var story in _stories)
-				{
-					if (story.Order == 0) continue;
-					var storyElement = new Story(story);
-					PanelStories.Children.Add(storyElement);
-				}
-				
-				FlyoutItemMuteFor0.Click += (_, _) => MuteChatsFor(2);
-				FlyoutItemMuteFor1.Click += (_, _) => MuteChatsFor(8);
-				FlyoutItemMuteFor2.Click += (_, _) => MuteChatsFor(24);
-				
-				FlyoutItemCreatePc.Click += (_, _) => OpenCreateChatDialog(0);
-				FlyoutItemCreateGroup.Click += (_, _) => OpenCreateChatDialog(1);
-				FlyoutItemCreateChannel.Click += (_, _) => OpenCreateChatDialog(2);
-				FlyoutItemCreateSecretChat.Click += (_, _) => OpenCreateChatDialog(3);
-				
-				await UpdateNotificationInfo();
-			});
-			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
-			NotificationService notificationService = new();
-
-			_mutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = int.MaxValue };
-			_unmutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = 0 };
-		}
-
-		void OpenCreateChatDialog(int chatType)
-		{
-			var dialog = new CreateChat(chatType);
-			dialog.XamlRoot = ContentFrame.XamlRoot;
-			dialog.ShowAsync();
-		}
 	}
 
 	private async void CheckForUpdates()
@@ -460,20 +411,56 @@ public sealed partial class MainWindow : Window
 
 	public async Task UpdateWindow(TdClient client)
 	{
-		_client.UpdateReceived -= async (_, update) => { await ProcessUpdates(update); };
-		_client = client;
-		ContentFrame.Content = null;
-		await OpenChatsView();
-		
-		if (ContentFrame.Content is ChatsView chatsView)
+		if (App._authNeeded)
 		{
-			chatsView._client = client;
+			
+			PanelContent.Visibility = Visibility.Collapsed;
+			ContentFrame.Navigate(typeof(LoginView));
+			if (ContentFrame.Content is LoginView login) login._window = this;
 		}
-		
-		PanelStories.Children.Clear();
-		_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
-	}
+		else
+		{
+			CheckForUpdates();
 
+			await DispatcherQueue.EnqueueAsync(async () =>
+			{
+				await OpenChatsView();
+				var user = await _client.GetMeAsync();
+
+				Title = user.FirstName + " " + user.LastName + " (" + _totalUnreadCount + ")";
+
+				foreach (var story in _stories)
+				{
+					if (story.Order == 0) continue;
+					var storyElement = new Story(story);
+					PanelStories.Children.Add(storyElement);
+				}
+
+				FlyoutItemMuteFor0.Click += (_, _) => MuteChatsFor(2);
+				FlyoutItemMuteFor1.Click += (_, _) => MuteChatsFor(8);
+				FlyoutItemMuteFor2.Click += (_, _) => MuteChatsFor(24);
+
+				FlyoutItemCreatePc.Click += (_, _) => OpenCreateChatDialog(0);
+				FlyoutItemCreateGroup.Click += (_, _) => OpenCreateChatDialog(1);
+				FlyoutItemCreateChannel.Click += (_, _) => OpenCreateChatDialog(2);
+				FlyoutItemCreateSecretChat.Click += (_, _) => OpenCreateChatDialog(3);
+
+				await UpdateNotificationInfo();
+			});
+			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+			NotificationService notificationService = new();
+
+			_mutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = int.MaxValue };
+			_unmutedScopeNotificationSettings = new TdApi.ScopeNotificationSettings { MuteFor = 0 };
+		}
+		void OpenCreateChatDialog(int chatType)
+		{
+			var dialog = new CreateChat(chatType);
+			dialog.XamlRoot = ContentFrame.XamlRoot;
+			dialog.ShowAsync();
+		}
+	}
+	
 	private bool _isWindowVisible = true;
 	private void FlyoutItemWindowVisibility_OnClick(object sender, RoutedEventArgs e)
 	{
@@ -488,15 +475,23 @@ public sealed partial class MainWindow : Window
 			_isWindowVisible = true;
 		}
 	}
-
+	
 	private void FlyoutItemNotifications_OnClick(object sender, RoutedEventArgs e)
 	{
 		Console.WriteLine("sosal?");
 	}
-
+	
 	private void FlyoutItemQuit_OnClick(object sender, RoutedEventArgs e)
 	{
 		TrayIcon.Dispose();
 		Close();
+	}
+
+	private void MainWindow_OnClosed(object sender, WindowEventArgs args)
+	{
+		if (ContentFrame.Content is LoginView login)
+		{
+			_client.CloseAsync();
+		}
 	}
 }
