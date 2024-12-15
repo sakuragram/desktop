@@ -12,7 +12,7 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GenerateDocumentationFile>False</GenerateDocumentationFile>
 	<WindowsSdkPackageVersion>10.0.26100.38</WindowsSdkPackageVersion>
 	<ApplicationIcon>Assets\icons\app\ico\White Icon (Circle).ico</ApplicationIcon>
 	<Title>sakuragram</Title>
@@ -102,6 +102,12 @@
     <Resource Remove="Views\Chats\Messages\ChatMessage.xaml" />
     <Resource Remove="Views\Chats\Messages\ChatServiceMessage.xaml" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <WebView2EnableCsWinRTProjection>False</WebView2EnableCsWinRTProjection>
     <PackageIcon>Assets\icons\app\White Icon (Circle).ico</PackageIcon>
@@ -109,6 +115,7 @@
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <PackageCertificateThumbprint>908EA968CA5AC992EB66C4E451AF9BB2791177B2</PackageCertificateThumbprint>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <!--
