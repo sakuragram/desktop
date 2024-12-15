@@ -11,7 +11,7 @@ namespace TdLib
     public static partial class TdApi
     {
         /// <summary>
-        /// Returns the list of owned by the current user bots
+        /// Returns the list of bots owned by the current user
         /// </summary>
         public class GetOwnedBots : Function<Users>
         {
@@ -31,7 +31,7 @@ namespace TdLib
         }
 
         /// <summary>
-        /// Returns the list of owned by the current user bots
+        /// Returns the list of bots owned by the current user
         /// </summary>
         public static Task<Users> GetOwnedBotsAsync(
             this Client client)
