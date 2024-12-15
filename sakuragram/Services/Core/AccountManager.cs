@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -23,6 +24,9 @@ public class AccountManager
         if (settings.AccountIds is { Count: > 0 }) _selectedAccountIndex = settings.SelectedAccount;
         else _selectedAccountIndex = 0;
 
+        if (!Directory.Exists(@$"{Config.BaseLocation}\u_{_selectedAccountIndex}"))
+            _selectedAccountIndex = 0;
+        
         return Task.FromResult(_selectedAccountIndex);
     }
 
