@@ -6,30 +6,19 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:winUi="using:CommunityToolkit.Labs.WinUI"
+    xmlns:messageElements="using:sakuragram.Views.Messages.MessageElements"
     mc:Ignorable="d">
     
-    <MediaPlayerElement x:Name="MediaPlayerElement"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Width="Auto"
-                        Height="Auto"
-                        AutoPlay="True"/>
-    <winUi:Shimmer x:Name="ShimmerLoading"
-                   HorizontalAlignment="Stretch"
-                   VerticalAlignment="Stretch"
-                   Width="Auto"
-                   Height="Auto"/>
-    <StackPanel HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                Width="Auto"
-                Height="Auto">
-        <Border HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Width="64"
-                Height="64">
-            <ProgressRing IsActive="True" />
-        </Border>
-    </StackPanel>
+    <Image x:Name="Image"
+           HorizontalAlignment="Stretch"
+           VerticalAlignment="Stretch"/>
+    <messageElements:MediaLoading Visibility="Collapsed"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  RelativePanel.AlignBottomWithPanel="True"
+                                  RelativePanel.AlignTopWithPanel="True"
+                                  RelativePanel.AlignRightWithPanel="True"
+                                  RelativePanel.AlignLeftWithPanel="True"
+                                  x:Name="MediaLoading"/>
     
 </RelativePanel>

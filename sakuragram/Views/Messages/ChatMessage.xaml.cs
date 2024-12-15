@@ -141,7 +141,7 @@ public partial class ChatMessage : Page
                 GridUserInfo.Visibility = Visibility.Collapsed;
                 MessageBackground.Background =
                     (Brush)Application.Current.Resources["AccentAcrylicBackgroundFillColorBaseBrush"];
-                Reply.Background = (Brush)Application.Current.Resources["AccentAcrylicBackgroundFillColorDefaultBrush"];
+                BorderReply.Background = (Brush)Application.Current.Resources["AccentAcrylicBackgroundFillColorDefaultBrush"];
                 ReplyFirstName.Foreground = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"];
                 ReplyInputContent.Foreground = (Brush)Application.Current.Resources["TextOnAccentFillColorSecondaryBrush"];
             }
@@ -182,7 +182,7 @@ public partial class ChatMessage : Page
 
             ReplyInputContent.Text = await MessageService.GetTextMessageContent(replyMessage);
 
-            Reply.Visibility = Visibility.Visible;
+            BorderReply.Visibility = Visibility.Visible;
         }
 
         #endregion
@@ -364,6 +364,9 @@ public partial class ChatMessage : Page
             case TdApi.MessageContent.MessagePhoto messagePhoto:
                 GeneratePhotoMessage(messagePhoto);
                 break;
+            case TdApi.MessageContent.MessageVideo messageVideo:
+                GenerateVideoMessage(messageVideo);
+                break;
             case TdApi.MessageContent.MessageDocument messageDocument:
                 DispatcherQueue.EnqueueAsync(() =>
                 {
@@ -394,10 +397,39 @@ public partial class ChatMessage : Page
         }
     }
 
-    private async void GenerateAnimationMessage(TdApi.MessageContent.MessageAnimation messageAnimation)
+    private void GenerateVideoMessage(TdApi.MessageContent.MessageVideo messageVideo)
     {
-        var mediaPlayer = new AnimationType(messageAnimation.Animation);
-        PanelMessageContent.Children.Add(mediaPlayer);
+        DispatcherQueue.EnqueueAsync(() =>
+        {
+            var video = new VideoType(messageVideo.Video);
+            
+            if (messageVideo.Caption != null)
+            {
+                var inlines = MessageService.GetTextEntities(messageVideo.Caption).Result;
+
+                _caption = new();
+                _caption.IsTextSelectionEnabled = true;
+                _caption.TextWrapping = TextWrapping.Wrap;
+                _caption.Inlines.Add(inlines);
+            }
+
+            if (messageVideo.ShowCaptionAboveMedia)
+            {
+                PanelMessageContent.Children.Add(_caption);
+                PanelMessageContent.Children.Add(video);
+            }
+            else
+            {
+                PanelMessageContent.Children.Add(video);
+                PanelMessageContent.Children.Add(_caption);
+            }
+        });
+    }
+
+    private void GenerateAnimationMessage(TdApi.MessageContent.MessageAnimation messageAnimation)
+    {
+        var animation = new AnimationType(messageAnimation.Animation);
+        PanelMessageContent.Children.Add(animation);
         MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
         GridUserInfo.Visibility = Visibility.Collapsed;
     }
@@ -411,25 +443,12 @@ public partial class ChatMessage : Page
         }
     }
     
-    private async void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto)
+    private void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto)
     {
-        // _photoMessage = new();
-        // _photoMessage.Width = messagePhoto.Photo.Sizes[1].Width * (1.0 / 1.5);
-        // _photoMessage.Height = messagePhoto.Photo.Sizes[1].Height * (1.0 / 1.5);
-        //
-        // if (messagePhoto.Photo.Sizes[1].Photo.Local.Path != string.Empty)
-        // {
-        //     _photoMessage.Source = new BitmapImage(new Uri(messagePhoto.Photo.Sizes[1].Photo.Local.Path));
-        // }
-        // else
-        // {
-        //     await _client.DownloadFileAsync(messagePhoto.Photo.Sizes[1].Photo.Id, 1).ContinueWith(_ => {
-        //             _photoMessage.Source = new BitmapImage(new Uri(messagePhoto.Photo.Sizes[1].Photo.Local.Path));
-        //         });
-        // }
-
-        await DispatcherQueue.EnqueueAsync(() =>
+        DispatcherQueue.EnqueueAsync(() =>
         {
+            var photo = new PhotoType(messagePhoto.Photo);
+            
             if (messagePhoto.Caption != null)
             {
                 var inlines = MessageService.GetTextEntities(messagePhoto.Caption).Result;
@@ -443,52 +462,14 @@ public partial class ChatMessage : Page
             if (messagePhoto.ShowCaptionAboveMedia)
             {
                 PanelMessageContent.Children.Add(_caption);
-                //PanelMessageContent.Children.Add(_photoMessage);
+                PanelMessageContent.Children.Add(photo);
             }
             else
             {
-                //PanelMessageContent.Children.Add(_photoMessage);
+                PanelMessageContent.Children.Add(photo);
                 PanelMessageContent.Children.Add(_caption);
             }
         });
-
-        // if (album != null && mediaAlbumId != 0)
-        // {
-        //     _mediaAlbum = album;
-        //     _mediaAlbumId = mediaAlbumId;
-        //
-        //     foreach (var media in _mediaAlbum)
-        //     {
-        //         if (media.MediaAlbumId == _mediaAlbumId)
-        //         {
-        //             switch (media.Content)
-        //             {
-        //                 case TdApi.MessageContent.MessagePhoto mediaPhoto:
-        //                 {
-        //                     Image image = new();
-        //                     image.Width = mediaPhoto.Photo.Sizes[1].Width * (1.0 / 1.5);
-        //                     image.Height = mediaPhoto.Photo.Sizes[1].Height * (1.0 / 1.5);
-        //
-        //                     if (mediaPhoto.Photo.Sizes[1].Photo.Local.Path != string.Empty)
-        //                     {
-        //                         image.Source = new BitmapImage(new Uri(mediaPhoto.Photo.Sizes[1].Photo.Local.Path));
-        //                     }
-        //                     else
-        //                     {
-        //                         await _client.DownloadFileAsync(mediaPhoto.Photo.Sizes[1].Photo.Id, 1).ContinueWith(_ => {
-        //                             image.Source = new BitmapImage(new Uri(mediaPhoto.Photo.Sizes[1].Photo.Local.Path));
-        //                         });
-        //                     }
-        //                     break;
-        //                 }
-        //                 case TdApi.MessageContent.MessageVideo mediaVideo:
-        //                 {
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
 
     private void GenerateTextMessage(TdApi.FormattedText messageText)
