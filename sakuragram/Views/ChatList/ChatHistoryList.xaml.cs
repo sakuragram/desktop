@@ -110,7 +110,8 @@ public partial class ChatHistoryList
                         MessagesList.Children.Add(serviceMessage);
                     }
                     
-                    if (message.MediaAlbumId != 0 && _lastChatMessage._mediaAlbumId == message.MediaAlbumId) 
+                    if (message.MediaAlbumId != 0 && _lastChatMessage._mediaAlbumId != 0 && 
+                        _lastChatMessage._mediaAlbumId == message.MediaAlbumId && _lastChatMessage._canAttachAlbumElements) 
                     {
                         _lastChatMessage.AddAlbumElement(message);
                         addedMessages.Add(message);

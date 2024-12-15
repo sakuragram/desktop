@@ -56,6 +56,7 @@ public partial class ChatMessage : Page
 
     /** can be used only for photo, video, audio and document messages */
     public long _mediaAlbumId;
+    public bool _canAttachAlbumElements = false;
     private List<TdApi.Message> _mediaAlbum;
     private int _mediaElementsCount = 0;
 
@@ -133,6 +134,8 @@ public partial class ChatMessage : Page
 
         var sender = await UserService.GetSender(message.SenderId);
 
+        if (_mediaAlbumId != 0) _canAttachAlbumElements = true;
+        
         if (sender.User != null)
         {
             await ProfilePicture.InitializeProfilePhoto(sender.User, canOpenProfile: true);
