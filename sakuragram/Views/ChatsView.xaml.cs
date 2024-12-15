@@ -653,7 +653,7 @@ public sealed partial class ChatsView : Page
         });
         _isArchiveState = !_isArchiveState;
         FlyoutItemExpandArchive.Text = _isArchiveState ? "Expand" : "Collapse";
-        ButtonArchive.Height = _isArchiveState ? 40 : 50;
+        ButtonArchive.Height = _isArchiveState ? 35 : 50;
         TextBlockLastChat.Visibility = _isArchiveState ? Visibility.Collapsed : Visibility.Visible;
     }
 }
