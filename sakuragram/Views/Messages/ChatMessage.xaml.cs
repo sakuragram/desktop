@@ -356,7 +356,6 @@ public partial class ChatMessage : Page
                 GenerateTextMessage(messageText.Text);
                 break;
             case TdApi.MessageContent.MessageSticker messageSticker:
-                CheckSticker(messageSticker);
                 GenerateStickerMessage(messageSticker);
                 break;
             case TdApi.MessageContent.MessageAnimation messageAnimation:
@@ -399,6 +398,8 @@ public partial class ChatMessage : Page
     {
         var mediaPlayer = new AnimationType(messageAnimation.Animation);
         PanelMessageContent.Children.Add(mediaPlayer);
+        MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
+        GridUserInfo.Visibility = Visibility.Collapsed;
     }
 
     public void AddAlbumElement(TdApi.Message message)
@@ -501,70 +502,13 @@ public partial class ChatMessage : Page
         
         PanelMessageContent.Children.Add(textMessage);
     }
-
-    private async void CheckSticker(TdApi.MessageContent.MessageSticker messageSticker)
-    {
-        if (messageSticker.Sticker.Sticker_.Local.IsDownloadingCompleted)
-        {
-            return;
-        }
-        else
-        {
-            await _client.DownloadFileAsync(messageSticker.Sticker.Sticker_.Id, 3);
-            return;
-        }
-    }
     
-    private async void GenerateStickerMessage(TdApi.MessageContent.MessageSticker messageSticker)
+    private void GenerateStickerMessage(TdApi.MessageContent.MessageSticker messageSticker)
     {
-        switch (messageSticker.Sticker.Format)
-        {
-            case TdApi.StickerFormat.StickerFormatWebp:
-            {
-                try
-                {
-                    await DispatcherQueue.EnqueueAsync(() =>
-                    {
-                        _stickerStaticMessage = new();
-                        _stickerStaticMessage.Source = new BitmapImage(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
-                        _stickerStaticMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
-                        _stickerStaticMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
-                        PanelMessageContent.Children.Add(_stickerStaticMessage);
-                    });
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                    throw;
-                }
-                break;
-            }
-            case TdApi.StickerFormat.StickerFormatWebm or TdApi.StickerFormat.StickerFormatTgs:
-            {
-                try
-                {
-                    await DispatcherQueue.EnqueueAsync(() =>
-                    {
-                        _stickerDynamicMessage = new();
-                        _stickerDynamicMessage.Source = MediaSource.CreateFromUri(new Uri(messageSticker.Sticker.Sticker_.Local.Path));
-                        _stickerDynamicMessage.Width = messageSticker.Sticker.Width * (1.0 / 3);
-                        _stickerDynamicMessage.Height = messageSticker.Sticker.Height * (1.0 / 3);
-                        _stickerDynamicMessage.MediaPlayer.IsLoopingEnabled = true;
-                        _stickerDynamicMessage.MediaPlayer.AutoPlay = true;
-                        _stickerDynamicMessage.MediaPlayer.Volume = 0;
-                        _stickerDynamicMessage.MediaPlayer.Position = TimeSpan.Zero;
-                        _stickerDynamicMessage.MediaPlayer.Play();
-                        PanelMessageContent.Children.Add(_stickerDynamicMessage);
-                    });
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                    throw;
-                }
-                break;
-            }
-        }
+        var sticker = new StickerType(messageSticker.Sticker);
+        PanelMessageContent.Children.Add(sticker);
+        MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
+        GridUserInfo.Visibility = Visibility.Collapsed;
     }
     
     private async void GenerateReactions(TdApi.MessageReaction reaction)

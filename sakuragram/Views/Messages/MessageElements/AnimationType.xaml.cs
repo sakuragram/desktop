@@ -11,55 +11,36 @@ public partial class AnimationType
 {
     private TdClient _client = App._client;
     private TdApi.Animation _animation;
-    private bool _isDownloaded;
-    private string _uri;
     
     public AnimationType(TdApi.Animation animation)
     {
         InitializeComponent();
 
+        if (animation == null) return;
         _animation = animation;
-        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
         
         DispatcherQueue.EnqueueAsync(async () =>
         {
-            Width = animation.Width / 2.5;
-            Height = animation.Height / 2.5;
+            Width = animation.Width / 3.0;
+            Height = animation.Height / 3.0;
 
-            if (animation.Animation_.Local.IsDownloadingCompleted)
-            {
-                MediaPlayerElement.Source = MediaSource.CreateFromUri(new Uri(animation.Animation_.Local.Path));
-                MediaLoading.Visibility = Visibility.Collapsed;
-            }
+            if (animation.Animation_.Local.IsDownloadingCompleted) SetAnimation(animation.Animation_.Local);
             else
             {
-                if (animation.Animation_.Local.CanBeDownloaded)
-                    await _client.DownloadFileAsync(animation.Animation_.Id, 3, synchronous: false);
-                if (_isDownloaded)
-                    Console.WriteLine("s");
+                MediaLoading.Visibility = Visibility.Visible;
+                var file = await _client.DownloadFileAsync(animation.Animation_.Id, Constants.MediaPriority, synchronous: true);
+                SetAnimation(file.Local);
+                MediaLoading.Visibility = Visibility.Collapsed;
             }
         });
-    }
 
-    private async Task ProcessUpdates(TdApi.Update update)
-    {
-        switch (update)
+        void SetAnimation(TdApi.LocalFile file)
         {
-            case TdApi.Update.UpdateFile updateFile:
-                if (updateFile.File.Id == _animation.Animation_.Id)
-                {
-                    if (string.IsNullOrEmpty(updateFile.File.Local.Path) || updateFile.File.Local.Path == string.Empty ||
-                        !updateFile.File.Local.IsDownloadingCompleted) return;
-                    _isDownloaded = updateFile.File.Local.IsDownloadingCompleted;
-                    _uri = updateFile.File.Local.Path;
-                    
-                    await DispatcherQueue.EnqueueAsync(() =>
-                    {
-                        MediaPlayerElement.Source = MediaSource.CreateFromUri(new Uri(_isDownloaded ? _uri : string.Empty));
-                        MediaLoading.Visibility = _isDownloaded ? Visibility.Collapsed : Visibility.Visible;
-                    });
-                }
-                break;
+            MediaPlayerElement.Source = MediaSource.CreateFromUri(new Uri(file.Path));
+            MediaPlayerElement.MediaPlayer.IsMuted = true;
+            MediaPlayerElement.MediaPlayer.IsLoopingEnabled = true;
+            MediaPlayerElement.MediaPlayer.AutoPlay = true;
+            MediaPlayerElement.MediaPlayer.Play();
         }
     }
 }

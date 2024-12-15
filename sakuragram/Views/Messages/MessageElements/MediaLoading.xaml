@@ -17,25 +17,17 @@
                    VerticalAlignment="Stretch"
                    Width="Auto"
                    Height="Auto"
+                   Background="#1a1a1a"
                    RelativePanel.AlignBottomWithPanel="True"
                    RelativePanel.AlignTopWithPanel="True"
                    RelativePanel.AlignLeftWithPanel="True"
                    RelativePanel.AlignRightWithPanel="True">
     </winUi:Shimmer>
-    <StackPanel HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                RelativePanel.AlignVerticalCenterWithPanel="True"
-                RelativePanel.AlignHorizontalCenterWithPanel="True"
-                Width="Auto"
-                Height="Auto">
-        <Border HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Width="32"
-                Height="32"
-                Background="Black"
-                CornerRadius="32">
-            <ProgressRing IsActive="True"/>
-        </Border>
-    </StackPanel>
+    
+    <ProgressRing IsActive="True"
+                  RelativePanel.AlignHorizontalCenterWithPanel="True"
+                  RelativePanel.AlignVerticalCenterWithPanel="True"
+                  Width="32"
+                  Height="32"/>
     
 </RelativePanel>
