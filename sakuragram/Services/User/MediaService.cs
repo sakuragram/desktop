@@ -33,7 +33,7 @@ public class MediaService
         var file = await _client.ExecuteAsync(new TdApi.DownloadFile
         {
             FileId = chat.Photo.Small.Id,
-            Priority = 10,
+            Priority = Constants.ProfilePhotoPriority,
             Synchronous = true
         });
 
@@ -64,7 +64,7 @@ public class MediaService
         var file = await _client.ExecuteAsync(new TdApi.DownloadFile
         {
             FileId = user.ProfilePhoto.Small.Id,
-            Priority = 10,
+            Priority = Constants.ProfilePhotoPriority,
             Synchronous = true
         });
 
