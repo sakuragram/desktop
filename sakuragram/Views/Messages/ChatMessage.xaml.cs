@@ -37,7 +37,7 @@ public partial class ChatMessage : Page
 
     #region MessageContent
 
-    private TdApi.Message _message;
+    public TdApi.Message _message;
     private TdApi.MessageContent _messageContent;
     
     private TextBlock _textMessage;
@@ -194,49 +194,9 @@ public partial class ChatMessage : Page
 
         if (message.ForwardInfo != null)
         {
-            if (message.ForwardInfo.Source != null)
-            {
-                TextBlockForwardInfo.Text = $"Forwarded from {message.ForwardInfo.Source.SenderName}";
-                TextBlockForwardInfo.Visibility = Visibility.Visible;
-            }
-            else if (message.ForwardInfo.Origin != null)
-            {
-                switch (message.ForwardInfo.Origin)
-                {
-                    case TdApi.MessageOrigin.MessageOriginChannel channel:
-                    {
-                        var forwardInfo = string.Empty;
-
-                        forwardInfo = chat.Title;
-
-                        if (channel.AuthorSignature != string.Empty)
-                            forwardInfo = forwardInfo + $" ({channel.AuthorSignature})";
-
-                        TextBlockForwardInfo.Text = $"Forwarded from {forwardInfo}";
-                        TextBlockForwardInfo.Visibility = Visibility.Visible;
-                        break;
-                    }
-                    case TdApi.MessageOrigin.MessageOriginChat originChat:
-                    {
-                        TextBlockForwardInfo.Text = $"Forwarded from {originChat.AuthorSignature}";
-                        TextBlockForwardInfo.Visibility = Visibility.Visible;
-                        break;
-                    }
-                    case TdApi.MessageOrigin.MessageOriginUser user:
-                    {
-                        var originUser = _client.GetUserAsync(user.SenderUserId).Result;
-                        TextBlockForwardInfo.Text = $"Forwarded from {originUser.FirstName} {originUser.LastName}";
-                        TextBlockForwardInfo.Visibility = Visibility.Visible;
-                        break;
-                    }
-                    case TdApi.MessageOrigin.MessageOriginHiddenUser hiddenUser:
-                    {
-                        TextBlockForwardInfo.Text = $"Forwarded from {hiddenUser.SenderName}";
-                        TextBlockForwardInfo.Visibility = Visibility.Visible;
-                        break;
-                    }
-                }
-            }
+            var forwardInfo = await UserService.GetSenderName(message);
+            TextBlockForwardInfo.Text = "forwarded from " + forwardInfo;
+            TextBlockForwardInfo.Visibility = Visibility.Visible;
         }
         else
         {
