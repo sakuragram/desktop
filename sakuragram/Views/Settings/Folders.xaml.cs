@@ -6,6 +6,7 @@ using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using TdLib;
+using Brush = Microsoft.UI.Xaml.Media.Brush;
 
 namespace sakuragram.Views.Settings;
 
@@ -37,7 +38,7 @@ public partial class Folders : Page
             stackPanel.Orientation = Orientation.Horizontal;
             
             Button buttonDelete = new();
-            buttonDelete.Content = "Delete";
+            buttonDelete.Content = new FontIcon { Glyph = "\uE74D" };
             buttonDelete.Click += async (_, _) =>
             {
                 await _client.DeleteChatFolderAsync(userFolder.Id, []);
@@ -45,7 +46,7 @@ public partial class Folders : Page
             };
             
             Button buttonEdit = new();
-            buttonEdit.Content = "Edit";
+            buttonEdit.Content = new FontIcon { Glyph = "\uE70F" };
             buttonEdit.Margin = new Thickness(0, 0, 5, 0);
             buttonEdit.Click += async (_, _) =>
             {
@@ -70,28 +71,38 @@ public partial class Folders : Page
             card.Content = stackPanel;
             PanelUserFolders.Children.Add(card);
         }
-
-        if (hasInternetConnection)
+        
+        var recommendedFolders = _client.ExecuteAsync(new TdApi.GetRecommendedChatFolders()).Result;
+        if (recommendedFolders == null)
         {
-            var recommendedFolders = _client.ExecuteAsync(new TdApi.GetRecommendedChatFolders()).Result;
-            
-            foreach (var folder in recommendedFolders.ChatFolders)
-            {
-                SettingsCard card = new();
-                card.Header = folder.Folder.Title;
-                card.Description = folder.Description;
+            TextBlockRecommendedFolders.Visibility = Visibility.Collapsed;
+            return;
+        }
+        
+        foreach (var folder in recommendedFolders.ChatFolders)
+        {
+            SettingsCard card = new();
+            card.Header = folder.Folder.Title;
+            card.Description = folder.Description;
 
-                Button button = new();
-                button.Content = "Add";
-                button.Click += async (_, _) =>
-                {
-                    await _client.CreateChatFolderAsync(folder.Folder);
-                    GenerateFolders(_hasInternetConnection);
-                };
-                
-                card.Content = button;
-                PanelUserRecommendedFolders.Children.Add(card);
+            if (folder.Folder.Icon != null)
+            {
+                var folderIcon = Array.Find(Constants.FolderIcon, item =>
+                    item.Item1.Equals(folder.Folder.Icon.Name, StringComparison.CurrentCultureIgnoreCase));
+                card.HeaderIcon = new FontIcon { Glyph = folderIcon.Item2 };
             }
+            
+            Button button = new();
+            button.Style = (Style)Application.Current.Resources["AccentButtonStyle"]; 
+            button.Content = new FontIcon { Glyph = "\uE710" };
+            button.Click += async (_, _) =>
+            {
+                await _client.CreateChatFolderAsync(folder.Folder);
+                GenerateFolders(_hasInternetConnection);
+            };
+
+            card.Content = button;
+            PanelUserRecommendedFolders.Children.Add(card);
         }
     }
 }

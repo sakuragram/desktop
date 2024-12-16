@@ -41,7 +41,8 @@
                         Content="Create new folder"/>
                 
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
-                           Text="Recommended folders" />
+                           Text="Recommended folders"
+                           x:Name="TextBlockRecommendedFolders"/>
                 
                 <StackPanel x:Name="PanelUserRecommendedFolders" />
                 
