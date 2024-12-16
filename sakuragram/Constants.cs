@@ -7,7 +7,7 @@ public static class Constants
     public const int MediaPriority = 8;
     public const int ProfilePhotoPriority = 10;
     
-    public static Tuple<string, string>[] FolderIcon = 
+    public static readonly Tuple<string, string>[] FolderIcon = 
     [
         new("existing_chats", "\uE8F2"),
         new("new_chats", "\uE8BD"),
