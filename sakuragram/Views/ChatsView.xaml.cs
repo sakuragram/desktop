@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
+using sakuragram.Controls.Folders;
 using sakuragram.Services;
 using sakuragram.Services.Core;
 using sakuragram.Views.Chats;
@@ -549,19 +550,14 @@ public sealed partial class ChatsView : Page
         SelectorBarFolders.Items.Clear();
         var localAccountSettings = SettingsService.LoadAccountInfoSettings();
         
-        SelectorBarItem selectorBarItemAllChats = new();
-        selectorBarItemAllChats.Margin = new Thickness(0, 0, 5, 0);
-        selectorBarItemAllChats.Text = "All chats";
+        SelectorBarItem selectorBarItemAllChats = new FolderEntry(null);
         selectorBarItemAllChats.PointerPressed += async (_, _) => await GenerateChatEntries(new TdApi.ChatList.ChatListMain());
         SelectorBarFolders.Items.Add(selectorBarItemAllChats);
         SelectorBarFolders.SelectedItem = selectorBarItemAllChats;
         
         foreach (var folder in localAccountSettings.ChatFolders)
         {
-            SelectorBarItem selectorBarItem = new();
-            selectorBarItem.Margin = new Thickness(0, 0, 5, 0);
-            selectorBarItem.Text = folder.Title;
-            selectorBarItem.Tag = $"{folder.Title}_{folder.Id}";
+            SelectorBarItem selectorBarItem = new FolderEntry(folder);
             selectorBarItem.PointerPressed += async (_, _) =>
             {
                 App._folderId = folder.Id;
