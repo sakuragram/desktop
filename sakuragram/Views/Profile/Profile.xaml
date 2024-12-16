@@ -9,15 +9,14 @@
     xmlns:user="using:sakuragram.Controls.User"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     mc:Ignorable="d"
-    Width="350"
-    Height="700"
-	MaxHeight="700"
+    Width="450"
+    Height="550"
     HorizontalAlignment="Center"
     VerticalAlignment="Center"
     HorizontalContentAlignment="Center"
     VerticalContentAlignment="Center">
 	
-	<ScrollViewer>
+	<ScrollViewer MaxHeight="550">
 		<StackPanel>
 			<!--- User info -->
 			<Grid ColumnDefinitions="Auto, *">
@@ -26,7 +25,8 @@
 				                   Margin="0, 0, 10, 0"/>
 				<StackPanel Grid.Column="1">
 					<TextBlock x:Name="TextBlockUsername"
-					           FontSize="14"
+					           FontSize="18"
+					           MaxLines="1"
 					           Foreground="{StaticResource TextFillColorPrimaryBrush}"/>
 					<TextBlock x:Name="TextBlockStatus"
 					           FontSize="10"
@@ -40,8 +40,10 @@
 			      x:Name="GridPersonalChatInfo">
 				<user:ProfilePhoto x:Name="PhotoPersonalChat"
 				                   Grid.Column="0"
+				                   VerticalAlignment="Center"
 				                   Margin="0, 0, 10, 0" />
-				<StackPanel Grid.Column="1">
+				<StackPanel Grid.Column="1"
+				            VerticalAlignment="Center">
 					<TextBlock x:Name="TextBlockPersonalChatTitle"
 					           FontSize="12"
 					           Foreground="{StaticResource TextFillColorPrimaryBrush}"
@@ -58,29 +60,31 @@
 			<MenuFlyoutSeparator Margin="4"/>
 			<controls:SettingsCard x:Name="CardMobile"
 			                       Description="Mobile"
-			                       Width="300"/>
+			                       Width="350"/>
 			<controls:SettingsCard x:Name="CardUsername"
 			                       Description="Username"
-			                       Width="300"/>
+			                       Width="350"/>
 			<controls:SettingsCard x:Name="CardBio"
 			                       Description="Bio"
-			                       Width="300"/>
+			                       Width="350"/>
 			<controls:SettingsExpander x:Name="ExpanderBusinessHours"
 			                           Description="Business hours"
-			                           Width="300"/>
+			                           Width="350"/>
 			<controls:SettingsCard x:Name="CardDateOfBirth"
 			                       Description="Date of Birth"
-			                       Width="300"/>
+			                       Width="350"/>
 			<controls:SettingsCard x:Name="CardLocation"
 			                       Description="Location"
-			                       Width="300"/>
+			                       Width="350"/>
 			<controls:SettingsCard x:Name="CardChatId"
 			                       Description="ID"
-			                       Width="300"/>
+			                       Width="350"/>
 			<controls:SettingsCard x:Name="CardNotification"
 			                       Header="Notification"
-			                       Width="300">
-				<ToggleSwitch x:Name="SwitchNotifications"/>
+			                       Width="350">
+				<ToggleSwitch x:Name="SwitchNotifications"
+				              OnContent=""
+				              OffContent=""/>
 			</controls:SettingsCard>
 			<MenuFlyoutSeparator Margin="4"
 			                     x:Name="SeparatorChatMedia"/>
