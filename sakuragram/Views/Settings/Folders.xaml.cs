@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Diagnostics;
+using System.Drawing;
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -27,20 +28,10 @@ public partial class Folders : Page
         
         foreach (var userFolder in _chatFolders)
         {
-            string path = AppContext.BaseDirectory +
-                          $@"Assets\icons\folders\folders_{userFolder.Icon.Name.ToLower()}.png";
-            BitmapIcon folderIcon = new();
-					
-            if (File.Exists(path))
-            {
-                Uri folderIconPath = new(path);
-						
-                folderIcon.UriSource = folderIconPath;
-                folderIcon.ShowAsMonochrome = false;
-            }
-            
             TdApi.ChatFolder chatFolderInfo = await _client.GetChatFolderAsync(userFolder.Id);
             var folderChatCount = await _client.GetChatFolderChatCountAsync(chatFolderInfo);
+            var folderIcon = Array.Find(Constants.FolderIcon, item =>
+                item.Item1.Equals(userFolder.Icon.Name, StringComparison.CurrentCultureIgnoreCase));
 
             StackPanel stackPanel = new();
             stackPanel.Orientation = Orientation.Horizontal;
@@ -71,7 +62,7 @@ public partial class Folders : Page
             
             SettingsCard card = new();
             card.Header = userFolder.Title;
-            //card.HeaderIcon = folderIcon != null ? folderIcon : null;
+            card.HeaderIcon = new FontIcon { Glyph = folderIcon.Item2 };
             card.Description = folderChatCount.Count_ + " chats";
             
             stackPanel.Children.Add(buttonEdit);
