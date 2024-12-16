@@ -78,7 +78,12 @@
                                    MaxLines="1"/>
                     </StackPanel>
                 </Border>
-                <StackPanel x:Name="PanelMessageContent" />
+                <StackPanel x:Name="PanelMessageContent">
+                    <TextBlock x:Name="TextBlockCaption"
+                               FontSize="14"
+                               IsTextSelectionEnabled="True"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
                 <Grid x:Name="GridReactions"
                       Margin="0, 3"/>
                 <Grid HorizontalAlignment="Stretch"

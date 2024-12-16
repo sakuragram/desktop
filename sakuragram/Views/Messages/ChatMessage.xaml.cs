@@ -39,22 +39,9 @@ public partial class ChatMessage : Page
 
     public TdApi.Message _message;
     private TdApi.MessageContent _messageContent;
-    
-    private TextBlock _textMessage;
-    private TextBlock _caption;
-    private Image _photoMessage;
-    private Image _stickerStaticMessage;
-    private MediaPlayerElement _stickerDynamicMessage;
-    private Image _videoMessage;
-    private Image _voiceNoteMessage;
-    private Image _documentMessage;
-    private Image _audioMessage;
-    private Image _videoNoteMessage;
-    private Image _pollMessage;
-    private Image _paidMediaMessage;
-    private Image _contactMessage;
 
     /** can be used only for photo, video, audio and document messages */
+    private FlipView _mediaFlipView;
     public long _mediaAlbumId;
     public bool _canAttachAlbumElements = false;
     private List<TdApi.Message> _mediaAlbum;
@@ -99,25 +86,6 @@ public partial class ChatMessage : Page
                 }
                 break;
             }
-            case TdApi.Update.UpdateMessageInteractionInfo updateMessageInteractionInfo:
-            {
-                break;
-            }
-            // case TdApi.Update.UpdateMessageEdited:
-            // {
-            //     var message = _client.ExecuteAsync(new TdApi.GetMessage
-            //     {
-            //         ChatId = _chatId,
-            //         MessageId = _messageId
-            //     });
-            //
-            //     textMessage.Text = message.Result.Content switch
-            //     {
-            //         TdApi.MessageContent.MessageText messageText => textMessage.Text = messageText.Text.Text,
-            //         _ => textMessage.Text
-            //     };
-            //     break;
-            // }
         }
 
         return Task.CompletedTask;
@@ -384,30 +352,23 @@ public partial class ChatMessage : Page
 
     private void GenerateVideoMessage(TdApi.MessageContent.MessageVideo messageVideo)
     {
-        DispatcherQueue.EnqueueAsync(() =>
+        DispatcherQueue.EnqueueAsync(async () =>
         {
             var video = new VideoType(messageVideo.Video);
             
             if (messageVideo.Caption != null)
             {
-                var inlines = MessageService.GetTextEntities(messageVideo.Caption).Result;
-
-                _caption = new();
-                _caption.IsTextSelectionEnabled = true;
-                _caption.TextWrapping = TextWrapping.Wrap;
-                _caption.Inlines.Add(inlines);
+                var inlines = await MessageService.GetTextEntities(messageVideo.Caption);
+                TextBlockCaption.Inlines.Add(inlines);
             }
 
-            if (messageVideo.ShowCaptionAboveMedia)
+            if (_mediaFlipView == null)
             {
-                PanelMessageContent.Children.Add(_caption);
-                PanelMessageContent.Children.Add(video);
+                _mediaFlipView = new FlipView();
+                PanelMessageContent.Children.Insert(messageVideo.ShowCaptionAboveMedia ? 1 : 0, _mediaFlipView);
             }
-            else
-            {
-                PanelMessageContent.Children.Add(video);
-                PanelMessageContent.Children.Add(_caption);
-            }
+            
+            _mediaFlipView.Items.Add(video);
         });
     }
 
@@ -421,30 +382,24 @@ public partial class ChatMessage : Page
     
     private void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto)
     {
-        DispatcherQueue.EnqueueAsync(() =>
+        DispatcherQueue.EnqueueAsync(async () =>
         {
+            
             var photo = new PhotoType(messagePhoto.Photo);
             
             if (messagePhoto.Caption != null)
             {
-                var inlines = MessageService.GetTextEntities(messagePhoto.Caption).Result;
-
-                _caption = new();
-                _caption.IsTextSelectionEnabled = true;
-                _caption.TextWrapping = TextWrapping.Wrap;
-                _caption.Inlines.Add(inlines);
+                var inlines = await MessageService.GetTextEntities(messagePhoto.Caption);
+                TextBlockCaption.Inlines.Add(inlines);
             }
-
-            if (messagePhoto.ShowCaptionAboveMedia)
+            
+            if (_mediaFlipView == null)
             {
-                PanelMessageContent.Children.Add(_caption);
-                PanelMessageContent.Children.Add(photo);
+                _mediaFlipView = new FlipView();
+                PanelMessageContent.Children.Insert(messagePhoto.ShowCaptionAboveMedia ? 1 : 0, _mediaFlipView);
             }
-            else
-            {
-                PanelMessageContent.Children.Add(photo);
-                PanelMessageContent.Children.Add(_caption);
-            }
+            
+            _mediaFlipView.Items.Add(photo);
         });
     }
 
