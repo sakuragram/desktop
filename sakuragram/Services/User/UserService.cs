@@ -51,7 +51,7 @@ public class UserService
         }
     }
 
-    public static async Task<string> GetSenderName(TdApi.Message message)
+    public static async Task<string> GetSenderName(TdApi.Message message, bool needForwardInfo = false)
     {
         if (message == null) return null;
         try
@@ -59,50 +59,53 @@ public class UserService
             var sender = await GetSender(message.SenderId);
             TdApi.Chat chat = await _client.GetChatAsync(message.ChatId);
 
-            if (message.ForwardInfo != null)
+            if (needForwardInfo)
             {
-                if (message.ForwardInfo.Source != null)
+                if (message.ForwardInfo != null)
                 {
-                    if (message.ForwardInfo.Source.SenderName != string.Empty)
-                        return message.ForwardInfo.Source.SenderName;
-                    else
+                    if (message.ForwardInfo.Source != null)
                     {
-                        var user = GetSender(message.ForwardInfo.Source.SenderId).Result;
-                        if (user.User != null)
-                            return user.User.LastName != string.Empty
-                                ? user.User.FirstName + " " + user.User.LastName
-                                : user.User.FirstName;
-                        if (user.Chat != null) return user.Chat.Title;
+                        if (message.ForwardInfo.Source.SenderName != string.Empty)
+                            return message.ForwardInfo.Source.SenderName;
+                        else
+                        {
+                            var user = GetSender(message.ForwardInfo.Source.SenderId).Result;
+                            if (user.User != null)
+                                return user.User.LastName != string.Empty
+                                    ? user.User.FirstName + " " + user.User.LastName
+                                    : user.User.FirstName;
+                            if (user.Chat != null) return user.Chat.Title;
+                        }
                     }
-                }
-                else if (message.ForwardInfo.Origin != null)
-                {
-                    switch (message.ForwardInfo.Origin)
+                    else if (message.ForwardInfo.Origin != null)
                     {
-                        case TdApi.MessageOrigin.MessageOriginChannel originChannel:
+                        switch (message.ForwardInfo.Origin)
                         {
-                            var foundedChannel = _client.GetChatAsync(chatId: originChannel.ChatId).Result;
-                            string forwardInfo = foundedChannel.Title;
-
-                            if (originChannel.AuthorSignature != string.Empty)
+                            case TdApi.MessageOrigin.MessageOriginChannel originChannel:
                             {
-                                forwardInfo = forwardInfo + $" ({originChannel.AuthorSignature})";
-                            }
+                                var foundedChannel = _client.GetChatAsync(chatId: originChannel.ChatId).Result;
+                                string forwardInfo = foundedChannel.Title;
 
-                            return forwardInfo;
-                        }
-                        case TdApi.MessageOrigin.MessageOriginChat originChat:
-                        {
-                            return originChat.AuthorSignature;
-                        }
-                        case TdApi.MessageOrigin.MessageOriginUser user:
-                        {
-                            var originUser = _client.GetUserAsync(userId: user.SenderUserId).Result;
-                            return originUser.FirstName + " " + originUser.LastName;
-                        }
-                        case TdApi.MessageOrigin.MessageOriginHiddenUser hiddenUser:
-                        {
-                            return hiddenUser.SenderName;
+                                if (originChannel.AuthorSignature != string.Empty)
+                                {
+                                    forwardInfo = forwardInfo + $" ({originChannel.AuthorSignature})";
+                                }
+
+                                return forwardInfo;
+                            }
+                            case TdApi.MessageOrigin.MessageOriginChat originChat:
+                            {
+                                return originChat.AuthorSignature;
+                            }
+                            case TdApi.MessageOrigin.MessageOriginUser user:
+                            {
+                                var originUser = _client.GetUserAsync(userId: user.SenderUserId).Result;
+                                return originUser.FirstName + " " + originUser.LastName;
+                            }
+                            case TdApi.MessageOrigin.MessageOriginHiddenUser hiddenUser:
+                            {
+                                return hiddenUser.SenderName;
+                            }
                         }
                     }
                 }
