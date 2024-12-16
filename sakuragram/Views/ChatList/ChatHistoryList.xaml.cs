@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.WinUI;
+using Microsoft.UI.Xaml.Controls;
 using sakuragram.Services;
 using sakuragram.Services.Chat;
 using sakuragram.Services.Core;
@@ -72,21 +74,32 @@ public partial class ChatHistoryList
             var messages = await _client.ExecuteAsync(new TdApi.GetChatHistory
             {
                 ChatId = chat.Id,
-                FromMessageId = fromMessageId,
+                FromMessageId = 0,
                 Limit = 42,
                 OnlyLocal = false
             });
             
             await GenerateMessageByType(messages.Messages_.Reverse().ToList(), true);
         });
+        
+        _client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
+    }
+
+    private async Task ProcessUpdates(TdApi.Update update)
+    {
+        switch (update)
+        {
+            case TdApi.Update.UpdateNewMessage updateNewMessage:
+            {
+                if (updateNewMessage.Message.ChatId == _chat.Id)
+                {
+                    await DispatcherQueue.EnqueueAsync(async () => await GenerateMessageByType([updateNewMessage.Message]));
+                }
+                break;
+            }
+        }
     }
     
-    /// <summary>
-    /// Generates and displays chat messages in the UI based on the provided list of messages.
-    /// </summary>
-    /// <param name="messages">A list of TdApi.Message objects to be displayed.</param>
-    /// <param name="clear">A boolean indicating whether to clear the existing messages before adding new ones.</param>
-    /// <returns>An asynchronous task representing the operation.</returns>
     private async Task GenerateMessageByType(List<TdApi.Message> messages, bool clear = false)
     {
         List<TdApi.Message> addedMessages = [];
@@ -97,9 +110,9 @@ public partial class ChatHistoryList
             
             foreach (var message in messages.Where(message => !addedMessages.Contains(message)))
             {
-                if (_lastChatMessage != null)
+                if (_lastChatMessage != null && _lastChatMessage._message != null)
                 {
-                    var lastMessage = await _client.GetMessageAsync(_chat.Id, _lastChatMessage._messageId);
+                    var lastMessage = _lastChatMessage._message;
                     var lastMessageReadTime = MathService.CalculateDateTime(lastMessage.Date);
                     var messageReadTime = MathService.CalculateDateTime(message.Date);
                     
