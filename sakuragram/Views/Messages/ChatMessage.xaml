@@ -50,7 +50,7 @@
                                Text="@username" 
                                FontStyle="Oblique" 
                                Foreground="Orange"
-                               Tapped="DisplayName_OnTapped"
+                               PointerPressed="DisplayName_OnPointerPressed"
                                Grid.Column="0"/>
                     <Image x:Name="ImageEmojiStatus"
                            Grid.Column="1"/>

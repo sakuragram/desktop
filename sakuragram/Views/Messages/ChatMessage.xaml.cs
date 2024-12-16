@@ -153,8 +153,8 @@ public partial class ChatMessage : Page
         else if (sender.Chat != null)
         {
             await ProfilePicture.InitializeProfilePhoto(null, sender.Chat, canOpenProfile: true);
+            SetDisplayName();
         }
-        else SetDisplayName();
         
         TextBlockSendTime.Text = string.IsNullOrEmpty(message.AuthorSignature) 
             ? MathService.CalculateDateTime(message.Date).ToShortTimeString()
@@ -403,6 +403,17 @@ public partial class ChatMessage : Page
         }
     }
 
+    public void AddAlbumElement(TdApi.Message message)
+    {
+        if (message.MediaAlbumId == 0) return;
+        if (message.MediaAlbumId == _mediaAlbumId)
+        {
+            GenerateMessageFromContent(message.Content);
+        }
+    }
+    
+    #region GeneratingContent
+    
     private void GenerateVideoNoteMessage(TdApi.MessageContent.MessageVideoNote messageVideoNote)
     {
         var videoNote = new VideoNoteType(messageVideoNote.VideoNote);
@@ -446,15 +457,6 @@ public partial class ChatMessage : Page
         PanelMessageContent.Children.Add(animation);
         MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
         GridUserInfo.Visibility = Visibility.Collapsed;
-    }
-
-    public void AddAlbumElement(TdApi.Message message)
-    {
-        if (message.MediaAlbumId == 0) return;
-        if (message.MediaAlbumId == _mediaAlbumId)
-        {
-            GenerateMessageFromContent(message.Content);
-        }
     }
     
     private void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto)
@@ -505,6 +507,8 @@ public partial class ChatMessage : Page
         MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
         GridUserInfo.Visibility = Visibility.Collapsed;
     }
+    
+    #endregion
     
     private async void GenerateReactions(TdApi.MessageReaction reaction)
     {
@@ -665,7 +669,7 @@ public partial class ChatMessage : Page
         // await _chat.GenerateMessageByType(replies, true);
     }
 
-    private async void DisplayName_OnTapped(object sender, TappedRoutedEventArgs e)
+    private async void DisplayName_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
         var messageSender = await UserService.GetSender(_message.SenderId);
         await UserService.ShowProfile(messageSender.User, messageSender.Chat);
