@@ -194,7 +194,7 @@ public partial class ChatMessage : Page
 
         if (message.ForwardInfo != null)
         {
-            var forwardInfo = await UserService.GetSenderName(message);
+            var forwardInfo = await UserService.GetSenderName(message, true);
             TextBlockForwardInfo.Text = "forwarded from " + forwardInfo;
             TextBlockForwardInfo.Visibility = Visibility.Visible;
         }
