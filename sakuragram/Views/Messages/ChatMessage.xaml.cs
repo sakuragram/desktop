@@ -305,6 +305,9 @@ public partial class ChatMessage : Page
             case TdApi.MessageContent.MessageDocument messageDocument:
                 GenerateDocumentMessage(messageDocument);
                 break;
+            case TdApi.MessageContent.MessagePoll messagePoll:
+                GeneratePollMessage(messagePoll);
+                break;
             case TdApi.MessageContent.MessageUnsupported:
                 TextBlock textUnsupported = new();
                 textUnsupported.Text = "Unsupported message type";
@@ -330,6 +333,17 @@ public partial class ChatMessage : Page
     }
     
     #region GeneratingContent
+
+    private void GeneratePollMessage(TdApi.MessageContent.MessagePoll messagePoll)
+    {
+        DispatcherQueue.EnqueueAsync(async () =>
+        {
+            var pollType = new PollType(messagePoll, _message.ChatId, _messageId);
+            var inlines = await MessageService.GetTextEntities(messagePoll.Poll.Question);
+            TextBlockCaption.Inlines.Add(inlines);
+            PanelMessageContent.Children.Add(pollType);
+        });
+    }
     
     private void GenerateDocumentMessage(TdApi.MessageContent.MessageDocument messageDocument)
     {

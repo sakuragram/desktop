@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Grid x:Class="sakuragram.Views.Messages.MessageElements.PollType"
+      x:Name="GridPollType"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      RowDefinitions="*, Auto">
+      
+      <ScrollViewer Grid.Row="0">
+            <StackPanel x:Name="StackPanelOptions"/>
+      </ScrollViewer>
+      <StackPanel Grid.Row="1">
+            <Button x:Name="ButtonVote"
+                    Content="Vote"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Bottom"
+                    Width="Auto"
+                    Click="ButtonVote_OnClick"/>
+            <TextBlock x:Name="TextBlockVoteCount"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Bottom"
+                       TextAlignment="Center"
+                       Width="Auto"/>
+      </StackPanel>
+      
+</Grid>
