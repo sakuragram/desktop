@@ -12,16 +12,33 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         
         <FontIcon Grid.Column="0"
                   x:Name="Icon"
                   FontSize="13"
-                  Margin="5, 0"/>
+                  Margin="5, 0"
+                  VerticalAlignment="Center"/>
         <TextBlock Grid.Column="1"
                    x:Name="TextBlockFolderName"
                    FontSize="13"/>
-        
+        <InfoBadge Grid.Column="2"
+                   x:Name="InfoBadgeUnreadChats"
+                   Margin="5, 0"
+                   VerticalAlignment="Center"
+                   Visibility="Collapsed"/>
     </Grid>
+    
+    <SelectorBarItem.ContextFlyout>
+        <MenuFlyout>
+            <MenuFlyoutItem x:Name="FlyoutItemEdit"
+                            Text="Edit folder"/>
+            <MenuFlyoutItem x:Name="FlyoutItemMarkAs"
+                            Text="Mark as"/>
+            <MenuFlyoutItem x:Name="FlyoutItemDelete"
+                            Text="Delete folder"/>
+        </MenuFlyout>
+    </SelectorBarItem.ContextFlyout>
     
 </SelectorBarItem>
