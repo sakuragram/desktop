@@ -36,6 +36,9 @@
                                     x:Name="FlyoutItemNotifications"
                                     Click="FlyoutItemNotifications_OnClick"/>
                     <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="Log out"
+                                    x:Name="FlyoutItemLogOut"
+                                    Click="FlyoutItemLogOut_OnClick"/>
                     <MenuFlyoutItem Text="Quit"
                                     x:Name="FlyoutItemQuit"
                                     Click="FlyoutItemQuit_OnClick"/>

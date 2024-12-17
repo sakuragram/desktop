@@ -15,6 +15,7 @@ using sakuragram.Services;
 using sakuragram.Services.Core;
 using sakuragram.Views;
 using sakuragram.Views.MainWindowElements;
+using sakuragram.Views.Settings;
 using TdLib;
 using Size = Windows.Foundation.Size;
 
@@ -392,6 +393,15 @@ public sealed partial class MainWindow : Window
 		});
 	}
 
+	private void OpenLoginView()
+	{
+		FlyoutItemNotifications.Visibility = Visibility.Collapsed;
+		FlyoutItemLogOut.Visibility = Visibility.Collapsed;
+		PanelContent.Visibility = Visibility.Collapsed;
+		ContentFrame.Navigate(typeof(LoginView));
+		if (ContentFrame.Content is LoginView login) login._window = this;
+	}
+	
 	public async Task OpenChatsView()
 	{
 		ContentFrame.Navigate(typeof(ChatsView), null, 
@@ -409,11 +419,23 @@ public sealed partial class MainWindow : Window
 		}
 	}
 
+	public void OpenSettingsView()
+	{
+		ContentFrame.Navigate(typeof(SettingsView));
+		TitleBar.IsBackButtonVisible = true;
+		TitleBar.BackButtonClick += async (_, _) =>
+		{
+			TitleBar.IsBackButtonVisible = false;
+			await OpenChatsView();
+		};
+	}
+
 	public async Task UpdateWindow(TdClient client)
 	{
 		if (App._authNeeded)
 		{
-			
+			FlyoutItemNotifications.Visibility = Visibility.Collapsed;
+			FlyoutItemLogOut.Visibility = Visibility.Collapsed;
 			PanelContent.Visibility = Visibility.Collapsed;
 			ContentFrame.Navigate(typeof(LoginView));
 			if (ContentFrame.Content is LoginView login) login._window = this;
@@ -445,6 +467,9 @@ public sealed partial class MainWindow : Window
 				FlyoutItemCreateChannel.Click += (_, _) => OpenCreateChatDialog(2);
 				FlyoutItemCreateSecretChat.Click += (_, _) => OpenCreateChatDialog(3);
 
+				FlyoutItemNotifications.Visibility = Visibility.Visible;
+				FlyoutItemLogOut.Visibility = Visibility.Visible;
+				
 				await UpdateNotificationInfo();
 			});
 			_client.UpdateReceived += async (_, update) => { await ProcessUpdates(update); };
@@ -493,5 +518,11 @@ public sealed partial class MainWindow : Window
 		{
 			_client.CloseAsync();
 		}
+	}
+
+	private async void FlyoutItemLogOut_OnClick(object sender, RoutedEventArgs e)
+	{
+		await _client.LogOutAsync();
+		OpenLoginView();
 	}
 }
