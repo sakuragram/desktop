@@ -7,6 +7,7 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
 using CommunityToolkit.WinUI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -487,19 +488,12 @@ public sealed partial class ChatsView : Page
 
     private void FlyoutItemSettings_OnClick(object sender, RoutedEventArgs e)
     {
-        MainWindowFrame.Navigate(typeof(SettingsView));
-			     
-        MainWindowTitleBar.IsBackButtonVisible = true;
-        MainWindowTitleBar.BackButtonClick += (_, _) =>
-        {
-            MainWindowTitleBar.IsBackButtonVisible = false;
-            MainWindowFrame.Navigate(typeof(ChatsView));
-        };
+        MainWindow.OpenSettingsView();
     }
 
     private void FlyoutItemCurrentUser_OnClick(object sender, RoutedEventArgs e)
     {
-        MainWindowFrame.Navigate(typeof(SettingsView));
+        MainWindow.OpenSettingsView();
     }
     
     private void CurrentUserPicture_OnPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -551,14 +545,18 @@ public sealed partial class ChatsView : Page
         var localAccountSettings = SettingsService.LoadAccountInfoSettings();
         
         SelectorBarItem selectorBarItemAllChats = new FolderEntry(null);
-        selectorBarItemAllChats.PointerPressed += async (_, _) => await GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+        selectorBarItemAllChats.Tapped += async (_, _) =>
+        {
+            App._folderId = -1;
+            await GenerateChatEntries(new TdApi.ChatList.ChatListMain());
+        };
         SelectorBarFolders.Items.Add(selectorBarItemAllChats);
         SelectorBarFolders.SelectedItem = selectorBarItemAllChats;
         
         foreach (var folder in localAccountSettings.ChatFolders)
         {
             SelectorBarItem selectorBarItem = new FolderEntry(folder);
-            selectorBarItem.PointerPressed += async (_, _) =>
+            selectorBarItem.Tapped += async (e, args) =>
             {
                 App._folderId = folder.Id;
                 await GenerateChatEntries(new TdApi.ChatList.ChatListFolder{ChatFolderId = folder.Id});

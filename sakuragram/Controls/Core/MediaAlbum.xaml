@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Grid x:Class="sakuragram.Controls.Core.MediaAlbum"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      Width="Auto"
+      RowDefinitions="*, Auto">
+      
+      <FlipView x:Name="FlipView"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Grid.Row="0"/>
+      <Border HorizontalAlignment="Center"
+              VerticalAlignment="Bottom"
+              Grid.Row="1"
+              Margin="0, 5, 0, 0"
+              Background="Black"
+              CornerRadius="4">
+          <PipsPager x:Name="PipsPager"
+                     Margin="5, 0"
+                     Orientation="Horizontal"
+                     HorizontalAlignment="Left"
+                     VerticalAlignment="Stretch"
+                     NumberOfPages="{x:Bind FlipView.Items.Count, Mode=OneWay}"
+                     SelectedPageIndex="{x:Bind FlipView.SelectedIndex, Mode=TwoWay}"/>
+      </Border>
+      
+</Grid>

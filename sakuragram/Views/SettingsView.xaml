@@ -91,7 +91,8 @@
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
         </NavigationView.FooterMenuItems>
-        <Frame x:Name="ContentFrame" />
+        <Frame x:Name="ContentFrame"
+               x:FieldModifier="public"/>
     </NavigationView>
     
 </Page>

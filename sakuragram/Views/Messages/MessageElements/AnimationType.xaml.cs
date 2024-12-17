@@ -21,8 +21,8 @@ public partial class AnimationType
         
         DispatcherQueue.EnqueueAsync(async () =>
         {
-            Width = animation.Width / 3.0;
-            Height = animation.Height / 3.0;
+            Width = animation.Width / 2.0;
+            Height = animation.Height / 2.0;
 
             if (animation.Animation_.Local.IsDownloadingCompleted) SetAnimation(animation.Animation_.Local);
             else

@@ -17,6 +17,7 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using sakuragram.Controls.Core;
 using sakuragram.Controls.Messages;
 using sakuragram.Services;
 using sakuragram.Services.Chat;
@@ -41,7 +42,7 @@ public partial class ChatMessage : Page
     private TdApi.MessageContent _messageContent;
 
     /** can be used only for photo, video, audio and document messages */
-    private FlipView _mediaFlipView;
+    private MediaAlbum _mediaFlipView;
     public long _mediaAlbumId;
     public bool _canAttachAlbumElements = false;
     private List<TdApi.Message> _mediaAlbum;
@@ -302,19 +303,7 @@ public partial class ChatMessage : Page
                 GenerateVideoNoteMessage(messageVideoNote);
                 break;
             case TdApi.MessageContent.MessageDocument messageDocument:
-                DispatcherQueue.EnqueueAsync(() =>
-                {
-                    DocumentType documentType = new(messageDocument.Document);
-                    if (_mediaElementsCount > 1)
-                        PanelMessageContent.Children.Insert(0, documentType);
-                    else PanelMessageContent.Children.Add(documentType);
-                });
-                _mediaElementsCount++;
-                
-                if (!string.IsNullOrEmpty(messageDocument.Caption.Text))
-                {
-                    GenerateTextMessage(messageDocument.Caption);
-                }
+                GenerateDocumentMessage(messageDocument);
                 break;
             case TdApi.MessageContent.MessageUnsupported:
                 TextBlock textUnsupported = new();
@@ -342,6 +331,28 @@ public partial class ChatMessage : Page
     
     #region GeneratingContent
     
+    private void GenerateDocumentMessage(TdApi.MessageContent.MessageDocument messageDocument)
+    {
+        DispatcherQueue.EnqueueAsync(async () =>
+        {
+            var document = new DocumentType(messageDocument.Document);
+            
+            if (messageDocument.Caption != null)
+            {
+                var inlines = await MessageService.GetTextEntities(messageDocument.Caption);
+                TextBlockCaption.Inlines.Add(inlines);
+            }
+
+            if (_mediaFlipView == null)
+            {
+                _mediaFlipView = new MediaAlbum(false) { MaxHeight = 55 };
+                PanelMessageContent.Children.Insert(0, _mediaFlipView);
+            }
+            
+            _mediaFlipView.AddAlbumElement(document);
+        });
+    }
+    
     private void GenerateVideoNoteMessage(TdApi.MessageContent.MessageVideoNote messageVideoNote)
     {
         var videoNote = new VideoNoteType(messageVideoNote.VideoNote);
@@ -364,27 +375,40 @@ public partial class ChatMessage : Page
 
             if (_mediaFlipView == null)
             {
-                _mediaFlipView = new FlipView();
+                _mediaFlipView = new MediaAlbum { MaxHeight = messageVideo.Video.Height / 2.0 };
                 PanelMessageContent.Children.Insert(messageVideo.ShowCaptionAboveMedia ? 1 : 0, _mediaFlipView);
             }
             
-            _mediaFlipView.Items.Add(video);
+            _mediaFlipView.AddAlbumElement(video);
         });
     }
 
-    private void GenerateAnimationMessage(TdApi.MessageContent.MessageAnimation messageAnimation)
+    private async void GenerateAnimationMessage(TdApi.MessageContent.MessageAnimation messageAnimation)
     {
-        var animation = new AnimationType(messageAnimation.Animation);
-        PanelMessageContent.Children.Add(animation);
-        MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
-        GridUserInfo.Visibility = Visibility.Collapsed;
+        await DispatcherQueue.EnqueueAsync(async () =>
+        {
+            var animation = new AnimationType(messageAnimation.Animation);
+
+            if (!string.IsNullOrEmpty(messageAnimation.Caption.Text))
+            {
+                var inlines = await MessageService.GetTextEntities(messageAnimation.Caption);
+                TextBlockCaption.Inlines.Add(inlines);
+                PanelMessageContent.Children.Insert(messageAnimation.ShowCaptionAboveMedia ? 1 : 0, animation);
+            }
+            else
+            {
+                PanelMessageContent.Children.Insert(0, animation);
+                MessageBackground.Background = new SolidColorBrush(Colors.Transparent);
+                GridUserInfo.Visibility = Visibility.Collapsed;
+                TextBlockCaption.Visibility = Visibility.Collapsed;
+            }
+        });
     }
     
     private void GeneratePhotoMessage(TdApi.MessageContent.MessagePhoto messagePhoto)
     {
         DispatcherQueue.EnqueueAsync(async () =>
         {
-            
             var photo = new PhotoType(messagePhoto.Photo);
             
             if (messagePhoto.Caption != null)
@@ -395,24 +419,18 @@ public partial class ChatMessage : Page
             
             if (_mediaFlipView == null)
             {
-                _mediaFlipView = new FlipView();
+                _mediaFlipView = new MediaAlbum { MaxHeight = messagePhoto.Photo.Sizes[0].Height / 1.0 };
                 PanelMessageContent.Children.Insert(messagePhoto.ShowCaptionAboveMedia ? 1 : 0, _mediaFlipView);
             }
             
-            _mediaFlipView.Items.Add(photo);
+            _mediaFlipView.AddAlbumElement(photo);
         });
     }
 
     private void GenerateTextMessage(TdApi.FormattedText messageText)
     {
         var inlines = MessageService.GetTextEntities(messageText).Result;
-        
-        TextBlock textMessage = new();
-        textMessage.IsTextSelectionEnabled = true;
-        textMessage.TextWrapping = TextWrapping.Wrap;
-        textMessage.Inlines.Add(inlines);
-        
-        PanelMessageContent.Children.Add(textMessage);
+        TextBlockCaption.Inlines.Add(inlines);
     }
     
     private void GenerateStickerMessage(TdApi.MessageContent.MessageSticker messageSticker)
