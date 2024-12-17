@@ -53,21 +53,47 @@
                            PrimaryButtonText="Save"
                            CloseButtonText="Close"
                            DefaultButton="Primary"
-                           Width="300"
-                           MaxWidth="300"
-                           Height="450">
+                           Opened="DialogEditFolder_OnOpened"
+                           Closed="DialogEditFolder_OnClosed"
+                           MinWidth="600"
+                           Width="600"
+                           Height="500">
                 <ContentDialog.TitleTemplate>
                     <DataTemplate>
                         <TextBlock Text="Edit folder"/>
                     </DataTemplate>
                 </ContentDialog.TitleTemplate>
-                <StackPanel>
-                    <TextBox x:Name="TextBoxEditFolderName"
-                             PlaceholderText="Folder name"/>
-                    <MenuFlyoutSeparator Margin="4"/>
-                    <controls:SettingsCard Height="30"/>
-                    <controls:SettingsExpander Height="30"/>
-                </StackPanel>
+                <ScrollViewer Width="500">
+                    <StackPanel>
+                        <TextBox x:Name="TextBoxEditFolderName"
+                                 PlaceholderText="Folder name"/>
+                        <MenuFlyoutSeparator Margin="4"/>
+                        <controls:SettingsExpander x:Name="ExpanderIcons"
+                                                   Header="Icon"/>
+                        <controls:SettingsExpander x:Name="ExpanderIncludedByFilter"
+                                                   Header="Include \ Exclude">
+                            <controls:SettingsExpander.Items>
+                                <controls:SettingsCard Header="Contacts">
+                                    <CheckBox x:Name="ButtonIncludeContacts"/>
+                                </controls:SettingsCard>
+                                <controls:SettingsCard Header="Non-Contacts">
+                                    <CheckBox x:Name="ButtonIncludeNonContacts"/>
+                                </controls:SettingsCard>
+                                <controls:SettingsCard Header="Groups">
+                                    <CheckBox x:Name="ButtonIncludeGroups"/>
+                                </controls:SettingsCard>
+                                <controls:SettingsCard Header="Channels">
+                                    <CheckBox x:Name="ButtonIncludeChannels"/>
+                                </controls:SettingsCard>
+                                <controls:SettingsCard Header="Bots">
+                                    <CheckBox x:Name="ButtonIncludeBots"/>
+                                </controls:SettingsCard>
+                            </controls:SettingsExpander.Items>
+                        </controls:SettingsExpander>
+                        <controls:SettingsExpander x:Name="ExpanderChats"
+                                                   Header="Chats"/>
+                    </StackPanel>
+                </ScrollViewer>
             </ContentDialog>
             
         </Grid>

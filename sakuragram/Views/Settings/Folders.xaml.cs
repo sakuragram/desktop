@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,17 +15,35 @@ namespace sakuragram.Views.Settings;
 public partial class Folders : Page
 {
     private readonly TdClient _client = App._client;
-    private TdApi.ChatFolderInfo[] _chatFolders = App._folders;
-    private bool _hasInternetConnection = App._hasInternetConnection;
+    private readonly TdApi.ChatFolderInfo[] _chatFolders = App._folders;
+    private TdApi.ChatFolderInfo _currentFolder = null;
+    private List<RadioButton> _radioButtons = [];
     
     public Folders()
     {
         InitializeComponent();
         
-        GenerateFolders(_hasInternetConnection);
+        GenerateFolders();
+
+        foreach (var icon in Constants.FolderIcon)
+        {
+            var card = new SettingsCard
+            {
+                Header = icon.Item1,
+                HeaderIcon = new FontIcon { Glyph = icon.Item2 }
+            };
+            var radioButton = new RadioButton { Name = icon.Item1 };
+            radioButton.Checked += (_, _) =>
+            {
+                foreach (var rb in _radioButtons.Where(rb => rb != radioButton)) rb.IsChecked = false;
+            };
+            _radioButtons.Add(radioButton);
+            card.Content = radioButton;
+            ExpanderIcons.Items.Add(card);
+        }
     }
     
-    private async void GenerateFolders(bool hasInternetConnection)
+    private async void GenerateFolders()
     {
         PanelUserFolders.Children.Clear();
         
@@ -42,7 +62,7 @@ public partial class Folders : Page
             buttonDelete.Click += async (_, _) =>
             {
                 await _client.DeleteChatFolderAsync(userFolder.Id, []);
-                GenerateFolders(_hasInternetConnection);
+                GenerateFolders();
             };
             
             Button buttonEdit = new();
@@ -50,6 +70,7 @@ public partial class Folders : Page
             buttonEdit.Margin = new Thickness(0, 0, 5, 0);
             buttonEdit.Click += async (_, _) =>
             {
+                _currentFolder = userFolder;
                 TextBoxEditFolderName.Text = userFolder.Title;
                 await DialogEditFolder.ShowAsync();
                 DialogEditFolder.PrimaryButtonClick += async (_, _) =>
@@ -98,11 +119,27 @@ public partial class Folders : Page
             button.Click += async (_, _) =>
             {
                 await _client.CreateChatFolderAsync(folder.Folder);
-                GenerateFolders(_hasInternetConnection);
+                GenerateFolders();
             };
 
             card.Content = button;
             PanelUserRecommendedFolders.Children.Add(card);
         }
+    }
+
+    private void DialogEditFolder_OnOpened(ContentDialog sender, ContentDialogOpenedEventArgs args)
+    {
+        TextBoxEditFolderName.Focus(FocusState.Programmatic);
+        var folderIcon = Array.Find(Constants.FolderIcon, item => 
+            item.Item1.Equals(_currentFolder.Icon.Name, StringComparison.CurrentCultureIgnoreCase));
+        ExpanderIcons.HeaderIcon = new FontIcon { Glyph = folderIcon.Item2 };
+        foreach (var rb in _radioButtons.Where(rb => rb.Name.Equals(_currentFolder.Icon.Name, StringComparison.CurrentCultureIgnoreCase))) rb.IsChecked = true;
+    }
+
+    private void DialogEditFolder_OnClosed(ContentDialog sender, ContentDialogClosedEventArgs args)
+    {
+        ExpanderIcons.IsExpanded = false;
+        ExpanderIncludedByFilter.IsExpanded = false;
+        ExpanderChats.IsExpanded = false;
     }
 }
